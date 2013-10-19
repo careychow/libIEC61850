@@ -246,12 +246,12 @@ MmsValue_update(MmsValue* self, MmsValue* update)
 }
 
 MmsValue*
-MmsValue_newDataAccessError(uint32_t code)
+MmsValue_newDataAccessError(MmsDataAccessError accessError)
 {
     MmsValue* self = (MmsValue*) calloc(1, sizeof(MmsValue));
 
     self->type = MMS_DATA_ACCESS_ERROR;
-    self->value.dataAccessError.code = code;
+    self->value.dataAccessError = accessError;
 
     return self;
 }
@@ -1105,6 +1105,12 @@ MmsValue_getBinaryTimeAsUtcMs(MmsValue* value)
     timestamp += msSinceMidnight;
 
     return timestamp;
+}
+
+MmsDataAccessError
+MmsValue_getDataAccessError(MmsValue* self)
+{
+    return self->value.dataAccessError;
 }
 
 static inline void

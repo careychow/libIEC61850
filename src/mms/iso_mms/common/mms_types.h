@@ -32,8 +32,26 @@ typedef enum {
 	MMS_VALUE_OK,
 	MMS_VALUE_ACCESS_DENIED,
 	MMS_VALUE_VALUE_INVALID,
-	MMS_VALUE_TEMPORARILY_UNAVAILABLE
+	MMS_VALUE_TEMPORARILY_UNAVAILABLE,
+	MMS_VALUE_OBJECT_ACCESS_UNSUPPORTED
 } MmsValueIndication;
+
+typedef enum {
+    DATA_ACCESS_ERROR_NO_RESPONSE = -2, /* for server internal purposes only! */
+    DATA_ACCESS_ERROR_SUCCESS = -1,
+    DATA_ACCESS_ERROR_OBJECT_INVALIDATED = 0,
+    DATA_ACCESS_ERROR_HARDWARE_FAULT = 1,
+    DATA_ACCESS_ERROR_TEMPORARILY_UNAVAILABLE = 2,
+    DATA_ACCESS_ERROR_OBJECT_ACCESS_DENIED = 3,
+    DATA_ACCESS_ERROR_OBJECT_UNDEFINED = 4,
+    DATA_ACCESS_ERROR_INVALID_ADDRESS = 5,
+    DATA_ACCESS_ERROR_TYPE_UNSUPPORTED = 6,
+    DATA_ACCESS_ERROR_TYPE_INCONSISTENT = 7,
+    DATA_ACCESS_ERROR_OBJECT_ATTRIBUTE_INCONSISTENT = 8,
+    DATA_ACCESS_ERROR_OBJECT_ACCESS_UNSUPPORTED = 9,
+    DATA_ACCESS_ERROR_OBJECT_NONE_EXISTENT = 10,
+    DATA_ACCESS_ERROR_OBJECT_VALUE_INVALID = 11
+} MmsDataAccessError;
 
 /**
  * MmsValue - complex value type for MMS Client API
@@ -44,9 +62,7 @@ struct sMmsValue {
 	MmsType type;
 	int deleteValue;
 	union uMmsValue {
-        struct {
-            uint32_t code;
-        } dataAccessError;
+        MmsDataAccessError dataAccessError;
 		struct {
 			int size;
 			MmsValue** components;

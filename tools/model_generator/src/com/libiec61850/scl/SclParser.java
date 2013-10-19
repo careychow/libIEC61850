@@ -27,14 +27,22 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Stack;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
 
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
+import org.xml.sax.Attributes;
 
 import com.libiec61850.scl.communication.Communication;
 import com.libiec61850.scl.model.IED;
@@ -69,28 +77,109 @@ public class SclParser {
 	public Communication getCommunication() {
         return communication;
     }
+	
+	
+	public static Document parseXmlWithLineNumberInformation(InputStream xmlInputStream) throws IOException, SAXException {
+	    final Document xmlDocument;
+	    
+	    SAXParser saxParser;
+	    
+	    try {
+	        SAXParserFactory factory = SAXParserFactory.newInstance();
+	        saxParser = factory.newSAXParser();
+	        DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
+	        DocumentBuilder documentBuilder = docBuilderFactory.newDocumentBuilder();
+	        xmlDocument = documentBuilder.newDocument();           
+	    } catch(ParserConfigurationException e){
+	        throw new RuntimeException(e);
+	    }
+	 
+	    final Stack<Element> elementStack = new Stack<Element>();
+	        
+	    DefaultHandler handler = new DefaultHandler() {
+	        
+	    	private Locator documentLocator;
+	    	
+	    	private StringBuilder textNodeContent = new StringBuilder();
+	 
+	        @Override
+	        public void setDocumentLocator(Locator locator) {
+	            documentLocator = locator;
+	        }
+	        
+	        @Override
+	        public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {               
+	            
+	        	if (textNodeContent.length() > 0)
+	        		createTextNode();            
+	            
+	            Element element = xmlDocument.createElement(qName);
+	            	            
+	            for(int i = 0; i < attributes.getLength(); i++) {
+	                element.setAttribute(attributes.getQName(i), attributes.getValue(i));
+	            }
+	            	            
+	            element.setUserData("START_LINE_NUMBER_ATTR", new Integer(documentLocator.getLineNumber()), null);
+	            element.setUserData("START_COLUMN_NUMBER_ATTR", new Integer(documentLocator.getColumnNumber()), null);
+	                       
+	            elementStack.push(element);               
+	        }
+	        
+	        @Override
+	        public void endElement(String uri, String localName, String qName){
+	        	
+	        	if (textNodeContent.length() > 0)
+	        		createTextNode();
+	        	
+	            Element element = elementStack.pop();
+	            
+	            element.setUserData("END_LINE_NUMBER_ATTR", new Integer(documentLocator.getLineNumber()), null);
+	            element.setUserData("END_COLUMN_NUMBER_ATTR", new Integer(documentLocator.getColumnNumber()), null);
+	       
+	            
+	            if (elementStack.isEmpty())
+	                xmlDocument.appendChild(element);
+	            else {
+	                Element parentElement = elementStack.peek();
+	                parentElement.appendChild(element);                   
+	            }
+	        }
+	        
+	        @Override
+	        public void characters (char ch[], int start, int length) throws SAXException {
+	        	textNodeContent.append(ch, start, length);
+	        }
+	        
+	        private void createTextNode() {
+                Element element = elementStack.peek();
+                Node textNode = xmlDocument.createTextNode(textNodeContent.toString());
+                element.appendChild(textNode);
+                textNodeContent.delete(0, textNodeContent.length());    
+	        }           
+	    };
+	    
+	    
+	    saxParser.parse(xmlInputStream, handler);
+	    
+	    return xmlDocument;
+	}  
 
     private Document parseXmlDocument(InputStream stream)
 			throws SclParserException 
 	{
-		Document doc;
+		Document xmlDocument = null;
 		
-		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-		DocumentBuilder builder;
 		try {
-			builder = factory.newDocumentBuilder();
-		} catch (ParserConfigurationException e) {
-			throw new SclParserException();
-		}
-
-		try {
-			doc = builder.parse(stream);
-		} catch (SAXException e) {
-			throw new SclParserException();
+			xmlDocument = parseXmlWithLineNumberInformation(stream);
 		} catch (IOException e) {
-			throw new SclParserException();
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SAXException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
-		return doc;
+		
+		return xmlDocument;
 	}
 	
 	

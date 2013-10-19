@@ -48,7 +48,8 @@ struct sServerSocket {
 	int backLog;
 };
 
-static void activateKeepAlive(SOCKET s)
+static void
+activateKeepAlive(SOCKET s)
 {
 	struct tcp_keepalive keepalive;
 	DWORD retVal=0;
@@ -65,6 +66,24 @@ static void activateKeepAlive(SOCKET s)
 	 }
 }
 
+static void
+prepareServerAddress(char* address, int port, struct sockaddr_in* sockaddr)
+{
+
+	memset((char *) sockaddr , 0, sizeof(struct sockaddr_in));
+
+	if (address != NULL) {
+		struct hostent *server;
+		server = gethostbyname(address);
+		memcpy((char *) &sockaddr->sin_addr.s_addr, (char *) server->h_addr, server->h_length);
+	}
+	else
+		sockaddr->sin_addr.s_addr = htonl(INADDR_ANY);
+
+    sockaddr->sin_family = AF_INET;
+    sockaddr->sin_port = htons(port);
+}
+
 ServerSocket
 TcpServerSocket_create(char* address, int port)
 {
@@ -79,9 +98,8 @@ TcpServerSocket_create(char* address, int port)
 	}
 
 	struct sockaddr_in server_addr;
-	server_addr.sin_family = AF_INET;
-	server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-	server_addr.sin_port = htons(port);
+
+	prepareServerAddress(address, port, &server_addr);
 
 	listen_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
@@ -174,18 +192,13 @@ Socket_connect(Socket self, char* address, int port)
 		return 0;
 	}
 
-	server = gethostbyname(address);
-
-	memset((char *) &serverAddress, 0, sizeof(serverAddress));
-
-	serverAddress.sin_family = AF_INET;
-
-	memcpy((char *)&serverAddress.sin_addr.s_addr, (char *)server->h_addr, server->h_length);
-
-	serverAddress.sin_port = htons(port);
+	prepareServerAddress(address, port, &serverAddress);
 
 	self->fd = socket(AF_INET, SOCK_STREAM, 0);
 
+#if (CONFIG_ACTIVATE_TCP_KEEPALIVE == 1)
+        activateKeepAlive(self->fd);
+#endif
 	if (connect(self->fd, (struct sockaddr *) &serverAddress,sizeof(serverAddress)) < 0) {
 		printf("Socket failed connecting!\n");
 		return 0;

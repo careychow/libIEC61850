@@ -25,7 +25,7 @@
 #define MMS_VALUE_H_
 
 /**
- * \defgroup common_api_group IEC 61850 API common parts
+ * \defgroup common_api_group libIEC61850 API common parts
  */
 /**@{*/
 
@@ -86,6 +86,9 @@ MmsValue_setElement(MmsValue* complexValue, int index, MmsValue* elementValue);
 /*************************************************************************************
  * Basic type functions
  *************************************************************************************/
+
+MmsDataAccessError
+MmsValue_getDataAccessError(MmsValue* self);
 
 /**
  * Get the int64_t value of a MmsValue object.
@@ -364,7 +367,7 @@ MmsValue_equals(MmsValue* self, MmsValue* otherValue);
 
 
 MmsValue*
-MmsValue_newDataAccessError(uint32_t code);
+MmsValue_newDataAccessError(MmsDataAccessError accessError);
 
 MmsValue*
 MmsValue_newIntegerFromBerInteger(Asn1PrimitiveValue* berInteger);

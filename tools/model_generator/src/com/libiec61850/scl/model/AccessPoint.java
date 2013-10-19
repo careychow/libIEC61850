@@ -37,14 +37,22 @@ public class AccessPoint {
 	public AccessPoint(Node apNode, TypeDeclarations typeDeclarations) throws SclParserException {
 		this.name = ParserUtils.parseAttribute(apNode, "name");
 		
-		if (this.name == null)
-			throw new SclParserException("AccessPoint has no name");
+		if (this.name == null)  {
+			String lineNumber = apNode.getUserData("START_LINE_NUMBER_ATTR").toString();
+			
+			throw new SclParserException("AccessPoint defined at line " + lineNumber + " has no name defined!");
+		}
 
 		Node serverNode = ParserUtils.getChildNodeWithTag(apNode, "Server");
 		
-		if (serverNode == null)
-			throw new SclParserException("AccessPoint has no server");
+		if (serverNode == null) {
+			
+			String lineNumber = apNode.getUserData("LINE_NUMBER_ATTR").toString();
+			
+			throw new SclParserException("AccessPoint defined at line " + lineNumber + " has no server defined!");
 		
+		}
+			
 		this.server = new Server(serverNode, typeDeclarations);
 		
 	}

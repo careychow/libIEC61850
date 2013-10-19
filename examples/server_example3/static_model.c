@@ -1,7 +1,7 @@
 /*
  * static_model.c
  *
- * automatically generated from simpleIO_sbo_control.scd
+ * automatically generated from simpleIO_direct_control.scd
  */
 #include <stdlib.h>
 #include "model.h"
@@ -11,6 +11,7 @@ static void initializeValues();
 extern LogicalDevice iedModel_GenericIO;
 extern LogicalNode   iedModel_GenericIO_LLN0;
 extern DataObject    iedModel_GenericIO_LLN0_Mod;
+extern DataAttribute iedModel_GenericIO_LLN0_Mod_stVal;
 extern DataAttribute iedModel_GenericIO_LLN0_Mod_q;
 extern DataAttribute iedModel_GenericIO_LLN0_Mod_t;
 extern DataAttribute iedModel_GenericIO_LLN0_Mod_ctlModel;
@@ -79,7 +80,6 @@ extern DataAttribute iedModel_GenericIO_GGIO1_AnIn4_t;
 extern DataObject    iedModel_GenericIO_GGIO1_SPCSO1;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO1_stVal;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO1_q;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO1_SBO;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO1_Oper;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO1_Oper_ctlVal;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO1_Oper_origin;
@@ -89,22 +89,11 @@ extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO1_Oper_ctlNum;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO1_Oper_T;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO1_Oper_Test;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO1_Oper_Check;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO1_Cancel;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO1_Cancel_ctlVal;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO1_Cancel_origin;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO1_Cancel_origin_orCat;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO1_Cancel_origin_orIdent;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO1_Cancel_ctlNum;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO1_Cancel_T;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO1_Cancel_Test;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO1_ctlModel;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO1_t;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO1_sboTimeout;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO1_sboClass;
 extern DataObject    iedModel_GenericIO_GGIO1_SPCSO2;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO2_stVal;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO2_q;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO2_SBO;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO2_Oper;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO2_Oper_ctlVal;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO2_Oper_origin;
@@ -114,22 +103,11 @@ extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO2_Oper_ctlNum;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO2_Oper_T;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO2_Oper_Test;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO2_Oper_Check;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO2_Cancel;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO2_Cancel_ctlVal;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO2_Cancel_origin;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO2_Cancel_origin_orCat;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO2_Cancel_origin_orIdent;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO2_Cancel_ctlNum;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO2_Cancel_T;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO2_Cancel_Test;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO2_ctlModel;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO2_t;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO2_sboTimeout;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO2_sboClass;
 extern DataObject    iedModel_GenericIO_GGIO1_SPCSO3;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO3_stVal;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO3_q;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO3_SBO;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO3_Oper;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO3_Oper_ctlVal;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO3_Oper_origin;
@@ -139,22 +117,11 @@ extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO3_Oper_ctlNum;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO3_Oper_T;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO3_Oper_Test;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO3_Oper_Check;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO3_Cancel;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO3_Cancel_ctlVal;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO3_Cancel_origin;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO3_Cancel_origin_orCat;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO3_Cancel_origin_orIdent;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO3_Cancel_ctlNum;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO3_Cancel_T;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO3_Cancel_Test;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO3_ctlModel;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO3_t;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO3_sboTimeout;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO3_sboClass;
 extern DataObject    iedModel_GenericIO_GGIO1_SPCSO4;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO4_stVal;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO4_q;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO4_SBO;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO4_Oper;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO4_Oper_ctlVal;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO4_Oper_origin;
@@ -164,18 +131,8 @@ extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO4_Oper_ctlNum;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO4_Oper_T;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO4_Oper_Test;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO4_Oper_Check;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO4_Cancel;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO4_Cancel_ctlVal;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO4_Cancel_origin;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO4_Cancel_origin_orCat;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO4_Cancel_origin_orIdent;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO4_Cancel_ctlNum;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO4_Cancel_T;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO4_Cancel_Test;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO4_ctlModel;
 extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO4_t;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO4_sboTimeout;
-extern DataAttribute iedModel_GenericIO_GGIO1_SPCSO4_sboClass;
 extern DataObject    iedModel_GenericIO_GGIO1_Ind1;
 extern DataAttribute iedModel_GenericIO_GGIO1_Ind1_stVal;
 extern DataAttribute iedModel_GenericIO_GGIO1_Ind1_q;
@@ -262,9 +219,22 @@ DataObject iedModel_GenericIO_LLN0_Mod = {
     "Mod",
     (ModelNode*) &iedModel_GenericIO_LLN0,
     (ModelNode*) &iedModel_GenericIO_LLN0_Beh,
-    (ModelNode*) &iedModel_GenericIO_LLN0_Mod_q,
+    (ModelNode*) &iedModel_GenericIO_LLN0_Mod_stVal,
     0,
     0
+};
+
+DataAttribute iedModel_GenericIO_LLN0_Mod_stVal = {
+    DataAttributeModelType,
+    "stVal",
+    (ModelNode*) &iedModel_GenericIO_LLN0_Mod,
+    (ModelNode*) &iedModel_GenericIO_LLN0_Mod_q,
+    NULL,
+    0,
+    0,
+    ST,
+    INT32,
+    NULL
 };
 
 DataAttribute iedModel_GenericIO_LLN0_Mod_q = {
@@ -1087,7 +1057,7 @@ DataAttribute iedModel_GenericIO_GGIO1_SPCSO1_q = {
     DataAttributeModelType,
     "q",
     (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO1,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO1_SBO,
+    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO1_Oper,
     NULL,
     0,
     0,
@@ -1096,24 +1066,11 @@ DataAttribute iedModel_GenericIO_GGIO1_SPCSO1_q = {
     NULL
 };
 
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO1_SBO = {
-    DataAttributeModelType,
-    "SBO",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO1,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO1_Oper,
-    NULL,
-    0,
-    0,
-    CO,
-    VISIBLE_STRING_64,
-    NULL
-};
-
 DataAttribute iedModel_GenericIO_GGIO1_SPCSO1_Oper = {
     DataAttributeModelType,
     "Oper",
     (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO1,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO1_Cancel,
+    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO1_ctlModel,
     (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO1_Oper_ctlVal,
     0,
     0,
@@ -1226,110 +1183,6 @@ DataAttribute iedModel_GenericIO_GGIO1_SPCSO1_Oper_Check = {
     NULL
 };
 
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO1_Cancel = {
-    DataAttributeModelType,
-    "Cancel",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO1,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO1_ctlModel,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO1_Cancel_ctlVal,
-    0,
-    0,
-    CO,
-    CONSTRUCTED,
-    NULL
-};
-
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO1_Cancel_ctlVal = {
-    DataAttributeModelType,
-    "ctlVal",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO1_Cancel,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO1_Cancel_origin,
-    NULL,
-    0,
-    0,
-    CO,
-    INT8,
-    NULL
-};
-
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO1_Cancel_origin = {
-    DataAttributeModelType,
-    "origin",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO1_Cancel,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO1_Cancel_ctlNum,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO1_Cancel_origin_orCat,
-    0,
-    0,
-    CO,
-    CONSTRUCTED,
-    NULL
-};
-
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO1_Cancel_origin_orCat = {
-    DataAttributeModelType,
-    "orCat",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO1_Cancel_origin,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO1_Cancel_origin_orIdent,
-    NULL,
-    0,
-    0,
-    CO,
-    ENUMERATED,
-    NULL
-};
-
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO1_Cancel_origin_orIdent = {
-    DataAttributeModelType,
-    "orIdent",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO1_Cancel_origin,
-    NULL,
-    NULL,
-    0,
-    0,
-    CO,
-    OCTET_STRING_64,
-    NULL
-};
-
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO1_Cancel_ctlNum = {
-    DataAttributeModelType,
-    "ctlNum",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO1_Cancel,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO1_Cancel_T,
-    NULL,
-    0,
-    0,
-    CO,
-    INT8U,
-    NULL
-};
-
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO1_Cancel_T = {
-    DataAttributeModelType,
-    "T",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO1_Cancel,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO1_Cancel_Test,
-    NULL,
-    0,
-    0,
-    CO,
-    TIMESTAMP,
-    NULL
-};
-
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO1_Cancel_Test = {
-    DataAttributeModelType,
-    "Test",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO1_Cancel,
-    NULL,
-    NULL,
-    0,
-    0,
-    CO,
-    BOOLEAN,
-    NULL
-};
-
 DataAttribute iedModel_GenericIO_GGIO1_SPCSO1_ctlModel = {
     DataAttributeModelType,
     "ctlModel",
@@ -1347,38 +1200,12 @@ DataAttribute iedModel_GenericIO_GGIO1_SPCSO1_t = {
     DataAttributeModelType,
     "t",
     (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO1,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO1_sboTimeout,
+    NULL,
     NULL,
     0,
     0,
     ST,
     TIMESTAMP,
-    NULL
-};
-
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO1_sboTimeout = {
-    DataAttributeModelType,
-    "sboTimeout",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO1,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO1_sboClass,
-    NULL,
-    0,
-    0,
-    CF,
-    INT32U,
-    NULL
-};
-
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO1_sboClass = {
-    DataAttributeModelType,
-    "sboClass",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO1,
-    NULL,
-    NULL,
-    0,
-    0,
-    CF,
-    ENUMERATED,
     NULL
 };
 
@@ -1409,7 +1236,7 @@ DataAttribute iedModel_GenericIO_GGIO1_SPCSO2_q = {
     DataAttributeModelType,
     "q",
     (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO2,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO2_SBO,
+    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO2_Oper,
     NULL,
     0,
     0,
@@ -1418,24 +1245,11 @@ DataAttribute iedModel_GenericIO_GGIO1_SPCSO2_q = {
     NULL
 };
 
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO2_SBO = {
-    DataAttributeModelType,
-    "SBO",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO2,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO2_Oper,
-    NULL,
-    0,
-    0,
-    CO,
-    VISIBLE_STRING_64,
-    NULL
-};
-
 DataAttribute iedModel_GenericIO_GGIO1_SPCSO2_Oper = {
     DataAttributeModelType,
     "Oper",
     (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO2,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO2_Cancel,
+    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO2_ctlModel,
     (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO2_Oper_ctlVal,
     0,
     0,
@@ -1548,110 +1362,6 @@ DataAttribute iedModel_GenericIO_GGIO1_SPCSO2_Oper_Check = {
     NULL
 };
 
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO2_Cancel = {
-    DataAttributeModelType,
-    "Cancel",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO2,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO2_ctlModel,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO2_Cancel_ctlVal,
-    0,
-    0,
-    CO,
-    CONSTRUCTED,
-    NULL
-};
-
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO2_Cancel_ctlVal = {
-    DataAttributeModelType,
-    "ctlVal",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO2_Cancel,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO2_Cancel_origin,
-    NULL,
-    0,
-    0,
-    CO,
-    INT8,
-    NULL
-};
-
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO2_Cancel_origin = {
-    DataAttributeModelType,
-    "origin",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO2_Cancel,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO2_Cancel_ctlNum,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO2_Cancel_origin_orCat,
-    0,
-    0,
-    CO,
-    CONSTRUCTED,
-    NULL
-};
-
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO2_Cancel_origin_orCat = {
-    DataAttributeModelType,
-    "orCat",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO2_Cancel_origin,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO2_Cancel_origin_orIdent,
-    NULL,
-    0,
-    0,
-    CO,
-    ENUMERATED,
-    NULL
-};
-
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO2_Cancel_origin_orIdent = {
-    DataAttributeModelType,
-    "orIdent",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO2_Cancel_origin,
-    NULL,
-    NULL,
-    0,
-    0,
-    CO,
-    OCTET_STRING_64,
-    NULL
-};
-
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO2_Cancel_ctlNum = {
-    DataAttributeModelType,
-    "ctlNum",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO2_Cancel,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO2_Cancel_T,
-    NULL,
-    0,
-    0,
-    CO,
-    INT8U,
-    NULL
-};
-
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO2_Cancel_T = {
-    DataAttributeModelType,
-    "T",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO2_Cancel,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO2_Cancel_Test,
-    NULL,
-    0,
-    0,
-    CO,
-    TIMESTAMP,
-    NULL
-};
-
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO2_Cancel_Test = {
-    DataAttributeModelType,
-    "Test",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO2_Cancel,
-    NULL,
-    NULL,
-    0,
-    0,
-    CO,
-    BOOLEAN,
-    NULL
-};
-
 DataAttribute iedModel_GenericIO_GGIO1_SPCSO2_ctlModel = {
     DataAttributeModelType,
     "ctlModel",
@@ -1669,38 +1379,12 @@ DataAttribute iedModel_GenericIO_GGIO1_SPCSO2_t = {
     DataAttributeModelType,
     "t",
     (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO2,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO2_sboTimeout,
+    NULL,
     NULL,
     0,
     0,
     ST,
     TIMESTAMP,
-    NULL
-};
-
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO2_sboTimeout = {
-    DataAttributeModelType,
-    "sboTimeout",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO2,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO2_sboClass,
-    NULL,
-    0,
-    0,
-    CF,
-    INT32U,
-    NULL
-};
-
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO2_sboClass = {
-    DataAttributeModelType,
-    "sboClass",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO2,
-    NULL,
-    NULL,
-    0,
-    0,
-    CF,
-    ENUMERATED,
     NULL
 };
 
@@ -1731,7 +1415,7 @@ DataAttribute iedModel_GenericIO_GGIO1_SPCSO3_q = {
     DataAttributeModelType,
     "q",
     (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO3,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO3_SBO,
+    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO3_Oper,
     NULL,
     0,
     0,
@@ -1740,24 +1424,11 @@ DataAttribute iedModel_GenericIO_GGIO1_SPCSO3_q = {
     NULL
 };
 
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO3_SBO = {
-    DataAttributeModelType,
-    "SBO",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO3,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO3_Oper,
-    NULL,
-    0,
-    0,
-    CO,
-    VISIBLE_STRING_64,
-    NULL
-};
-
 DataAttribute iedModel_GenericIO_GGIO1_SPCSO3_Oper = {
     DataAttributeModelType,
     "Oper",
     (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO3,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO3_Cancel,
+    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO3_ctlModel,
     (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO3_Oper_ctlVal,
     0,
     0,
@@ -1870,110 +1541,6 @@ DataAttribute iedModel_GenericIO_GGIO1_SPCSO3_Oper_Check = {
     NULL
 };
 
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO3_Cancel = {
-    DataAttributeModelType,
-    "Cancel",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO3,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO3_ctlModel,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO3_Cancel_ctlVal,
-    0,
-    0,
-    CO,
-    CONSTRUCTED,
-    NULL
-};
-
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO3_Cancel_ctlVal = {
-    DataAttributeModelType,
-    "ctlVal",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO3_Cancel,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO3_Cancel_origin,
-    NULL,
-    0,
-    0,
-    CO,
-    INT8,
-    NULL
-};
-
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO3_Cancel_origin = {
-    DataAttributeModelType,
-    "origin",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO3_Cancel,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO3_Cancel_ctlNum,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO3_Cancel_origin_orCat,
-    0,
-    0,
-    CO,
-    CONSTRUCTED,
-    NULL
-};
-
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO3_Cancel_origin_orCat = {
-    DataAttributeModelType,
-    "orCat",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO3_Cancel_origin,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO3_Cancel_origin_orIdent,
-    NULL,
-    0,
-    0,
-    CO,
-    ENUMERATED,
-    NULL
-};
-
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO3_Cancel_origin_orIdent = {
-    DataAttributeModelType,
-    "orIdent",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO3_Cancel_origin,
-    NULL,
-    NULL,
-    0,
-    0,
-    CO,
-    OCTET_STRING_64,
-    NULL
-};
-
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO3_Cancel_ctlNum = {
-    DataAttributeModelType,
-    "ctlNum",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO3_Cancel,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO3_Cancel_T,
-    NULL,
-    0,
-    0,
-    CO,
-    INT8U,
-    NULL
-};
-
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO3_Cancel_T = {
-    DataAttributeModelType,
-    "T",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO3_Cancel,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO3_Cancel_Test,
-    NULL,
-    0,
-    0,
-    CO,
-    TIMESTAMP,
-    NULL
-};
-
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO3_Cancel_Test = {
-    DataAttributeModelType,
-    "Test",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO3_Cancel,
-    NULL,
-    NULL,
-    0,
-    0,
-    CO,
-    BOOLEAN,
-    NULL
-};
-
 DataAttribute iedModel_GenericIO_GGIO1_SPCSO3_ctlModel = {
     DataAttributeModelType,
     "ctlModel",
@@ -1991,38 +1558,12 @@ DataAttribute iedModel_GenericIO_GGIO1_SPCSO3_t = {
     DataAttributeModelType,
     "t",
     (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO3,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO3_sboTimeout,
+    NULL,
     NULL,
     0,
     0,
     ST,
     TIMESTAMP,
-    NULL
-};
-
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO3_sboTimeout = {
-    DataAttributeModelType,
-    "sboTimeout",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO3,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO3_sboClass,
-    NULL,
-    0,
-    0,
-    CF,
-    INT32U,
-    NULL
-};
-
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO3_sboClass = {
-    DataAttributeModelType,
-    "sboClass",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO3,
-    NULL,
-    NULL,
-    0,
-    0,
-    CF,
-    ENUMERATED,
     NULL
 };
 
@@ -2053,7 +1594,7 @@ DataAttribute iedModel_GenericIO_GGIO1_SPCSO4_q = {
     DataAttributeModelType,
     "q",
     (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO4,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO4_SBO,
+    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO4_Oper,
     NULL,
     0,
     0,
@@ -2062,24 +1603,11 @@ DataAttribute iedModel_GenericIO_GGIO1_SPCSO4_q = {
     NULL
 };
 
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO4_SBO = {
-    DataAttributeModelType,
-    "SBO",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO4,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO4_Oper,
-    NULL,
-    0,
-    0,
-    CO,
-    VISIBLE_STRING_64,
-    NULL
-};
-
 DataAttribute iedModel_GenericIO_GGIO1_SPCSO4_Oper = {
     DataAttributeModelType,
     "Oper",
     (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO4,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO4_Cancel,
+    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO4_ctlModel,
     (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO4_Oper_ctlVal,
     0,
     0,
@@ -2192,110 +1720,6 @@ DataAttribute iedModel_GenericIO_GGIO1_SPCSO4_Oper_Check = {
     NULL
 };
 
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO4_Cancel = {
-    DataAttributeModelType,
-    "Cancel",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO4,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO4_ctlModel,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO4_Cancel_ctlVal,
-    0,
-    0,
-    CO,
-    CONSTRUCTED,
-    NULL
-};
-
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO4_Cancel_ctlVal = {
-    DataAttributeModelType,
-    "ctlVal",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO4_Cancel,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO4_Cancel_origin,
-    NULL,
-    0,
-    0,
-    CO,
-    INT8,
-    NULL
-};
-
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO4_Cancel_origin = {
-    DataAttributeModelType,
-    "origin",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO4_Cancel,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO4_Cancel_ctlNum,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO4_Cancel_origin_orCat,
-    0,
-    0,
-    CO,
-    CONSTRUCTED,
-    NULL
-};
-
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO4_Cancel_origin_orCat = {
-    DataAttributeModelType,
-    "orCat",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO4_Cancel_origin,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO4_Cancel_origin_orIdent,
-    NULL,
-    0,
-    0,
-    CO,
-    ENUMERATED,
-    NULL
-};
-
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO4_Cancel_origin_orIdent = {
-    DataAttributeModelType,
-    "orIdent",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO4_Cancel_origin,
-    NULL,
-    NULL,
-    0,
-    0,
-    CO,
-    OCTET_STRING_64,
-    NULL
-};
-
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO4_Cancel_ctlNum = {
-    DataAttributeModelType,
-    "ctlNum",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO4_Cancel,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO4_Cancel_T,
-    NULL,
-    0,
-    0,
-    CO,
-    INT8U,
-    NULL
-};
-
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO4_Cancel_T = {
-    DataAttributeModelType,
-    "T",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO4_Cancel,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO4_Cancel_Test,
-    NULL,
-    0,
-    0,
-    CO,
-    TIMESTAMP,
-    NULL
-};
-
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO4_Cancel_Test = {
-    DataAttributeModelType,
-    "Test",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO4_Cancel,
-    NULL,
-    NULL,
-    0,
-    0,
-    CO,
-    BOOLEAN,
-    NULL
-};
-
 DataAttribute iedModel_GenericIO_GGIO1_SPCSO4_ctlModel = {
     DataAttributeModelType,
     "ctlModel",
@@ -2313,38 +1737,12 @@ DataAttribute iedModel_GenericIO_GGIO1_SPCSO4_t = {
     DataAttributeModelType,
     "t",
     (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO4,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO4_sboTimeout,
+    NULL,
     NULL,
     0,
     0,
     ST,
     TIMESTAMP,
-    NULL
-};
-
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO4_sboTimeout = {
-    DataAttributeModelType,
-    "sboTimeout",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO4,
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO4_sboClass,
-    NULL,
-    0,
-    0,
-    CF,
-    INT32U,
-    NULL
-};
-
-DataAttribute iedModel_GenericIO_GGIO1_SPCSO4_sboClass = {
-    DataAttributeModelType,
-    "sboClass",
-    (ModelNode*) &iedModel_GenericIO_GGIO1_SPCSO4,
-    NULL,
-    NULL,
-    0,
-    0,
-    CF,
-    ENUMERATED,
     NULL
 };
 
@@ -2549,10 +1947,12 @@ static GSEControlBlock* gseControlBlocks[] = {
     NULL
 };
 
-static ReportControlBlock iedModel_GenericIO_LLN0_report0 = {&iedModel_GenericIO_LLN0, "EventsRCB", "Events", false, "Events", 1, 16, 111, 50, 1000};
+static ReportControlBlock iedModel_GenericIO_LLN0_report0 = {&iedModel_GenericIO_LLN0, "EventsRCB", "Events1", false, "Events", 1, 16, 111, 50, 1000};
+static ReportControlBlock iedModel_GenericIO_LLN0_report1 = {&iedModel_GenericIO_LLN0, "EventsRCB2", "Events2", false, "Events", 1, 16, 111, 50, 1000};
 
 static ReportControlBlock* reportControlBlocks[] = {
     &iedModel_GenericIO_LLN0_report0,
+    &iedModel_GenericIO_LLN0_report1,
     NULL
 };
 
@@ -2574,27 +1974,11 @@ iedModel_GenericIO_LLN0_Mod_ctlModel.mmsValue = MmsValue_newIntegerFromInt32(0);
 
 iedModel_GenericIO_GGIO1_Mod_ctlModel.mmsValue = MmsValue_newIntegerFromInt32(0);
 
-iedModel_GenericIO_GGIO1_SPCSO1_ctlModel.mmsValue = MmsValue_newIntegerFromInt32(2);
+iedModel_GenericIO_GGIO1_SPCSO1_ctlModel.mmsValue = MmsValue_newIntegerFromInt32(1);
 
-iedModel_GenericIO_GGIO1_SPCSO1_sboTimeout.mmsValue = MmsValue_newUnsignedFromUint32(30000);
+iedModel_GenericIO_GGIO1_SPCSO2_ctlModel.mmsValue = MmsValue_newIntegerFromInt32(1);
 
-iedModel_GenericIO_GGIO1_SPCSO1_sboClass.mmsValue = MmsValue_newIntegerFromInt32(0);
+iedModel_GenericIO_GGIO1_SPCSO3_ctlModel.mmsValue = MmsValue_newIntegerFromInt32(1);
 
-iedModel_GenericIO_GGIO1_SPCSO2_ctlModel.mmsValue = MmsValue_newIntegerFromInt32(2);
-
-iedModel_GenericIO_GGIO1_SPCSO2_sboTimeout.mmsValue = MmsValue_newUnsignedFromUint32(30000);
-
-iedModel_GenericIO_GGIO1_SPCSO2_sboClass.mmsValue = MmsValue_newIntegerFromInt32(0);
-
-iedModel_GenericIO_GGIO1_SPCSO3_ctlModel.mmsValue = MmsValue_newIntegerFromInt32(2);
-
-iedModel_GenericIO_GGIO1_SPCSO3_sboTimeout.mmsValue = MmsValue_newUnsignedFromUint32(30000);
-
-iedModel_GenericIO_GGIO1_SPCSO3_sboClass.mmsValue = MmsValue_newIntegerFromInt32(0);
-
-iedModel_GenericIO_GGIO1_SPCSO4_ctlModel.mmsValue = MmsValue_newIntegerFromInt32(2);
-
-iedModel_GenericIO_GGIO1_SPCSO4_sboTimeout.mmsValue = MmsValue_newUnsignedFromUint32(30000);
-
-iedModel_GenericIO_GGIO1_SPCSO4_sboClass.mmsValue = MmsValue_newIntegerFromInt32(0);
+iedModel_GenericIO_GGIO1_SPCSO4_ctlModel.mmsValue = MmsValue_newIntegerFromInt32(1);
 }

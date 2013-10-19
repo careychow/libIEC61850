@@ -124,7 +124,7 @@ mmsServer_getNumberOfElements(AlternateAccess_t* alternateAccess);
 void
 mmsServer_deleteVariableList(LinkedList namedVariableLists, char* variableListName);
 
-MmsValueIndication
+MmsDataAccessError
 mmsServer_setValue(MmsServer self, MmsDomain* domain, char* itemId, MmsValue* value,
         MmsServerConnection* connection);
 
@@ -133,7 +133,7 @@ mmsServer_getValue(MmsServer self, MmsDomain* domain, char* itemId, MmsServerCon
 
 int
 mmsServer_createMmsWriteResponse(MmsServerConnection* connection,
-        int invokeId, ByteBuffer* response, MmsValueIndication indication);
+        int invokeId, ByteBuffer* response, int numberOfItems, MmsDataAccessError* accessResults);
 
 void
 mmsServer_writeMmsRejectPdu(uint32_t* invokeId, int reason, ByteBuffer* response);

@@ -45,7 +45,7 @@
 #define CONFIG_TCP_READ_TIMEOUT_MS 1000
 
 /* Ethernet interface ID for GOOSE and SV */
-#define CONFIG_ETHERNET_INTERFACE_ID "vboxnet0"
+#define CONFIG_ETHERNET_INTERFACE_ID "eth0"
 
 /* Set to 1 to include GOOSE support in the build. Otherwise set to 0 */
 #define CONFIG_INCLUDE_GOOSE_SUPPORT 1
@@ -89,7 +89,7 @@
 
 #define CONFIG_DEFAULT_MMS_VENDOR_NAME "libiec61850.com"
 #define CONFIG_DEFAULT_MMS_MODEL_NAME "libiec61850"
-#define CONFIG_DEFAULT_MMS_REVISION "0.5.2"
+#define CONFIG_DEFAULT_MMS_REVISION "0.5.3"
 
 /* Definition of supported services */
 #define MMS_DEFAULT_PROFILE 1

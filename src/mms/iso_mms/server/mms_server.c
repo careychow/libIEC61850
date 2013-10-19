@@ -189,11 +189,11 @@ MmsServer_insertIntoCache(MmsServer self, MmsDomain* domain, char* itemId, MmsVa
     }
 }
 
-MmsValueIndication
+MmsDataAccessError
 mmsServer_setValue(MmsServer self, MmsDomain* domain, char* itemId, MmsValue* value,
         MmsServerConnection* connection)
 {
-    MmsValueIndication indication;
+    MmsDataAccessError indication;
 
     if (self->writeHandler != NULL) {
         indication = self->writeHandler(self->writeHandlerParameter, domain,
@@ -205,9 +205,9 @@ mmsServer_setValue(MmsServer self, MmsDomain* domain, char* itemId, MmsValue* va
 
         if (cachedValue != NULL) {
             MmsValue_update(cachedValue, value);
-            indication = MMS_VALUE_OK;
+            indication = DATA_ACCESS_ERROR_SUCCESS;
         } else
-            indication = MMS_VALUE_ACCESS_DENIED;
+            indication = DATA_ACCESS_ERROR_OBJECT_VALUE_INVALID;
     }
 
     return indication;

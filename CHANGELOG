@@ -1,3 +1,12 @@
+Changes to version 0.5.3
+------------------------
+- MMS client/server: multiple variables can be written with a single MMS write request
+- changed encoding of boolean to be compatible with buggy server devices
+- added TCP keep alive support to MMS client
+- added IedConnection_triggerGIReport function
+- some enhancements in server side report handling
+- some bug fixes
+
 Changes to version 0.5.2.1
 --------------------------
 - all examples now compile with VC++

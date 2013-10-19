@@ -152,6 +152,25 @@ LinkedList_getNext(LinkedList list)
 	return list->next;
 }
 
+LinkedList
+LinkedList_get(LinkedList list, int index)
+{
+    LinkedList element = LinkedList_getNext(list);
+
+    int i = 0;
+
+    while (i < index) {
+        element = LinkedList_getNext(element);
+
+        if (element == NULL)
+            return NULL;
+
+        i++;
+    }
+
+    return element;
+}
+
 void
 LinkedList_printStringList(LinkedList list)
 {

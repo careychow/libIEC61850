@@ -138,18 +138,53 @@ void
 IedServer_attributeQualityChanged(IedServer self, ModelNode* node);
 
 /**
- * User provided callback function for the control model. It will be invoked when
- * a control operation happens (Oper).
+ * \brief Control model callback to perform the static tests (optional).
+ *
+ * User provided callback function for the control model. It will be invoked after
+ * a control operation has been invoked by the client. This callback function is
+ * intended to perform the static tests. It should check if the interlock conditions
+ * are met if the interlockCheck parameter is true.
  *
  * \param parameter the parameter that was specified when setting the control handler
  * \param ctlVal the control value of the control operation.
  * \param test indicates if the operate request is a test operation
+ * \param interlockCheck the interlockCheck parameter provided by the client
+ *
+ * \return true if the static tests had been successful, false otherwise
  */
-typedef bool (*ControlHandler) (void* parameter, MmsValue* ctlVal, bool test);
-
 typedef bool (*ControlPerformCheckHandler) (void* parameter, MmsValue* ctlVal, bool test, bool interlockCheck);
 
+/**
+ * \brief Control model callback to perform the dynamic tests (optional).
+ *
+ * User provided callback function for the control model. It will be invoked after
+ * a control operation has been invoked by the client. This callback function is
+ * intended to perform the dynamic tests. It should check if the synchronization conditions
+ * are met if the synchroCheck parameter is set to true.
+ *
+ * \param parameter the parameter that was specified when setting the control handler
+ * \param ctlVal the control value of the control operation.
+ * \param test indicates if the operate request is a test operation
+ * \param synchroCheck the synchroCheck parameter provided by the client
+ *
+ * \return true if the dynamic tests had been successful, false otherwise
+ */
 typedef bool (*ControlWaitForExecutionHandler) (void* parameter, MmsValue* ctlVal, bool test, bool synchroCheck);
+
+/**
+ * \brief Control model callback to actually perform the control operation.
+ *
+ * User provided callback function for the control model. It will be invoked when
+ * a control operation happens (Oper). Here the user should perform the control operation
+ * (e.g. by setting an digital output or switching a relay).
+ *
+ * \param parameter the parameter that was specified when setting the control handler
+ * \param ctlVal the control value of the control operation.
+ * \param test indicates if the operate request is a test operation
+ *
+ * \return true if the control action bas been successful, false otherwise
+ */
+typedef bool (*ControlHandler) (void* parameter, MmsValue* ctlVal, bool test);
 
 /**
  * \brief Set control handler for controllable data object

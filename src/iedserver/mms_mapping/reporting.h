@@ -46,6 +46,7 @@ typedef struct {
     uint64_t reservationTimeout;
     MmsServerConnection* clientConnection;
     ReportInclusionFlag* inclusionFlags;
+    int triggerOps;
 } ReportControl;
 
 ReportControl*
@@ -68,9 +69,10 @@ MmsVariableSpecification*
 Reporting_createMmsUnbufferedRCBs(MmsMapping* self, MmsDomain* domain,
         LogicalNode* logicalNode, int reportsCount);
 
-MmsValueIndication
+MmsDataAccessError
 Reporting_RCBWriteAccessHandler(MmsMapping* self, ReportControl* rc, char* elementName, MmsValue* value,
         MmsServerConnection* connection);
+
 
 void
 Reporting_processReportEvents(MmsMapping* self, uint64_t currentTimeInMs);

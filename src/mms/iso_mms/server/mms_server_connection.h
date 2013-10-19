@@ -78,7 +78,8 @@ MmsServerConnection_sendInformationReportListOfVariables(
         );
 
 void
-MmsServerConnection_sendWriteResponse(MmsServerConnection* self, uint32_t invokeId, MmsValueIndication indication);
+MmsServerConnection_sendWriteResponse(MmsServerConnection* self, uint32_t invokeId, MmsDataAccessError indication);
+
 
 uint32_t
 MmsServerConnection_getLastInvokeId(MmsServerConnection* self);

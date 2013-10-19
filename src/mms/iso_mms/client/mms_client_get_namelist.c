@@ -114,7 +114,7 @@ mmsClient_createMmsGetNameListRequestAssociationSpecific(long invokeId, ByteBuff
 bool
 mmsClient_parseGetNameListResponse(LinkedList* nameList, ByteBuffer* message, uint32_t* invokeId)
 {
-	bool moreFollows = false;
+	bool moreFollows = true;
 
 	uint8_t* buffer = message->buffer;
 	int maxBufPos = message->size;
@@ -177,15 +177,17 @@ mmsClient_parseGetNameListResponse(LinkedList* nameList, ByteBuffer* message, ui
         bufPos += length;
     }
 
-    tag = buffer[bufPos++];
-    if (tag != 0x81) goto exit_error;
-    bufPos = BerDecoder_decodeLength(buffer, &length, bufPos, maxBufPos);
-    if (bufPos < 0) goto exit_error;
-    if (length != 1) goto exit_error;
-    if (buffer[bufPos++] > 0)
-        moreFollows = true;
-    else
-        moreFollows = false;
+    if (bufPos < maxBufPos) {
+		tag = buffer[bufPos++];
+		if (tag != 0x81) goto exit_error;
+		bufPos = BerDecoder_decodeLength(buffer, &length, bufPos, maxBufPos);
+		if (bufPos < 0) goto exit_error;
+		if (length != 1) goto exit_error;
+		if (buffer[bufPos++] > 0)
+			moreFollows = true;
+		else
+			moreFollows = false;
+    }
 
 	return moreFollows;
 
@@ -194,7 +196,8 @@ exit_error:
         LinkedList_destroy(*nameList);
     }
 
-    printf("parseNameListResponse: error parsing message!\n");
+    //if (DEBUG)
+      printf("parseNameListResponse: error parsing message!\n");
     return false;
 }
 

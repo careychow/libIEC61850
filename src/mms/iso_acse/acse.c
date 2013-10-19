@@ -207,6 +207,9 @@ parseAarePdu(AcseConnection* self, uint8_t* buffer, int bufPos, int maxBufPos)
 			break;
 
 		default: /* ignore unknown tag */
+		    if (DEBUG)
+		        printf("parseAarePdu: unknown tag %02x\n", tag);
+
 			bufPos += len;
 			break;
 		}
@@ -238,6 +241,12 @@ parseAarqPdu(AcseConnection* self, uint8_t* buffer, int bufPos, int maxBufPos)
 
 		bufPos = BerDecoder_decodeLength(buffer, &len, bufPos, maxBufPos);
 
+		if (bufPos < 0) {
+		    if (DEBUG)
+	            printf("parseAarqPdu: user info invalid!\n");
+	        return ACSE_ASSOCIATE_FAILED;
+		}
+
 		switch (tag) {
 		case 0xa1: /* application context name */
 			bufPos += len;
@@ -259,7 +268,7 @@ parseAarqPdu(AcseConnection* self, uint8_t* buffer, int bufPos, int maxBufPos)
 			break;
 
 		case 0x8a: /* sender ACSE requirements */
-			bufPos += len;
+            bufPos += len;
 			break;
 
 		case 0x8b: /* (authentication) mechanism name */
@@ -291,16 +300,27 @@ parseAarqPdu(AcseConnection* self, uint8_t* buffer, int bufPos, int maxBufPos)
 			break;
 
 		default: /* ignore unknown tag */
+		    if (DEBUG)
+		        printf("parseAarqPdu: unknown tag %02x\n", tag);
+
 			bufPos += len;
 			break;
 		}
 	}
 
-    if (checkAuthentication(self, authMechanism, authMechLen, authValue, authValueLen) == false)
-        return ACSE_ASSOCIATE_FAILED;
+    if (checkAuthentication(self, authMechanism, authMechLen, authValue, authValueLen) == false) {
+        if (DEBUG)
+            printf("parseAarqPdu: check authentication failed!\n");
 
-    if (userInfoValid == false)
+        return ACSE_ASSOCIATE_FAILED;
+    }
+
+    if (userInfoValid == false) {
+        if (DEBUG)
+            printf("parseAarqPdu: user info invalid!\n");
+
     	return ACSE_ASSOCIATE_FAILED;
+    }
 
     return ACSE_ASSOCIATE;
 }
@@ -338,7 +358,16 @@ AcseConnection_parseMessage(AcseConnection* self, ByteBuffer* message)
     int bufPos = 0;
 
     uint8_t messageType = buffer[bufPos++];
-    uint8_t messageLen = buffer[bufPos++];
+
+    int len;
+
+    bufPos = BerDecoder_decodeLength(buffer, &len, bufPos, messageSize);
+
+    if (bufPos < 0) {
+        printf("AcseConnection_parseMessage: invalid ACSE message!\n");
+
+        return ACSE_ERROR;
+    }
 
     switch (messageType) {
     case 0x60:
@@ -350,6 +379,7 @@ AcseConnection_parseMessage(AcseConnection* self, ByteBuffer* message)
     default:
     	if (DEBUG) printf("ACSE: Unknown ACSE message\n");
     	indication = ACSE_ERROR;
+    	break;
     }
 
     return indication;

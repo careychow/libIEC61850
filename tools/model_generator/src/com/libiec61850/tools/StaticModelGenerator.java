@@ -83,6 +83,10 @@ public class StaticModelGenerator {
         SclParser sclParser = new SclParser(stream);
 
         IED ied = sclParser.getIed();
+        
+        if (ied == null) {
+        	System.out.println("No data model present in SCL file! Exit.");
+        }
     
         AccessPoint accessPoint = ied.getAccessPoint();
         
@@ -438,9 +442,6 @@ public class StaticModelGenerator {
     private void printForwardDeclarations(Server server) {
         
         cOut.println("extern IedModel iedModel;");
-//        cOut.println("static DataSet* datasets[];");
-//        cOut.println("static ReportControlBlock* reportControlBlocks[];");
-//        cOut.println("static GSEControlBlock* gseControlBlocks[];");
         cOut.println("static void initializeValues();");
         hOut.println("extern IedModel iedModel;");
         

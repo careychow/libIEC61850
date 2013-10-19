@@ -302,6 +302,12 @@ mmsIsoCallback(IsoIndication indication, void* parameter, ByteBuffer* payload)
 	    return;
 	}
 
+	if (indication == ISO_IND_ASSOCIATION_FAILED) {
+	    self->connectionState = MMS_CON_ASSOCIATION_FAILED;
+	    return;
+	}
+
+
 	if (payload != NULL) {
         if (ByteBuffer_getSize(payload) < 1) {
             IsoClientConnection_releasePayloadBuffer(self->isoClient, payload);
@@ -1000,7 +1006,7 @@ MmsConnection_writeVariable(MmsConnection self, MmsClientError* clientError,
 		char* domainId, char* itemId,
 		MmsValue* value)
 {
-	MmsIndication indication = MMS_ERROR;
+    MmsIndication indication = MMS_ERROR;
 	ByteBuffer payload;
 	ByteBuffer_wrap(&payload, self->buffer, 0, self->parameters.maxPduSize);
 
@@ -1028,6 +1034,43 @@ MmsConnection_writeVariable(MmsConnection self, MmsClientError* clientError,
 	return indication;
 }
 
+MmsIndication
+MmsConnection_writeMultipleVariables(MmsConnection self, MmsClientError* mmsError, char* domainId,
+        LinkedList /*<char*>*/ items,
+        LinkedList /* <MmsValue*> */ values,
+        /* OUTPUT */ LinkedList* /* <MmsValue*> */ accessResults)
+{
+    MmsIndication indication = MMS_ERROR;
+    ByteBuffer payload;
+    ByteBuffer_wrap(&payload, self->buffer, 0, self->parameters.maxPduSize);
+
+    *mmsError = MMS_ERROR_NONE;
+
+    uint32_t invokeId = getNextInvokeId(self);
+
+    mmsClient_createWriteMultipleItemsRequest(invokeId, domainId, items, values, &payload);
+
+    ByteBuffer* responseMessage = sendRequestAndWaitForResponse(self, invokeId, &payload);
+
+    if (responseMessage != NULL) {
+
+        int numberOfItems = LinkedList_size(items);
+
+        indication = mmsClient_parseWriteMultipleItemsResponse(self->lastResponse, numberOfItems, accessResults);
+
+        if (indication != MMS_OK)
+            *mmsError = MMS_ERROR_SERVICE_ERROR;
+
+        releaseResponse(self);
+    }
+    else {
+        if (self->associationState == MMS_STATE_CLOSED)
+            *mmsError = MMS_ERROR_CONNECTION_LOST;
+    }
+
+    return indication;
+}
+
 void
 MmsServerIdentity_destroy(MmsServerIdentity* self)
 {
@@ -1046,28 +1089,44 @@ MmsServerIdentity_destroy(MmsServerIdentity* self)
 MmsVariableAccessSpecification*
 MmsVariableAccessSpecification_create(char* domainId, char* itemId)
 {
-	MmsVariableAccessSpecification* varSpec = (MmsVariableAccessSpecification*) 
+	MmsVariableAccessSpecification* self = (MmsVariableAccessSpecification*) 
 				malloc(sizeof(MmsVariableAccessSpecification));
 
-	varSpec->domainId = domainId;
-	varSpec->itemId = itemId;
-	varSpec->arrayIndex = -1;
-	varSpec->componentName = NULL;
+	self->domainId = domainId;
+	self->itemId = itemId;
+	self->arrayIndex = -1;
+	self->componentName = NULL;
 
-	return varSpec;
+	return self;
 }
 
 MmsVariableAccessSpecification*
 MmsVariableAccessSpecification_createAlternateAccess(char* domainId, char* itemId, int32_t index,
 		char* componentName)
 {
-	MmsVariableAccessSpecification* varSpec = (MmsVariableAccessSpecification*) 
+	MmsVariableAccessSpecification* self = (MmsVariableAccessSpecification*) 
 		malloc(sizeof(MmsVariableAccessSpecification));
 
-	varSpec->domainId = domainId;
-	varSpec->itemId = itemId;
-	varSpec->arrayIndex = index;
-	varSpec->componentName = componentName;
+	self->domainId = domainId;
+	self->itemId = itemId;
+	self->arrayIndex = index;
+	self->componentName = componentName;
 
-	return varSpec;
+	return self;
 }
+
+void
+MmsVariableAccessSpecification_destroy(MmsVariableAccessSpecification* self)
+{
+	if (self->domainId != NULL)
+		free(self->domainId);
+
+	if (self->itemId != NULL)
+		free(self->itemId);
+
+	if (self->componentName != NULL)
+		free (self->componentName);
+
+	free(self);
+}
+

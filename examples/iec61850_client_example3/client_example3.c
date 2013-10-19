@@ -1,7 +1,7 @@
 /*
  * client_example3.c
  *
- * How to control a device ...
+ * How to control a device ... intended to be used with server_example_control
  */
 
 #include "iec61850_client.h"

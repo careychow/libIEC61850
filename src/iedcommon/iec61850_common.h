@@ -24,8 +24,14 @@
 #ifndef IEC61850_COMMON_H_
 #define IEC61850_COMMON_H_
 
+#define TRG_OPT_DATA_CHANGED 1
+#define TRG_OPT_QUALITY_CHANGED 2
+#define TRG_OPT_DATA_UPDATE 4
+#define TRG_OPT_INTEGRITY 8
+#define TRG_OPT_GI 16
+
+ /* FCs according to IEC 61850-7-2 */
 typedef enum eFunctionalConstraint {
-    // FCs according to IEC 61850-7-2:
     ST, /** Status information */
     MX, /** Measurands - analog values */
     SP, /** Setpoint */

@@ -131,7 +131,7 @@ appendValueToResultList(MmsValue* value, LinkedList values)
 
 static void
 appendErrorToResultList(LinkedList values, uint32_t errorCode) {
-    MmsValue* value = MmsValue_newDataAccessError(errorCode);
+    MmsValue* value = MmsValue_newDataAccessError((MmsDataAccessError) errorCode);
     MmsValue_setDeletable(value);
     appendValueToResultList(value, values);
 }

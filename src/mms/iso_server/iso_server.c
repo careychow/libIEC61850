@@ -31,6 +31,7 @@
 #include "iso_server.h"
 
 #define TCP_PORT 102
+#define SECURE_TCP_PORT 3782
 #define BACKLOG 10
 
 struct sIsoServer {
@@ -41,6 +42,7 @@ struct sIsoServer {
     Thread serverThread;
     Socket serverSocket;
     int tcpPort;
+    char* localIpAddress;
 };
 
 
@@ -51,7 +53,7 @@ isoServerThread(void* isoServerParam)
 
     Socket connectionSocket;
 
-    self->serverSocket = (Socket) TcpServerSocket_create(NULL, self->tcpPort);
+    self->serverSocket = (Socket) TcpServerSocket_create(self->localIpAddress, self->tcpPort);
 
     if (self->serverSocket == NULL) {
         self->state = ISO_SVR_STATE_ERROR;
@@ -101,6 +103,12 @@ void
 IsoServer_setTcpPort(IsoServer self, int port)
 {
     self->tcpPort = port;
+}
+
+void
+IsoServer_setLocalIpAddress(IsoServer self, char* ipAddress)
+{
+	self->localIpAddress = ipAddress;
 }
 
 IsoServerState

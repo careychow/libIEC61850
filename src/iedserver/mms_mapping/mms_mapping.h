@@ -96,7 +96,10 @@ MmsMapping_getDomainSpecificDataSet(MmsMapping* self, char* dataSetName);
 void
 MmsMapping_freeDynamicallyCreatedDataSet(DataSet* dataSet);
 
-MmsValueIndication
+MmsVariableAccessSpecification*
+MmsMapping_ObjectReferenceToVariableAccessSpec(char* objectReference);
+
+MmsDataAccessError
 Control_writeAccessControlObject(MmsMapping* self, MmsDomain* domain, char* variableIdOrig,
                          MmsValue* value, MmsServerConnection* connection);
 

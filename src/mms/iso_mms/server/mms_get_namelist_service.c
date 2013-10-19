@@ -237,10 +237,12 @@ createNameListResponse(
 
     }
 
-
     uint32_t listOfIdentifierSize = 1 + BerEncoder_determineLengthSize(identifierListSize) + identifierListSize;
 
-    uint32_t getNameListSize = listOfIdentifierSize + 3;
+    uint32_t getNameListSize = listOfIdentifierSize;
+
+    if (moreFollows == false)
+    	getNameListSize += 3;
 
     uint32_t confirmedServiceResponseSize = 1 + BerEncoder_determineLengthSize(getNameListSize) + getNameListSize;
 
@@ -280,7 +282,8 @@ createNameListResponse(
             break;
     }
 
-    bufPos = BerEncoder_encodeBoolean(0x81, moreFollows, buffer, bufPos);
+    if (moreFollows == false)
+    	bufPos = BerEncoder_encodeBoolean(0x81, moreFollows, buffer, bufPos);
 
     response->size = bufPos;
 

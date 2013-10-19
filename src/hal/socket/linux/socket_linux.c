@@ -71,6 +71,24 @@ activateKeepAlive(int sd)
 #endif
 }
 
+static void
+prepareServerAddress(char* address, int port, struct sockaddr_in* sockaddr)
+{
+
+	memset((char *) sockaddr , 0, sizeof(struct sockaddr_in));
+
+	if (address != NULL) {
+		struct hostent *server;
+		server = gethostbyname(address);
+		memcpy((char *) &sockaddr->sin_addr.s_addr, (char *) server->h_addr, server->h_length);
+	}
+	else
+		sockaddr->sin_addr.s_addr = htonl(INADDR_ANY);
+
+    sockaddr->sin_family = AF_INET;
+    sockaddr->sin_port = htons(port);
+}
+
 ServerSocket
 TcpServerSocket_create(char* address, int port)
 {
@@ -81,10 +99,7 @@ TcpServerSocket_create(char* address, int port)
     if ((fd = socket(AF_INET, SOCK_STREAM, 0)) >= 0) {
         struct sockaddr_in serverAddress;
 
-        memset(&serverAddress, 0, sizeof(serverAddress));
-        serverAddress.sin_family = AF_INET;
-        serverAddress.sin_addr.s_addr = htonl(INADDR_ANY );
-        serverAddress.sin_port = htons(port);
+        prepareServerAddress(address, port, &serverAddress);
 
         //TODO check if this works with BSD
         int optionReuseAddr = 1;
@@ -169,20 +184,15 @@ TcpSocket_create()
 int
 Socket_connect(Socket self, char* address, int port)
 {
-    struct hostent *server;
     struct sockaddr_in serverAddress;
 
-    server = gethostbyname(address);
-
-    memset((char *) &serverAddress, 0, sizeof(serverAddress));
-
-    serverAddress.sin_family = AF_INET;
-
-    memcpy((char *) &serverAddress.sin_addr.s_addr, (char *) server->h_addr, server->h_length);
-
-    serverAddress.sin_port = htons(port);
+    prepareServerAddress(address, port, &serverAddress);
 
     self->fd = socket(AF_INET, SOCK_STREAM, 0);
+
+#if (CONFIG_ACTIVATE_TCP_KEEPALIVE == 1)
+        activateKeepAlive(self->fd);
+#endif
 
     if (connect(self->fd, (struct sockaddr *) &serverAddress, sizeof(serverAddress)) < 0)
         return 0;

@@ -4,7 +4,7 @@ README:
 This file is part of the documentation of libiec61850.
 
 Build Status:
-[![Build Status](https://travis-ci.org/careychow/libIEC61850.png?branch=master)](https://travis-ci.org/careychow/libIEC61850)
+- [![Build Status](https://travis-ci.org/careychow/libIEC61850.png?branch=master)](https://travis-ci.org/careychow/libIEC61850)
 
 Content:
 - Overview

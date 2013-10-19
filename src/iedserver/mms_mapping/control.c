@@ -280,7 +280,7 @@ controlOperateThread(ControlObject* self)
     		                    self->ctlNum, self->origin);
     	}
     	else
-    		MmsServerConnection_sendWriteResponse(self->clientConnection, self->operateInvokeId, MMS_VALUE_ACCESS_DENIED);
+    		MmsServerConnection_sendWriteResponse(self->clientConnection, self->operateInvokeId, DATA_ACCESS_ERROR_OBJECT_ACCESS_DENIED);
 
         abortControlOperation(self);
 
@@ -296,7 +296,7 @@ controlOperateThread(ControlObject* self)
 
     	}
     	else
-    		MmsServerConnection_sendWriteResponse(self->clientConnection, self->operateInvokeId, MMS_VALUE_OK);
+    		MmsServerConnection_sendWriteResponse(self->clientConnection, self->operateInvokeId, DATA_ACCESS_ERROR_SUCCESS);
 
         uint64_t currentTime = Hal_getTimeInMs();
 
@@ -888,11 +888,11 @@ Control_readAccessControlObject(MmsMapping* self, MmsDomain* domain, char* varia
     return value;
 }
 
-MmsValueIndication
+MmsDataAccessError
 Control_writeAccessControlObject(MmsMapping* self, MmsDomain* domain, char* variableIdOrig,
                          MmsValue* value, MmsServerConnection* connection)
 {
-    MmsValueIndication indication = MMS_VALUE_ACCESS_DENIED;
+    MmsDataAccessError indication = DATA_ACCESS_ERROR_OBJECT_ACCESS_DENIED;
 
     char* variableId = copyString(variableIdOrig);
 
@@ -920,7 +920,7 @@ Control_writeAccessControlObject(MmsMapping* self, MmsDomain* domain, char* vari
     ControlObject* controlObject = Control_lookupControlObject(self, domain, lnName, objectName);
 
     if (controlObject == NULL) {
-        indication = MMS_VALUE_ACCESS_DENIED;
+        indication = DATA_ACCESS_ERROR_OBJECT_ACCESS_DENIED;
         goto free_and_return;
     }
 
@@ -946,7 +946,7 @@ Control_writeAccessControlObject(MmsMapping* self, MmsDomain* domain, char* vari
     		    int state = getState(controlObject);
 
     		    if (state != STATE_UNSELECTED) {
-    		        indication = MMS_VALUE_TEMPORARILY_UNAVAILABLE;
+    		        indication = DATA_ACCESS_ERROR_TEMPORARILY_UNAVAILABLE;
 
     		        if (connection != controlObject->clientConnection)
     		        	ControlObject_sendLastApplError(controlObject, connection, "SBOw",  0,
@@ -975,12 +975,12 @@ Control_writeAccessControlObject(MmsMapping* self, MmsDomain* domain, char* vari
 
                         updateControlParameters(controlObject, ctlVal, ctlNum, origin);
 
-                        indication = MMS_VALUE_OK;
+                        indication = DATA_ACCESS_ERROR_SUCCESS;
 
                         if (DEBUG) printf("SBOw: selected successful\n");
     	            }
     	            else {
-    	                indication = MMS_VALUE_ACCESS_DENIED;
+    	                indication = DATA_ACCESS_ERROR_OBJECT_ACCESS_DENIED;
 
     	                ControlObject_sendLastApplError(controlObject, connection, "SBOw",  0,
     	                        CONTROL_ADD_CAUSE_SELECT_FAILED, ctlNum, origin);
@@ -990,11 +990,11 @@ Control_writeAccessControlObject(MmsMapping* self, MmsDomain* domain, char* vari
 				}
     		}
 			else {
-				indication = MMS_VALUE_VALUE_INVALID;
+				indication = DATA_ACCESS_ERROR_OBJECT_VALUE_INVALID;
 			}
     	}
     	else {
-    		indication = MMS_VALUE_ACCESS_DENIED;
+    		indication = DATA_ACCESS_ERROR_OBJECT_ACCESS_DENIED;
     		goto free_and_return;
     	}
     }
@@ -1007,7 +1007,7 @@ Control_writeAccessControlObject(MmsMapping* self, MmsDomain* domain, char* vari
     	MmsValue* timeParameter = getOperParameterTime(value);
 
     	if ((ctlVal == NULL) || (test == NULL) || (ctlNum == NULL) || (origin == NULL) || (check == NULL) || (timeParameter == NULL)) {
-    	    indication = MMS_VALUE_VALUE_INVALID;
+    	    indication = DATA_ACCESS_ERROR_OBJECT_VALUE_INVALID;
     	    goto free_and_return;
     	}
 
@@ -1019,7 +1019,7 @@ Control_writeAccessControlObject(MmsMapping* self, MmsDomain* domain, char* vari
     	int state = getState(controlObject);
 
     	if (state == STATE_WAIT_FOR_ACTICATION_TIME) {
-    	    indication = MMS_VALUE_TEMPORARILY_UNAVAILABLE;
+    	    indication = DATA_ACCESS_ERROR_TEMPORARILY_UNAVAILABLE;
 
     	    ControlObject_sendLastApplError(controlObject, connection, "Oper",
                                     CONTROL_ERROR_NO_ERROR, CONTROL_ADD_CAUSE_COMMAND_ALREADY_IN_EXECUTION,
@@ -1040,7 +1040,7 @@ Control_writeAccessControlObject(MmsMapping* self, MmsDomain* domain, char* vari
 
         	if ((controlObject->ctlModel == 2) || (controlObject->ctlModel == 4)) {
         		if (controlObject->clientConnection != connection) {
-        		    indication = MMS_VALUE_TEMPORARILY_UNAVAILABLE;
+        		    indication = DATA_ACCESS_ERROR_TEMPORARILY_UNAVAILABLE;
                     if (DEBUG) printf("Oper: operate from wrong client connection!\n");
                     goto free_and_return;
                 }
@@ -1050,7 +1050,7 @@ Control_writeAccessControlObject(MmsMapping* self, MmsDomain* domain, char* vari
                 		 MmsValue_equals(origin, controlObject->origin))  == false)
                 	{
 
-                		indication = MMS_VALUE_VALUE_INVALID;
+                		indication = DATA_ACCESS_ERROR_TYPE_INCONSISTENT;
                 		ControlObject_sendLastApplError(controlObject, connection, "Oper",
                 								CONTROL_ERROR_NO_ERROR, CONTROL_ADD_CAUSE_INCONSISTENT_PARAMETERS,
                 								ctlNum, origin);
@@ -1077,7 +1077,7 @@ Control_writeAccessControlObject(MmsMapping* self, MmsDomain* domain, char* vari
 
                     if (DEBUG) printf("Oper: activate time activated control\n");
 
-                    indication = MMS_VALUE_OK;
+                    indication = DATA_ACCESS_ERROR_SUCCESS;
                 }
             }
 
@@ -1095,7 +1095,7 @@ Control_writeAccessControlObject(MmsMapping* self, MmsDomain* domain, char* vari
                 }
 
                 if (checkOk) {
-                    indication = MMS_VALUE_NO_RESPONSE;
+                    indication = DATA_ACCESS_ERROR_NO_RESPONSE;
 
                     controlObject->clientConnection = connection;
 
@@ -1105,7 +1105,7 @@ Control_writeAccessControlObject(MmsMapping* self, MmsDomain* domain, char* vari
                 else {
                 	abortControlOperation(controlObject);
 
-                    indication = MMS_VALUE_TEMPORARILY_UNAVAILABLE;
+                    indication = DATA_ACCESS_ERROR_TEMPORARILY_UNAVAILABLE;
                 }
             }
 
@@ -1113,7 +1113,7 @@ Control_writeAccessControlObject(MmsMapping* self, MmsDomain* domain, char* vari
     	else if (state == STATE_UNSELECTED) {
     		if (DEBUG) printf("Oper: not selected!\n");
 
-			indication = MMS_VALUE_ACCESS_DENIED;
+			indication = DATA_ACCESS_ERROR_OBJECT_ACCESS_DENIED;
 			ControlObject_sendLastApplError(controlObject, connection, "Oper",
 										CONTROL_ERROR_NO_ERROR,	CONTROL_ADD_CAUSE_OBJECT_NOT_SELECTED,
 										ctlNum, origin);
@@ -1130,7 +1130,7 @@ Control_writeAccessControlObject(MmsMapping* self, MmsDomain* domain, char* vari
 		MmsValue* origin = getCancelParameterOrigin(value);
 
 		if ((ctlNum == NULL) || (origin == NULL)) {
-			indication = MMS_VALUE_VALUE_INVALID;
+			indication = DATA_ACCESS_ERROR_TYPE_INCONSISTENT;
 			if (DEBUG) printf("Invalid cancel message!\n");
 			goto free_and_return;
 		}
@@ -1138,12 +1138,12 @@ Control_writeAccessControlObject(MmsMapping* self, MmsDomain* domain, char* vari
     	if ((controlObject->ctlModel == 2) || (controlObject->ctlModel == 4)) {
     		if (state != STATE_UNSELECTED) {
 				if (controlObject->clientConnection == connection) {
-					indication = MMS_VALUE_OK;
+					indication = DATA_ACCESS_ERROR_SUCCESS;
 					setState(controlObject, STATE_UNSELECTED);
 					goto free_and_return;
 				}
 				else {
-					indication = MMS_VALUE_TEMPORARILY_UNAVAILABLE;
+					indication = DATA_ACCESS_ERROR_TEMPORARILY_UNAVAILABLE;
 					ControlObject_sendLastApplError(controlObject, connection, "Cancel",
 										CONTROL_ERROR_NO_ERROR,	CONTROL_ADD_CAUSE_LOCKED_BY_OTHER_CLIENT,
 										ctlNum, origin);
@@ -1154,7 +1154,7 @@ Control_writeAccessControlObject(MmsMapping* self, MmsDomain* domain, char* vari
    		if (controlObject->timeActivatedOperate) {
 			controlObject->timeActivatedOperate = false;
 			abortControlOperation(controlObject);
-			indication = MMS_VALUE_OK;
+			indication = DATA_ACCESS_ERROR_SUCCESS;
 			goto free_and_return;
 		}
     }

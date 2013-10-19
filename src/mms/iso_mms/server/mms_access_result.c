@@ -115,13 +115,13 @@ mmsServer_encodeAccessResult(MmsValue* value, uint8_t* buffer, int bufPos, bool 
 
     case MMS_DATA_ACCESS_ERROR:
         if (encode) {
-            int length = BerEncoder_UInt32determineEncodedSize(value->value.dataAccessError.code);
+            int length = BerEncoder_UInt32determineEncodedSize((uint32_t) value->value.dataAccessError);
 
             bufPos = BerEncoder_encodeTL(0x80, length, buffer, bufPos);
-            bufPos = BerEncoder_encodeUInt32(value->value.dataAccessError.code, buffer, bufPos);
+            bufPos = BerEncoder_encodeUInt32((uint32_t) value->value.dataAccessError, buffer, bufPos);
         }
         else
-            size = 2 + BerEncoder_UInt32determineEncodedSize(value->value.dataAccessError.code);
+            size = 2 + BerEncoder_UInt32determineEncodedSize((uint32_t) value->value.dataAccessError);
         break;
 
     case MMS_VISIBLE_STRING:

@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
         /* read data set */
         ClientDataSet clientDataSet;
 
-        clientDataSet = IedConnection_getDataSet(con, &error, "simpleIOGenericIO/LLN0.Events", NULL);
+        clientDataSet = IedConnection_getDataSetValues(con, &error, "simpleIOGenericIO/LLN0.Events", NULL);
 
         if (clientDataSet == NULL)
             printf("failed to read dataset\n");
@@ -81,14 +81,21 @@ int main(int argc, char** argv) {
         printDataSetValues(ClientDataSet_getDataSetValues(clientDataSet));
 
         IedConnection_enableReporting(con, &error, "simpleIOGenericIO/LLN0.RP.EventsRCB", clientDataSet,
-                TRG_OPT_DATA_UPDATE | TRG_OPT_INTEGRITY, reportCallbackFunction, ClientDataSet_getDataSetValues(
-                        clientDataSet));
+                TRG_OPT_DATA_UPDATE | TRG_OPT_INTEGRITY | TRG_OPT_GI, reportCallbackFunction,
+                ClientDataSet_getDataSetValues(clientDataSet));
+
+        Thread_sleep(1000);
+
+        IedConnection_triggerGIReport(con, &error, "impleIOGenericIO/LLN0.RP.EventsRCB");
 
         Thread_sleep(5000);
 
         IedConnection_disableReporting(con, &error, "simpleIOGenericIO/LLN0.RP.EventsRCB");
 
         IedConnection_close(con);
+    }
+    else {
+        printf("Failed to connect to %s:%i\n", hostname, tcpPort);
     }
 
     IedConnection_destroy(con);

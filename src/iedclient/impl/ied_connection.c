@@ -30,12 +30,14 @@
 #include "mms_client_connection.h"
 #include "mms_mapping.h"
 
-typedef enum eIedState {
+typedef enum eIedState
+{
     IED_STATE_IDLE,
     IED_STATE_CONNECTED
 } IedStateInt;
 
-struct sIedConnection {
+struct sIedConnection
+{
     MmsConnection connection;
     IedStateInt state;
     LinkedList enabledReports;
@@ -44,24 +46,26 @@ struct sIedConnection {
     LastApplError lastApplError;
 };
 
-typedef struct sICLogicalDevice {
+typedef struct sICLogicalDevice
+{
     char* name;
     LinkedList variables;
     LinkedList dataSets;
 } ICLogicalDevice;
 
-struct sClientDataSet {
-  char* dataSetReference;  /* data set reference in MMS format */
-  MmsValue* dataSetValues; /* MmsValue instance of type MMS_ARRAY */
+struct sClientDataSet
+{
+    char* dataSetReference; /* data set reference in MMS format */
+    MmsValue* dataSetValues; /* MmsValue instance of type MMS_ARRAY */
 };
 
-struct sClientReport {
+struct sClientReport
+{
     ClientDataSet dataSet;
     ReportCallbackFunction callback;
     void* callbackParameter;
-    // lastUpdateTime;
+// lastUpdateTime;
 };
-
 
 static IedClientError
 mapMmsErrorToIedError(MmsClientError mmsError)
@@ -103,7 +107,7 @@ ICLogicalDevice_setVariableList(ICLogicalDevice* self, LinkedList variables)
 void
 ICLogicalDevice_setDataSetList(ICLogicalDevice* self, LinkedList dataSets)
 {
-	self->dataSets = dataSets;
+    self->dataSets = dataSets;
 }
 
 void
@@ -112,26 +116,13 @@ ICLogicalDevice_destroy(ICLogicalDevice* self)
     free(self->name);
 
     if (self->variables != NULL)
-    	LinkedList_destroy(self->variables);
+        LinkedList_destroy(self->variables);
 
     if (self->dataSets != NULL)
-    	LinkedList_destroy(self->dataSets);
+        LinkedList_destroy(self->dataSets);
 
     free(self);
 }
-
-static void
-toMmsItemId(char* itemId)
-{
-    int len = strlen(itemId);
-    int i;
-
-    for (i = 0; i < len; i++){
-        if (itemId[i] == '.')
-            itemId[i] = '$';
-    }
-}
-
 
 ClientDataSet
 ClientDataSet_create(char* dataSetReference)
@@ -139,7 +130,7 @@ ClientDataSet_create(char* dataSetReference)
     ClientDataSet self = (ClientDataSet) calloc(1, sizeof(struct sClientDataSet));
 
     self->dataSetReference = copyString(dataSetReference);
-    toMmsItemId(self->dataSetReference);
+    StringUtils_replace(self->dataSetReference, '.', '$');
 
     self->dataSetValues = NULL;
 
@@ -197,20 +188,25 @@ doesControlObjectMatch(char* objRef, char* cntrlObj)
 
     char* separator = strchr(cntrlObj, '$');
 
-    if (separator == NULL) return false;
+    if (separator == NULL)
+        return false;
 
     int sepLen = separator - cntrlObj;
 
-    if (sepLen >= objRefLen) return false;
+    if (sepLen >= objRefLen)
+        return false;
 
     if (memcmp(objRef, cntrlObj, sepLen) != 0)
         return false;
 
     char* cntrlObjName = objRef + sepLen + 1;
 
-    if (separator[1] != 'C') return false;
-    if (separator[2] != 'O') return false;
-    if (separator[3] != '$') return false;
+    if (separator[1] != 'C')
+        return false;
+    if (separator[2] != 'O')
+        return false;
+    if (separator[3] != '$')
+        return false;
 
     char* nextSeparator = strchr(separator + 4, '$');
 
@@ -222,7 +218,7 @@ doesControlObjectMatch(char* objRef, char* cntrlObj)
     if (cntrlObjNameLen != nextSeparator - (separator + 4))
         return false;
 
-   // printf(" %s : %s : %s : %i\n", cntrlObjName, separator + 4, nextSeparator, cntrlObjNameLen);
+    // printf(" %s : %s : %s : %i\n", cntrlObjName, separator + 4, nextSeparator, cntrlObjNameLen);
 
     if (memcmp(cntrlObjName, separator + 4, cntrlObjNameLen) == 0)
         return true;
@@ -230,154 +226,163 @@ doesControlObjectMatch(char* objRef, char* cntrlObj)
     return false;
 }
 
-void
-informationReportHandler (void* parameter, char* domainName,
+static void
+informationReportHandler(void* parameter, char* domainName,
         char* variableListName, MmsValue* value, bool isVariableListName)
 {
     IedConnection self = (IedConnection) parameter;
 
-    if (DEBUG) printf("received information report for %s\n", variableListName);
+    if (DEBUG)
+        printf("received information report for %s\n", variableListName);
 
     if (domainName == NULL) {
 
-    	if (isVariableListName) {
+        if (isVariableListName) {
 
-			MmsValue* optFlds = MmsValue_getElement(value, 1);
+            MmsValue* optFlds = MmsValue_getElement(value, 1);
 
-			if (MmsValue_getBitStringBit(optFlds, 4) == false)
-				goto cleanup_and_return;
+            if (MmsValue_getBitStringBit(optFlds, 4) == false)
+                goto cleanup_and_return;
 
-			int datSetIndex = 2;
+            int datSetIndex = 2;
 
-			if (MmsValue_getBitStringBit(optFlds, 1) == true)
-				datSetIndex++;
+            if (MmsValue_getBitStringBit(optFlds, 1) == true)
+                datSetIndex++;
 
-			if (MmsValue_getBitStringBit(optFlds, 2) == true)
-				datSetIndex++;
+            if (MmsValue_getBitStringBit(optFlds, 2) == true)
+                datSetIndex++;
 
-			MmsValue* datSet = MmsValue_getElement(value, datSetIndex);
+            MmsValue* datSet = MmsValue_getElement(value, datSetIndex);
 
-			char* datSetName =  MmsValue_toString(datSet);
+            char* datSetName = MmsValue_toString(datSet);
 
-			if (DEBUG) printf("  with datSet %s\n", datSetName);
+            if (DEBUG)
+                printf("  with datSet %s\n", datSetName);
 
-			int inclusionIndex = datSetIndex + 1;
+            int inclusionIndex = datSetIndex + 1;
 
-			LinkedList element = LinkedList_getNext(self->enabledReports);
+            LinkedList element = LinkedList_getNext(self->enabledReports);
 
-			ClientReport report = NULL;
+            ClientReport report = NULL;
 
-			while (element != NULL) {
-				report = (ClientReport) element->data;
+            while (element != NULL) {
+                report = (ClientReport) element->data;
 
-				ClientDataSet dataSet = report->dataSet;
+                ClientDataSet dataSet = report->dataSet;
 
-				if (strcmp(datSetName, ClientDataSet_getReference(dataSet)) == 0) {
-					break;
-				}
+                if (strcmp(datSetName, ClientDataSet_getReference(dataSet)) == 0) {
+                    break;
+                }
 
-				element = LinkedList_getNext(element);
-			}
+                element = LinkedList_getNext(element);
+            }
 
-			if (report == NULL)
-				goto cleanup_and_return;
+            if (report == NULL)
+                goto cleanup_and_return;
 
-			if (DEBUG) printf("Found enabled report!\n");
+            if (DEBUG)
+                printf("Found enabled report!\n");
 
-			/* skip bufOvfl */
-			if (MmsValue_getBitStringBit(optFlds, 6) == true)
-					inclusionIndex++;
+            /* skip bufOvfl */
+            if (MmsValue_getBitStringBit(optFlds, 6) == true)
+                inclusionIndex++;
 
-			/* skip entryId */
-			if (MmsValue_getBitStringBit(optFlds, 7) == true)
-					inclusionIndex++;
+            /* skip entryId */
+            if (MmsValue_getBitStringBit(optFlds, 7) == true)
+                inclusionIndex++;
 
-			/* skip confRev */
-			if (MmsValue_getBitStringBit(optFlds, 8) == true)
-					inclusionIndex++;
+            /* skip confRev */
+            if (MmsValue_getBitStringBit(optFlds, 8) == true)
+                inclusionIndex++;
 
-			/* skip segmentation fields */
-			if (MmsValue_getBitStringBit(optFlds, 9) == true)
-					inclusionIndex += 2;
+            /* skip segmentation fields */
+            if (MmsValue_getBitStringBit(optFlds, 9) == true)
+                inclusionIndex += 2;
 
-			MmsValue* inclusion = MmsValue_getElement(value, inclusionIndex);
+            MmsValue* inclusion = MmsValue_getElement(value, inclusionIndex);
 
-			int includedElements = MmsValue_getNumberOfSetBits(inclusion);
+            int includedElements = MmsValue_getNumberOfSetBits(inclusion);
 
-			if (DEBUG) printf("Report includes %i data set elements\n", includedElements);
+            if (DEBUG)
+                printf("Report includes %i data set elements\n", includedElements);
 
-			int valueIndex = inclusionIndex + 1;
+            int valueIndex = inclusionIndex + 1;
 
-			/* skip data-reference fields */
-			if (MmsValue_getBitStringBit(optFlds, 5) == true)
-				valueIndex += includedElements;
+            /* skip data-reference fields */
+            if (MmsValue_getBitStringBit(optFlds, 5) == true)
+                valueIndex += includedElements;
 
-			int i;
+            int i;
 
-			ClientDataSet dataSet = report->dataSet;
-			MmsValue* dataSetValues = ClientDataSet_getDataSetValues(dataSet);
+            ClientDataSet dataSet = report->dataSet;
+            MmsValue* dataSetValues = ClientDataSet_getDataSetValues(dataSet);
 
-			for (i = 0; i < ClientDataSet_getDataSetSize(dataSet); i++) {
-				if (MmsValue_getBitStringBit(inclusion, i) == true) {
+            for (i = 0; i < ClientDataSet_getDataSetSize(dataSet); i++) {
+                if (MmsValue_getBitStringBit(inclusion, i) == true) {
 
+                    MmsValue* dataSetElement = MmsValue_getElement(dataSetValues, i);
 
-					MmsValue* dataSetElement = MmsValue_getElement(dataSetValues, i);
+                    MmsValue* newElementValue = MmsValue_getElement(value, valueIndex);
 
-					MmsValue* newElementValue = MmsValue_getElement(value, valueIndex);
+                    if (DEBUG)
+                        printf("  update element value type: %i\n", MmsValue_getType(newElementValue));
 
-					if (DEBUG) printf("  update element value type: %i\n", MmsValue_getType(newElementValue));
+                    MmsValue_update(dataSetElement, newElementValue);
 
-					MmsValue_update(dataSetElement, newElementValue);
+                    valueIndex++;
+                }
+            }
 
-					valueIndex ++;
-				}
-			}
+            // TODO update inclusion fields
 
-			// TODO update inclusion fields
+            if (report->callback != NULL) {
+                report->callback(report->callbackParameter, report);
+            }
+        }
+        else {
+            if (strcmp(variableListName, "LastApplError") == 0) {
+                if (DEBUG)
+                    printf("received LastApplError\n");
 
-			if (report->callback != NULL) {
-				report->callback(report->callbackParameter, report);
-			}
-    	}
-    	else {
-    		if (strcmp(variableListName, "LastApplError") == 0) {
-    			if (DEBUG) printf("received LastApplError\n");
+                MmsValue* lastAppIError = value;
 
-    			MmsValue* lastAppIError = value;
+                MmsValue* cntrlObj = MmsValue_getElement(lastAppIError, 0);
 
-    			MmsValue* cntrlObj = MmsValue_getElement(lastAppIError, 0);
+                MmsValue* error = MmsValue_getElement(lastAppIError, 1);
+                MmsValue* origin = MmsValue_getElement(lastAppIError, 2);
+                MmsValue* ctlNum = MmsValue_getElement(lastAppIError, 3);
+                MmsValue* addCause = MmsValue_getElement(lastAppIError, 4);
 
-    			MmsValue* error = MmsValue_getElement(lastAppIError, 1);
-    			MmsValue* origin = MmsValue_getElement(lastAppIError, 2);
-    			MmsValue* ctlNum = MmsValue_getElement(lastAppIError, 3);
-    			MmsValue* addCause = MmsValue_getElement(lastAppIError, 4);
-
-    			if (DEBUG) printf("  CntrlObj: %s\n", MmsValue_toString(cntrlObj));
-    			if (DEBUG) printf("  ctlNum: %u\n", MmsValue_toUint32(ctlNum));
-    			if (DEBUG) printf("  addCause: %i\n", MmsValue_toInt32(addCause));
-    			if (DEBUG) printf("  error: %i\n", MmsValue_toInt32(error));
+                if (DEBUG)
+                    printf("  CntrlObj: %s\n", MmsValue_toString(cntrlObj));
+                if (DEBUG)
+                    printf("  ctlNum: %u\n", MmsValue_toUint32(ctlNum));
+                if (DEBUG)
+                    printf("  addCause: %i\n", MmsValue_toInt32(addCause));
+                if (DEBUG)
+                    printf("  error: %i\n", MmsValue_toInt32(error));
 
                 self->lastApplError.ctlNum = MmsValue_toUint32(ctlNum);
                 self->lastApplError.addCause = MmsValue_toInt32(addCause);
                 self->lastApplError.error = MmsValue_toInt32(error);
 
-    			LinkedList control = LinkedList_getNext(self->clientControls);
+                LinkedList control = LinkedList_getNext(self->clientControls);
 
-    			while (control != NULL) {
-    			    ControlObjectClient object = (ControlObjectClient) control->data;
+                while (control != NULL) {
+                    ControlObjectClient object = (ControlObjectClient) control->data;
 
-    			    char* objectRef = ControlObjectClient_getObjectReference(object);
+                    char* objectRef = ControlObjectClient_getObjectReference(object);
 
-    			    if (doesControlObjectMatch(objectRef, MmsValue_toString(cntrlObj)))
-    			        ControlObjectClient_setLastApplError(object, self->lastApplError);
+                    if (doesControlObjectMatch(objectRef, MmsValue_toString(cntrlObj)))
+                        ControlObjectClient_setLastApplError(object, self->lastApplError);
 
-    			    control = LinkedList_getNext(control);
-    			}
-    		}
-    	}
+                    control = LinkedList_getNext(control);
+                }
+            }
+        }
     }
 
-cleanup_and_return:
+    cleanup_and_return:
 
     MmsValue_delete(value);
 }
@@ -385,7 +390,7 @@ cleanup_and_return:
 IedConnection
 IedConnection_create()
 {
-    IedConnection self =(IedConnection) calloc(1, sizeof(struct sIedConnection));
+    IedConnection self = (IedConnection) calloc(1, sizeof(struct sIedConnection));
 
     self->enabledReports = LinkedList_create();
     self->logicalDevices = NULL;
@@ -394,19 +399,17 @@ IedConnection_create()
     return self;
 }
 
-
-
 void
 IedConnection_connect(IedConnection self, IedClientError* error, char* hostname, int tcpPort)
 {
-	MmsClientError mmsError;
+    MmsClientError mmsError;
 
     self->connection = MmsConnection_create();
 
     MmsConnection_setInformationReportHandler(self->connection, informationReportHandler, self);
 
     MmsIndication indication = MmsConnection_connect(self->connection,
-    		&mmsError, hostname, tcpPort);
+            &mmsError, hostname, tcpPort);
 
     if (indication == MMS_OK) {
         *error = IED_ERROR_OK;
@@ -435,10 +438,10 @@ IedConnection_destroy(IedConnection self)
     IedConnection_close(self);
 
     if (self->logicalDevices != NULL)
-    	LinkedList_destroyDeep(self->logicalDevices, (LinkedListValueDeleteFunction) ICLogicalDevice_destroy);
+        LinkedList_destroyDeep(self->logicalDevices, (LinkedListValueDeleteFunction) ICLogicalDevice_destroy);
 
     if (self->enabledReports != NULL)
-    	LinkedList_destroyDeep(self->enabledReports, (LinkedListValueDeleteFunction) ClientReport_destroy);
+        LinkedList_destroyDeep(self->enabledReports, (LinkedListValueDeleteFunction) ClientReport_destroy);
 
     LinkedList_destroyStatic(self->clientControls);
 
@@ -447,13 +450,13 @@ IedConnection_destroy(IedConnection self)
 
 MmsVariableSpecification*
 IedConnection_getVariableSpecification(IedConnection self, IedClientError* error, char* objectReference,
-		FunctionalConstraint fc)
+        FunctionalConstraint fc)
 {
-	char* domainId;
-	char* itemId;
+    char* domainId;
+    char* itemId;
 
-	MmsClientError mmsError;
-	MmsVariableSpecification* varSpec = NULL;
+    MmsClientError mmsError;
+    MmsVariableSpecification* varSpec = NULL;
 
     domainId = MmsMapping_getMmsDomainFromObjectReference(objectReference, NULL);
     itemId = MmsMapping_createMmsVariableNameFromObjectReference(objectReference, fc, NULL);
@@ -463,26 +466,27 @@ IedConnection_getVariableSpecification(IedConnection self, IedClientError* error
         goto cleanup_and_exit;
     }
 
-
     varSpec =
-    		MmsConnection_getVariableAccessAttributes(self->connection, &mmsError, domainId, itemId);
+            MmsConnection_getVariableAccessAttributes(self->connection, &mmsError, domainId, itemId);
 
     if (varSpec != NULL) {
         *error = IED_ERROR_OK;
     }
     else
-    	*error = mapMmsErrorToIedError(mmsError);
+        *error = mapMmsErrorToIedError(mmsError);
 
-cleanup_and_exit:
-    if (domainId != NULL) free(domainId);
-    if (itemId != NULL) free(itemId);
+    cleanup_and_exit:
+    if (domainId != NULL)
+        free(domainId);
+    if (itemId != NULL)
+        free(itemId);
 
     return varSpec;
 }
 
 MmsValue*
 IedConnection_readObject(IedConnection self, IedClientError* error, char* objectReference,
-		FunctionalConstraint fc)
+        FunctionalConstraint fc)
 {
     char* domainId;
     char* itemId;
@@ -506,18 +510,20 @@ IedConnection_readObject(IedConnection self, IedClientError* error, char* object
         *error = IED_ERROR_OK;
     }
     else
-    	*error = mapMmsErrorToIedError(mmsError);
+        *error = mapMmsErrorToIedError(mmsError);
 
-cleanup_and_exit:
-    if (domainId != NULL) free(domainId);
-    if (itemId != NULL) free(itemId);
+    cleanup_and_exit:
+    if (domainId != NULL)
+        free(domainId);
+    if (itemId != NULL)
+        free(itemId);
 
     return value;
 }
 
 void
 IedConnection_writeObject(IedConnection self, IedClientError* error, char* objectReference,
-		FunctionalConstraint fc, MmsValue* value)
+        FunctionalConstraint fc, MmsValue* value)
 {
     char* domainId;
     char* itemId;
@@ -555,10 +561,10 @@ IedConnection_getDeviceModelFromServer(IedConnection self, IedClientError* error
 
     if (logicalDeviceNames != NULL) {
 
-    	if (self->logicalDevices != NULL) {
-			LinkedList_destroyDeep(self->logicalDevices, (LinkedListValueDeleteFunction) ICLogicalDevice_destroy);
-			self->logicalDevices = NULL;
-    	}
+        if (self->logicalDevices != NULL) {
+            LinkedList_destroyDeep(self->logicalDevices, (LinkedListValueDeleteFunction) ICLogicalDevice_destroy);
+            self->logicalDevices = NULL;
+        }
 
         LinkedList logicalDevice = LinkedList_getNext(logicalDeviceNames);
 
@@ -570,23 +576,23 @@ IedConnection_getDeviceModelFromServer(IedConnection self, IedClientError* error
             ICLogicalDevice* icLogicalDevice = ICLogicalDevice_create(name);
 
             LinkedList variables = MmsConnection_getDomainVariableNames(self->connection,
-            		&mmsError, name);
+                    &mmsError, name);
 
             if (variables != NULL)
                 ICLogicalDevice_setVariableList(icLogicalDevice, variables);
             else {
-            	*error = mapMmsErrorToIedError(mmsError);
-            	break;
+                *error = mapMmsErrorToIedError(mmsError);
+                break;
             }
 
             LinkedList dataSets = MmsConnection_getDomainVariableListNames(self->connection,
-            		&mmsError, name);
+                    &mmsError, name);
 
             if (dataSets != NULL)
-            	ICLogicalDevice_setDataSetList(icLogicalDevice, dataSets);
+                ICLogicalDevice_setDataSetList(icLogicalDevice, dataSets);
             else {
-            	*error = mapMmsErrorToIedError(mmsError);
-				break;
+                *error = mapMmsErrorToIedError(mmsError);
+                break;
             }
 
             LinkedList_add(logicalDevices, icLogicalDevice);
@@ -610,7 +616,7 @@ IedConnection_getLogicalDeviceList(IedConnection self, IedClientError* error)
         IedConnection_getDeviceModelFromServer(self, error);
 
         if (*error != IED_ERROR_OK)
-        	return NULL;
+            return NULL;
     }
 
     if (self->logicalDevices != NULL) {
@@ -639,7 +645,7 @@ IedConnection_getLogicalDeviceList(IedConnection self, IedClientError* error)
 
 LinkedList /*<char*>*/
 IedConnection_getLogicalDeviceDirectory(IedConnection self, IedClientError* error,
-		char* logicalDeviceName)
+        char* logicalDeviceName)
 {
     if (self->logicalDevices == NULL)
         IedConnection_getDeviceModelFromServer(self, error);
@@ -658,10 +664,10 @@ IedConnection_getLogicalDeviceDirectory(IedConnection self, IedClientError* erro
             LinkedList variable = LinkedList_getNext(device->variables);
 
             while (variable != NULL) {
-            	char* variableName = (char*) variable->data;
+                char* variableName = (char*) variable->data;
 
-            	if (strchr(variableName, '$') == NULL)
-            		LinkedList_add(logicalNodeNames, copyString((char*) variable->data));
+                if (strchr(variableName, '$') == NULL)
+                    LinkedList_add(logicalNodeNames, copyString((char*) variable->data));
 
                 variable = LinkedList_getNext(variable);
             }
@@ -680,437 +686,423 @@ IedConnection_getLogicalDeviceDirectory(IedConnection self, IedClientError* erro
 static bool
 addToStringSet(LinkedList set, char* string)
 {
-	LinkedList element = set;
+    LinkedList element = set;
 
-	while (LinkedList_getNext(element) != NULL) {
-		if (strcmp((char*) LinkedList_getNext(element)->data, string) == 0)
-			return false;
+    while (LinkedList_getNext(element) != NULL) {
+        if (strcmp((char*) LinkedList_getNext(element)->data, string) == 0)
+            return false;
 
-		element = LinkedList_getNext(element);
-	}
+        element = LinkedList_getNext(element);
+    }
 
-	LinkedList_insertAfter(element, string);
-	return true;
+    LinkedList_insertAfter(element, string);
+    return true;
 }
 
 static void
 addVariablesWithFc(char* fc, char* lnName, LinkedList variables, LinkedList lnDirectory)
 {
-	LinkedList variable = LinkedList_getNext(variables);
+    LinkedList variable = LinkedList_getNext(variables);
 
-	while (variable != NULL) {
-		char* variableName = (char*) variable->data;
+    while (variable != NULL) {
+        char* variableName = (char*) variable->data;
 
-		char* fcPos = strchr(variableName, '$');
+        char* fcPos = strchr(variableName, '$');
 
-		if (fcPos != NULL) {
-			if (memcmp(fcPos + 1, fc, 2) != 0)
-				goto next_element;
+        if (fcPos != NULL) {
+            if (memcmp(fcPos + 1, fc, 2) != 0)
+                goto next_element;
 
-			int lnNameLen = fcPos - variableName;
+            int lnNameLen = fcPos - variableName;
 
-			if (strncmp(variableName, lnName, lnNameLen) == 0) {
-				char* fcEndPos = strchr(fcPos + 1, '$');
+            if (strncmp(variableName, lnName, lnNameLen) == 0) {
+                char* fcEndPos = strchr(fcPos + 1, '$');
 
-				if (fcEndPos != NULL) {
-					char* nameEndPos = strchr(fcEndPos + 1, '$');
+                if (fcEndPos != NULL) {
+                    char* nameEndPos = strchr(fcEndPos + 1, '$');
 
-					if (nameEndPos == NULL)
-						addToStringSet(lnDirectory, copyString(fcEndPos + 1));
-				}
-			}
-		}
+                    if (nameEndPos == NULL)
+                        addToStringSet(lnDirectory, copyString(fcEndPos + 1));
+                }
+            }
+        }
 
-		next_element:
+        next_element:
 
-		variable = LinkedList_getNext(variable);
-	}
+        variable = LinkedList_getNext(variable);
+    }
 }
 
 LinkedList /*<char*>*/
 IedConnection_getLogicalNodeDirectory(IedConnection self, IedClientError* error,
-		char* logicalNodeReference, ACSIClass acsiClass)
+        char* logicalNodeReference, ACSIClass acsiClass)
 {
-	if (self->logicalDevices == NULL)
-	        IedConnection_getDeviceModelFromServer(self, error);
+    if (self->logicalDevices == NULL)
+        IedConnection_getDeviceModelFromServer(self, error);
 
-	int lnRefLen = strlen(logicalNodeReference);
+    int lnRefLen = strlen(logicalNodeReference);
 
-	char* lnRefCopy = (char*) alloca(lnRefLen + 1);
+    char* lnRefCopy = (char*) alloca(lnRefLen + 1);
 
-	strcpy(lnRefCopy, logicalNodeReference);
+    strcpy(lnRefCopy, logicalNodeReference);
 
-	char* ldSep = strchr(lnRefCopy, '/');
+    char* ldSep = strchr(lnRefCopy, '/');
 
-	*ldSep = 0;
+    *ldSep = 0;
 
-	char* logicalDeviceName = lnRefCopy;
+    char* logicalDeviceName = lnRefCopy;
 
-	char* logicalNodeName = ldSep + 1;
+    char* logicalNodeName = ldSep + 1;
 
-	// search for logical device
+    // search for logical device
 
-	LinkedList device = LinkedList_getNext(self->logicalDevices);
+    LinkedList device = LinkedList_getNext(self->logicalDevices);
 
-	bool deviceFound = false;
+    bool deviceFound = false;
 
-	ICLogicalDevice* ld;
+    ICLogicalDevice* ld;
 
-	while (device != NULL) {
-		ld = (ICLogicalDevice*) device->data;
+    while (device != NULL) {
+        ld = (ICLogicalDevice*) device->data;
 
-		if (strcmp(logicalDeviceName, ld->name) == 0) {
-			deviceFound = true;
-			break;
-		}
+        if (strcmp(logicalDeviceName, ld->name) == 0) {
+            deviceFound = true;
+            break;
+        }
 
-		device = LinkedList_getNext(device);
-	}
+        device = LinkedList_getNext(device);
+    }
 
-	if (!deviceFound) {
-		*error = IED_ERROR_OBJECT_REFERENCE_INVALID;
-		return NULL;
-	}
+    if (!deviceFound) {
+        *error = IED_ERROR_OBJECT_REFERENCE_INVALID;
+        return NULL;
+    }
 
-	LinkedList lnDirectory = LinkedList_create();
+    LinkedList lnDirectory = LinkedList_create();
 
-	switch (acsiClass) {
+    switch (acsiClass) {
 
-	case ACSI_CLASS_DATA_OBJECT:
-		{
-			LinkedList variable = LinkedList_getNext(ld->variables);
+    case ACSI_CLASS_DATA_OBJECT:
+        {
+            LinkedList variable = LinkedList_getNext(ld->variables);
 
-			while (variable != NULL) {
-				char* variableName = (char*) variable->data;
+            while (variable != NULL) {
+                char* variableName = (char*) variable->data;
 
-				char* fcPos = strchr(variableName, '$');
+                char* fcPos = strchr(variableName, '$');
 
-				if (fcPos != NULL) {
-					if (memcmp(fcPos + 1, "RP", 2) == 0)
-						goto next_element;
+                if (fcPos != NULL) {
+                    if (memcmp(fcPos + 1, "RP", 2) == 0)
+                        goto next_element;
 
-					if (memcmp(fcPos + 1, "BR", 2) == 0)
-						goto next_element;
+                    if (memcmp(fcPos + 1, "BR", 2) == 0)
+                        goto next_element;
 
-					if (memcmp(fcPos + 1, "GO", 2) == 0)
-						goto next_element;
+                    if (memcmp(fcPos + 1, "GO", 2) == 0)
+                        goto next_element;
 
-					int lnNameLen = fcPos - variableName;
+                    int lnNameLen = fcPos - variableName;
 
-					if (strncmp(variableName, logicalNodeName, lnNameLen) == 0) {
-						char* fcEndPos = strchr(fcPos + 1, '$');
+                    if (strncmp(variableName, logicalNodeName, lnNameLen) == 0) {
+                        char* fcEndPos = strchr(fcPos + 1, '$');
 
-						if (fcEndPos != NULL) {
-							char* nameEndPos = strchr(fcEndPos + 1, '$');
+                        if (fcEndPos != NULL) {
+                            char* nameEndPos = strchr(fcEndPos + 1, '$');
 
-							if (nameEndPos == NULL) {
-								char* dataObjectName = copyString(fcEndPos + 1);
+                            if (nameEndPos == NULL) {
+                                char* dataObjectName = copyString(fcEndPos + 1);
 
-								if (!addToStringSet(lnDirectory, dataObjectName))
-									free(dataObjectName);
-							}
-						}
-					}
-				}
+                                if (!addToStringSet(lnDirectory, dataObjectName))
+                                    free(dataObjectName);
+                            }
+                        }
+                    }
+                }
 
-				next_element:
+                next_element:
 
-				variable = LinkedList_getNext(variable);
-			}
-		}
-		break;
+                variable = LinkedList_getNext(variable);
+            }
+        }
+        break;
 
-	case ACSI_CLASS_BRCB:
-		addVariablesWithFc("BR", logicalNodeName, ld->variables, lnDirectory);
-		break;
+    case ACSI_CLASS_BRCB:
+        addVariablesWithFc("BR", logicalNodeName, ld->variables, lnDirectory);
+        break;
 
-	case ACSI_CLASS_URCB:
-		addVariablesWithFc("RP", logicalNodeName, ld->variables, lnDirectory);
-		break;
+    case ACSI_CLASS_URCB:
+        addVariablesWithFc("RP", logicalNodeName, ld->variables, lnDirectory);
+        break;
 
-	case ACSI_CLASS_GoCB:
-		addVariablesWithFc("GO", logicalNodeName, ld->variables, lnDirectory);
-		break;
+    case ACSI_CLASS_GoCB:
+        addVariablesWithFc("GO", logicalNodeName, ld->variables, lnDirectory);
+        break;
 
-	case ACSI_CLASS_DATA_SET:
-		{
-			LinkedList dataSet = LinkedList_getNext(ld->dataSets);
+    case ACSI_CLASS_DATA_SET:
+        {
+            LinkedList dataSet = LinkedList_getNext(ld->dataSets);
 
-			while (dataSet != NULL) {
-				char* dataSetName = (char*) dataSet->data;
+            while (dataSet != NULL) {
+                char* dataSetName = (char*) dataSet->data;
 
-				char* fcPos = strchr(dataSetName, '$');
+                char* fcPos = strchr(dataSetName, '$');
 
-				if (fcPos == NULL)
-					goto next_data_set_element;
+                if (fcPos == NULL)
+                    goto next_data_set_element;
 
-				int lnNameLen = fcPos - dataSetName;
+                int lnNameLen = fcPos - dataSetName;
 
-				if (strlen(logicalNodeName) != lnNameLen)
-					goto next_data_set_element;
+                if (strlen(logicalNodeName) != lnNameLen)
+                    goto next_data_set_element;
 
-				if (memcmp(dataSetName, logicalNodeName, lnNameLen) != 0)
-					goto next_data_set_element;
+                if (memcmp(dataSetName, logicalNodeName, lnNameLen) != 0)
+                    goto next_data_set_element;
 
-				LinkedList_add(lnDirectory, copyString(fcPos + 1));
+                LinkedList_add(lnDirectory, copyString(fcPos + 1));
 
-				next_data_set_element:
+                next_data_set_element:
 
-				dataSet = LinkedList_getNext(dataSet);
-			}
-		}
-		break;
-	}
+                dataSet = LinkedList_getNext(dataSet);
+            }
+        }
+        break;
+    }
 
-	*error = IED_ERROR_OK;
-	return lnDirectory;
+    *error = IED_ERROR_OK;
+    return lnDirectory;
 }
 
 LinkedList /*<char*>*/
 IedConnection_getLogicalNodeVariables(IedConnection self, IedClientError* error,
-		char* logicalNodeReference)
+        char* logicalNodeReference)
 {
-	if (self->logicalDevices == NULL)
-	        IedConnection_getDeviceModelFromServer(self, error);
+    if (self->logicalDevices == NULL)
+        IedConnection_getDeviceModelFromServer(self, error);
 
-	int lnRefLen = strlen(logicalNodeReference);
+    int lnRefLen = strlen(logicalNodeReference);
 
-	char* lnRefCopy = (char*) alloca(lnRefLen + 1);
+    char* lnRefCopy = (char*) alloca(lnRefLen + 1);
 
-	strcpy(lnRefCopy, logicalNodeReference);
+    strcpy(lnRefCopy, logicalNodeReference);
 
-	char* ldSep = strchr(lnRefCopy, '/');
+    char* ldSep = strchr(lnRefCopy, '/');
 
-	*ldSep = 0;
+    *ldSep = 0;
 
-	char* logicalDeviceName = lnRefCopy;
+    char* logicalDeviceName = lnRefCopy;
 
-	char* logicalNodeName = ldSep + 1;
+    char* logicalNodeName = ldSep + 1;
 
-	// search for logical device
+    // search for logical device
 
-	LinkedList device = LinkedList_getNext(self->logicalDevices);
+    LinkedList device = LinkedList_getNext(self->logicalDevices);
 
-	bool deviceFound = false;
+    bool deviceFound = false;
 
-	ICLogicalDevice* ld;
+    ICLogicalDevice* ld;
 
-	while (device != NULL) {
-		ld = (ICLogicalDevice*) device->data;
+    while (device != NULL) {
+        ld = (ICLogicalDevice*) device->data;
 
-		if (strcmp(logicalDeviceName, ld->name) == 0) {
-			deviceFound = true;
-			break;
-		}
+        if (strcmp(logicalDeviceName, ld->name) == 0) {
+            deviceFound = true;
+            break;
+        }
 
-		device = LinkedList_getNext(device);
-	}
+        device = LinkedList_getNext(device);
+    }
 
-	if (!deviceFound) {
-		*error = IED_ERROR_OBJECT_REFERENCE_INVALID;
-		return NULL;
-	}
+    if (!deviceFound) {
+        *error = IED_ERROR_OBJECT_REFERENCE_INVALID;
+        return NULL;
+    }
 
-	if (DEBUG)
-	    printf("Found LD %s search for variables of LN %s ...\n", logicalDeviceName, logicalNodeName);
+    if (DEBUG)
+        printf("Found LD %s search for variables of LN %s ...\n", logicalDeviceName, logicalNodeName);
 
-	LinkedList variable = LinkedList_getNext(ld->variables);
+    LinkedList variable = LinkedList_getNext(ld->variables);
 
-	LinkedList lnDirectory = LinkedList_create();
+    LinkedList lnDirectory = LinkedList_create();
 
-	while (variable != NULL) {
-		char* variableName = (char*) variable->data;
+    while (variable != NULL) {
+        char* variableName = (char*) variable->data;
 
-		char* fcPos = strchr(variableName, '$');
+        char* fcPos = strchr(variableName, '$');
 
-		if (fcPos != NULL) {
-			int lnNameLen = fcPos - variableName;
+        if (fcPos != NULL) {
+            int lnNameLen = fcPos - variableName;
 
-			if (strncmp(variableName, logicalNodeName, lnNameLen) == 0) {
-				LinkedList_add(lnDirectory, copyString(fcPos + 1));
-			}
-		}
+            if (strncmp(variableName, logicalNodeName, lnNameLen) == 0) {
+                LinkedList_add(lnDirectory, copyString(fcPos + 1));
+            }
+        }
 
-		variable = LinkedList_getNext(variable);
-	}
+        variable = LinkedList_getNext(variable);
+    }
 
-	*error = IED_ERROR_OK;
-	return lnDirectory;
-}
-
-static void
-convertIecNameToMmsName(char* iecName)
-{
-	int len = strlen(iecName);
-
-	int i;
-
-	for (i = 0; i < len; i++) {
-		if (iecName[i] == '.')
-			iecName[i] = '$';
-	}
+    *error = IED_ERROR_OK;
+    return lnDirectory;
 }
 
 static LinkedList
 getDataDirectory(IedConnection self, IedClientError* error,
-		char* dataReference, bool withFc)
+        char* dataReference, bool withFc)
 {
-	if (self->logicalDevices == NULL)
-		        IedConnection_getDeviceModelFromServer(self, error);
+    if (self->logicalDevices == NULL)
+        IedConnection_getDeviceModelFromServer(self, error);
 
-	int dataRefLen = strlen(dataReference);;
+    int dataRefLen = strlen(dataReference);
+    ;
 
-	char* dataRefCopy = (char*) alloca(dataRefLen + 1);
+    char* dataRefCopy = (char*) alloca(dataRefLen + 1);
 
-	strcpy(dataRefCopy, dataReference);
+    strcpy(dataRefCopy, dataReference);
 
-	char* ldSep = strchr(dataRefCopy, '/');
+    char* ldSep = strchr(dataRefCopy, '/');
 
-	*ldSep = 0;
+    *ldSep = 0;
 
-	char* logicalDeviceName = dataRefCopy;
+    char* logicalDeviceName = dataRefCopy;
 
-	char* logicalNodeName = ldSep + 1;
+    char* logicalNodeName = ldSep + 1;
 
-	char* logicalNodeNameEnd = strchr(logicalNodeName, '.');
+    char* logicalNodeNameEnd = strchr(logicalNodeName, '.');
 
-	if (logicalNodeNameEnd == NULL) {
-		*error = IED_ERROR_OBJECT_REFERENCE_INVALID;
-		return NULL;
-	}
+    if (logicalNodeNameEnd == NULL) {
+        *error = IED_ERROR_OBJECT_REFERENCE_INVALID;
+        return NULL;
+    }
 
-	int logicalNodeNameLen = logicalNodeNameEnd - logicalNodeName;
+    int logicalNodeNameLen = logicalNodeNameEnd - logicalNodeName;
 
-	char* dataNamePart = logicalNodeNameEnd + 1;
+    char* dataNamePart = logicalNodeNameEnd + 1;
 
-	int dataNamePartLen = strlen(dataNamePart);
+    int dataNamePartLen = strlen(dataNamePart);
 
-	if (dataNamePartLen < 1) {
-		*error = IED_ERROR_OBJECT_REFERENCE_INVALID;
-		return NULL;
-	}
+    if (dataNamePartLen < 1) {
+        *error = IED_ERROR_OBJECT_REFERENCE_INVALID;
+        return NULL;
+    }
 
-	/* Replace '.' by '$' */
-	convertIecNameToMmsName(dataNamePart);
+    StringUtils_replace(dataNamePart, '.', '$');
 
-	// search for logical device
+    // search for logical device
 
-	LinkedList device = LinkedList_getNext(self->logicalDevices);
+    LinkedList device = LinkedList_getNext(self->logicalDevices);
 
-	bool deviceFound = false;
+    bool deviceFound = false;
 
-	ICLogicalDevice* ld;
+    ICLogicalDevice* ld;
 
-	while (device != NULL) {
-		ld = (ICLogicalDevice*) device->data;
+    while (device != NULL) {
+        ld = (ICLogicalDevice*) device->data;
 
-		if (strcmp(logicalDeviceName, ld->name) == 0) {
-			deviceFound = true;
-			break;
-		}
+        if (strcmp(logicalDeviceName, ld->name) == 0) {
+            deviceFound = true;
+            break;
+        }
 
-		device = LinkedList_getNext(device);
-	}
+        device = LinkedList_getNext(device);
+    }
 
-	if (!deviceFound) {
-		*error = IED_ERROR_OBJECT_REFERENCE_INVALID;
-		return NULL;
-	}
+    if (!deviceFound) {
+        *error = IED_ERROR_OBJECT_REFERENCE_INVALID;
+        return NULL;
+    }
 
-	LinkedList variable = LinkedList_getNext(ld->variables);
+    LinkedList variable = LinkedList_getNext(ld->variables);
 
-	LinkedList dataDirectory = LinkedList_create();
+    LinkedList dataDirectory = LinkedList_create();
 
-	while (variable != NULL) {
-		char* variableName = (char*) variable->data;
+    while (variable != NULL) {
+        char* variableName = (char*) variable->data;
 
-		char* fcPos = strchr(variableName, '$');
+        char* fcPos = strchr(variableName, '$');
 
-		if (fcPos != NULL) {
-			int lnNameLen = fcPos - variableName;
+        if (fcPos != NULL) {
+            int lnNameLen = fcPos - variableName;
 
-			if (logicalNodeNameLen == lnNameLen) {
+            if (logicalNodeNameLen == lnNameLen) {
 
-				if (memcmp(variableName, logicalNodeName, lnNameLen) == 0) {
+                if (memcmp(variableName, logicalNodeName, lnNameLen) == 0) {
 
-					/* ok we are in the correct logical node */
+                    /* ok we are in the correct logical node */
 
-					/* skip FC */
-					char* fcEnd = strchr(fcPos + 1, '$');
+                    /* skip FC */
+                    char* fcEnd = strchr(fcPos + 1, '$');
 
-					if (fcEnd == NULL)
-						goto next_variable;
+                    if (fcEnd == NULL)
+                        goto next_variable;
 
-					char* remainingPart = fcEnd + 1;
+                    char* remainingPart = fcEnd + 1;
 
-					int remainingLen = strlen(remainingPart);
+                    int remainingLen = strlen(remainingPart);
 
-					if (remainingLen <= dataNamePartLen)
-						goto next_variable;
+                    if (remainingLen <= dataNamePartLen)
+                        goto next_variable;
 
-					if (remainingPart[dataNamePartLen] == '$') {
+                    if (remainingPart[dataNamePartLen] == '$') {
 
-						if (memcmp(dataNamePart, remainingPart, dataNamePartLen) == 0) {
+                        if (memcmp(dataNamePart, remainingPart, dataNamePartLen) == 0) {
 
-							char* subElementName = remainingPart + dataNamePartLen + 1;
+                            char* subElementName = remainingPart + dataNamePartLen + 1;
 
-							char* subElementNameSep = strchr(subElementName, '$');
+                            char* subElementNameSep = strchr(subElementName, '$');
 
-							if (subElementNameSep != NULL)
-								goto next_variable;
+                            if (subElementNameSep != NULL)
+                                goto next_variable;
 
-							char* elementName;
+                            char* elementName;
 
-							if (withFc) {
-								int elementNameLen = strlen(subElementName);
+                            if (withFc) {
+                                int elementNameLen = strlen(subElementName);
 
-								elementName = (char*) malloc(elementNameLen + 5);
-								memcpy(elementName, subElementName, elementNameLen);
-								elementName[elementNameLen] = '[';
-								elementName[elementNameLen + 1] = *(fcPos + 1);
-								elementName[elementNameLen + 2] = *(fcPos + 2);
-								elementName[elementNameLen + 3] = ']';
-								elementName[elementNameLen + 4] = 0;
-							}
-							else
-								elementName = copyString(subElementName);
+                                elementName = (char*) malloc(elementNameLen + 5);
+                                memcpy(elementName, subElementName, elementNameLen);
+                                elementName[elementNameLen] = '[';
+                                elementName[elementNameLen + 1] = *(fcPos + 1);
+                                elementName[elementNameLen + 2] = *(fcPos + 2);
+                                elementName[elementNameLen + 3] = ']';
+                                elementName[elementNameLen + 4] = 0;
+                            }
+                            else
+                                elementName = copyString(subElementName);
 
-							if (!addToStringSet(dataDirectory, elementName))
-								free(elementName);
-						}
-					}
-				}
-			}
-		}
+                            if (!addToStringSet(dataDirectory, elementName))
+                                free(elementName);
+                        }
+                    }
+                }
+            }
+        }
 
-		next_variable:
+        next_variable:
 
-		variable = LinkedList_getNext(variable);
-	}
+        variable = LinkedList_getNext(variable);
+    }
 
-	*error = IED_ERROR_OK;
-	return dataDirectory;
+    *error = IED_ERROR_OK;
+    return dataDirectory;
 
 }
 
 LinkedList
 IedConnection_getDataDirectory(IedConnection self, IedClientError* error,
-		char* dataReference)
+        char* dataReference)
 {
-	return getDataDirectory(self, error, dataReference, false);
+    return getDataDirectory(self, error, dataReference, false);
 }
 
 LinkedList
 IedConnection_getDataDirectoryFC(IedConnection self, IedClientError* error,
-		char* dataReference)
+        char* dataReference)
 {
-	return getDataDirectory(self, error, dataReference, true);
+    return getDataDirectory(self, error, dataReference, true);
 }
 
-
 ClientDataSet
-IedConnection_getDataSet(IedConnection self, IedClientError* error, char* dataSetReference,
-		ClientDataSet dataSet)
+IedConnection_getDataSetValues(IedConnection self, IedClientError* error, char* dataSetReference,
+        ClientDataSet dataSet)
 {
     char* domainId;
     char* itemId;
@@ -1121,13 +1113,13 @@ IedConnection_getDataSet(IedConnection self, IedClientError* error, char* dataSe
 
     itemId = copyString(dataSetReference + strlen(domainId) + 1);
 
-    toMmsItemId(itemId);
+    StringUtils_replace(itemId, '.', '$');
 
     MmsClientError mmsError;
 
     MmsValue* dataSetVal =
             MmsConnection_readNamedVariableListValues(self->connection, &mmsError,
-            		domainId, itemId, true);
+                    domainId, itemId, true);
 
     free(itemId);
 
@@ -1145,17 +1137,12 @@ IedConnection_getDataSet(IedConnection self, IedClientError* error, char* dataSe
         MmsValue_update(dataSetValues, dataSetVal);
     }
 
- cleanup_and_exit:
-     return dataSet;
+    cleanup_and_exit:
+    return dataSet;
 }
 
-void
-IedConnection_enableReporting(IedConnection self, IedClientError* error,
-		char* rcbReference,
-		ClientDataSet dataSet,
-		int triggerOptions,
-		ReportCallbackFunction callback,
-		void* callbackParameter)
+static void
+writeReportResv(IedConnection self, IedClientError* error, char* rcbReference, bool resvValue)
 {
     char* domainId;
     char* itemId;
@@ -1169,9 +1156,69 @@ IedConnection_enableReporting(IedConnection self, IedClientError* error,
 
     strcpy(itemId, rcbReference + strlen(domainId) + 1);
 
-    toMmsItemId(itemId);
+    StringUtils_replace(itemId, '.', '$');
 
-    if (DEBUG) printf("enable report for (%s) (%s)\n", domainId, itemId);
+    if (DEBUG)
+        printf("reserve report for (%s) (%s)\n", domainId, itemId);
+
+    int itemIdLen = strlen(itemId);
+
+    strcpy(itemId + itemIdLen, "$Resv");
+
+    MmsValue* resv = MmsValue_newBoolean(resvValue);
+
+    MmsIndication indication =
+            MmsConnection_writeVariable(self->connection, &mmsError, domainId,
+                    itemId, resv);
+
+    MmsValue_delete(resv);
+
+    if (indication != MMS_OK) {
+        if (DEBUG)
+            printf("  failed to write to RCB!\n");
+        *error = mapMmsErrorToIedError(mmsError);
+    }
+    else {
+        *error = *error = IED_ERROR_OK;
+    }
+}
+
+void
+IedConnection_reserveRCB(IedConnection self, IedClientError* error, char* rcbReference)
+{
+    writeReportResv(self, error, rcbReference, true);
+}
+
+void
+IedConnection_releaseRCB(IedConnection self, IedClientError* error, char* rcbReference)
+{
+    writeReportResv(self, error, rcbReference, false);
+}
+
+void
+IedConnection_enableReporting(IedConnection self, IedClientError* error,
+        char* rcbReference,
+        ClientDataSet dataSet,
+        int triggerOptions,
+        ReportCallbackFunction callback,
+        void* callbackParameter)
+{
+    char* domainId;
+    char* itemId;
+
+    MmsClientError mmsError;
+
+    domainId = (char*) alloca(129);
+    itemId = (char*) alloca(129);
+
+    domainId = MmsMapping_getMmsDomainFromObjectReference(rcbReference, domainId);
+
+    strcpy(itemId, rcbReference + strlen(domainId) + 1);
+
+    StringUtils_replace(itemId, '.', '$');
+
+    if (DEBUG)
+        printf("enable report for (%s) (%s)\n", domainId, itemId);
 
     int itemIdLen = strlen(itemId);
 
@@ -1181,12 +1228,14 @@ IedConnection_enableReporting(IedConnection self, IedClientError* error,
 
     if (datSet != NULL) {
 
-        if (DEBUG) printf("RCB has dataset: %s\n", MmsValue_toString(datSet));
+        if (DEBUG)
+            printf("RCB has dataset: %s\n", MmsValue_toString(datSet));
 
         bool matching = false;
 
         if (strcmp(MmsValue_toString(datSet), ClientDataSet_getReference(dataSet)) == 0) {
-            if (DEBUG) printf("  data sets are matching!\n");
+            if (DEBUG)
+                printf("  data sets are matching!\n");
             matching = true;
         }
         else {
@@ -1204,7 +1253,8 @@ IedConnection_enableReporting(IedConnection self, IedClientError* error,
 
     }
     else {
-        if (DEBUG) printf("Error accessing RCB!\n");
+        if (DEBUG)
+            printf("Error accessing RCB!\n");
         *error = IED_ERROR_ACCESS_DENIED;
         return;
     }
@@ -1213,10 +1263,11 @@ IedConnection_enableReporting(IedConnection self, IedClientError* error,
 
     strcpy(itemId + itemIdLen, "$OptFlds");
     MmsValue* optFlds = MmsConnection_readVariable(self->connection, &mmsError,
-    		domainId, itemId);
+            domainId, itemId);
 
     if (MmsValue_getBitStringBit(optFlds, 4) == true) {
-        if (DEBUG) printf("  data set reference is included in report.\n");
+        if (DEBUG)
+            printf("  data set reference is included in report.\n");
         MmsValue_delete(optFlds);
     }
     else {
@@ -1228,7 +1279,8 @@ IedConnection_enableReporting(IedConnection self, IedClientError* error,
         MmsValue_delete(optFlds);
 
         if (indication != MMS_OK) {
-            if (DEBUG) printf("  failed to write to RCB!\n");
+            if (DEBUG)
+                printf("  failed to write to RCB!\n");
             *error = mapMmsErrorToIedError(mmsError);
             goto cleanup_and_exit;
         }
@@ -1238,8 +1290,8 @@ IedConnection_enableReporting(IedConnection self, IedClientError* error,
     if (triggerOptions != 0) {
         strcpy(itemId + itemIdLen, "$TrgOps");
 
-        MmsValue* trgOps =  MmsConnection_readVariable(self->connection, &mmsError,
-        		domainId, itemId);
+        MmsValue* trgOps = MmsConnection_readVariable(self->connection, &mmsError,
+                domainId, itemId);
 
         if (trgOps != NULL) {
             MmsValue_deleteAllBitStringBits(trgOps);
@@ -1257,12 +1309,13 @@ IedConnection_enableReporting(IedConnection self, IedClientError* error,
 
             MmsIndication indication =
                     MmsConnection_writeVariable(self->connection, &mmsError, domainId,
-                    		itemId, trgOps);
+                            itemId, trgOps);
 
             MmsValue_delete(trgOps);
         }
         else {
-            if (DEBUG) printf("  failed to read RCB!\n");
+            if (DEBUG)
+                printf("  failed to read trigger options!\n");
             *error = mapMmsErrorToIedError(mmsError);
             MmsValue_delete(trgOps);
             goto cleanup_and_exit;
@@ -1273,7 +1326,7 @@ IedConnection_enableReporting(IedConnection self, IedClientError* error,
     strcpy(itemId + itemIdLen, "$RptEna");
     MmsValue* rptEna = MmsValue_newBoolean(true);
     MmsIndication indication =
-           MmsConnection_writeVariable(self->connection, &mmsError, domainId, itemId, rptEna);
+            MmsConnection_writeVariable(self->connection, &mmsError, domainId, itemId, rptEna);
 
     MmsValue_delete(rptEna);
 
@@ -1282,15 +1335,17 @@ IedConnection_enableReporting(IedConnection self, IedClientError* error,
         report->callback = callback;
         report->callbackParameter = callbackParameter;
         LinkedList_add(self->enabledReports, report);
-        if (DEBUG) printf("Successfully enabled report!\n");
+        if (DEBUG)
+            printf("Successfully enabled report!\n");
     }
     else {
-        if (DEBUG) printf("Failed to enable report!\n");
+        if (DEBUG)
+            printf("Failed to enable report!\n");
         *error = mapMmsErrorToIedError(mmsError);
     }
 
- cleanup_and_exit:
-     return;
+    cleanup_and_exit:
+    return;
 }
 
 void
@@ -1306,7 +1361,7 @@ IedConnection_disableReporting(IedConnection self, IedClientError* error, char* 
 
     strcpy(itemId, rcbReference + strlen(domainId) + 1);
 
-    toMmsItemId(itemId);
+    StringUtils_replace(itemId, '.', '$');
 
     if (DEBUG)
         printf("disable reporting for (%s) (%s)\n", domainId, itemId);
@@ -1324,9 +1379,52 @@ IedConnection_disableReporting(IedConnection self, IedClientError* error, char* 
     MmsValue_delete(rptEna);
 
     if (indication != MMS_OK) {
-        if (DEBUG) printf("  failed to disable RCB!\n");
+        if (DEBUG)
+            printf("  failed to disable RCB!\n");
 
         *error = mapMmsErrorToIedError(errorCode);
+    }
+    else {
+        *error = IED_ERROR_OK;
+    }
+}
+
+void
+IedConnection_triggerGIReport(IedConnection self, IedClientError* error, char* rcbReference)
+{
+    char* domainId;
+    char* itemId;
+
+    domainId = (char*) alloca(129);
+    itemId = (char*) alloca(129);
+
+    domainId = MmsMapping_getMmsDomainFromObjectReference(rcbReference,
+            domainId);
+
+    strcpy(itemId, rcbReference + strlen(domainId) + 1);
+
+    StringUtils_replace(itemId, '.', '$');
+
+    int itemIdLen = strlen(itemId);
+
+    strcpy(itemId + itemIdLen, "$GI");
+
+    MmsConnection mmsCon = IedConnection_getMmsConnection(self);
+
+    MmsClientError mmsError;
+
+    MmsValue* gi = MmsValue_newBoolean(true);
+
+    MmsIndication indication =
+            MmsConnection_writeVariable(mmsCon, &mmsError, domainId, itemId, gi);
+
+    MmsValue_delete(gi);
+
+    if (indication != MMS_OK) {
+        if (DEBUG)
+            printf("failed to trigger GI for %s!\n", rcbReference);
+
+        *error = mapMmsErrorToIedError(mmsError);
     }
     else {
         *error = IED_ERROR_OK;
@@ -1336,14 +1434,13 @@ IedConnection_disableReporting(IedConnection self, IedClientError* error, char* 
 MmsConnection
 IedConnection_getMmsConnection(IedConnection self)
 {
-	return self->connection;
+    return self->connection;
 }
-
 
 LastApplError
 IedConnection_getLastApplError(IedConnection self)
 {
-	return self->lastApplError;
+    return self->lastApplError;
 }
 
 void
@@ -1357,5 +1454,4 @@ IedConnectionPrivate_removeControlClient(IedConnection self, ControlObjectClient
 {
     LinkedList_remove(self->clientControls, control);
 }
-
 

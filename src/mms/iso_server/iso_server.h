@@ -80,6 +80,9 @@ IsoServer_create();
 void
 IsoServer_setTcpPort(IsoServer self, int port);
 
+void
+IsoServer_setLocalIpAddress(IsoServer self, char* ipAddress);
+
 IsoServerState
 IsoServer_getState(IsoServer self);
 

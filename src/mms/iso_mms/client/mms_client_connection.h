@@ -25,7 +25,7 @@
 #define MMS_CLIENT_CONNECTION_H_
 
 /**
- * \defgroup client_api_group IEC 61850 MMS client API
+ * \defgroup mms_client_api_group MMS client API
  */
 /**@{*/
 
@@ -266,7 +266,7 @@ MmsConnection_readMultipleVariables(MmsConnection self, MmsClientError* mmsError
 		LinkedList /*<char*>*/ items);
 
 /**
- * Write a single variable to the server.
+ * \brief Write a single variable to the server.
  *
  * \param self MmsConnection instance to operate on
  * \param mmsError user provided variable to store error code
@@ -279,6 +279,30 @@ MmsConnection_readMultipleVariables(MmsConnection self, MmsClientError* mmsError
 MmsIndication
 MmsConnection_writeVariable(MmsConnection self, MmsClientError* mmsError,
         char* domainId, char* itemId, MmsValue* value);
+
+/**
+ * \brief Write multiple variables at the server  (NOT YET IMPLEMENTED).
+ *
+ * This function will write multiple variables at the server.
+ *
+ * The parameter accessResults is a pointer to a LinkedList reference. The methods will create a new LinkedList
+ * object that contains the AccessResults of the single variable write attempts. It is up to the user to free this
+ * objects properly (e.g. with LinkedList_destroyDeep(accessResults, MmsValue_delete)).
+ *
+ * \param self MmsConnection instance to operate on
+ * \param mmsError user provided variable to store error code
+ * \param domainId the common domain name of all variables to be written
+ * \param items a linked list containing the names of the variables to be written. The names are C strings.
+ * \param values values of the variables to be written
+ * \param (OUTPUT) the MmsValue objects of type MMS_DATA_ACCESS_ERROR representing the write success of a single variable
+ *        write.
+ *
+ * \return MMS_OK if the service succeeded. MMS_ERROR if a service error occurred.
+ */
+MmsIndication
+MmsConnection_writeMultipleVariables(MmsConnection self, MmsClientError* mmsError, char* domainId,
+        LinkedList /*<char*>*/ items, LinkedList /* <MmsValue*> */ values,
+        LinkedList* /* <MmsValue*> */ accessResults);
 
 /**
  * Get the variable access attributes of a MMS named variable of the server
@@ -336,7 +360,7 @@ MmsConnection_readNamedVariableListValuesAssociationSpecific(MmsConnection self,
  * \param domainId the domain name of the domain for the new variable list
  * \param listName the name of the named variable list
  * \param variableSpecs a list of variable specifications for the new variable list. The list
- *        elements have to be of type MmsVariableSpecification.
+ *        elements have to be of type MmsVariableAccessSpecification*.
  *
  * \return MMS_OK on success. MMS_ERROR if the write attempt failed.
  */
@@ -352,7 +376,7 @@ MmsConnection_defineNamedVariableList(MmsConnection self, MmsClientError* mmsErr
  * \param mmsError user provided variable to store error code
  * \param listName the name of the named variable list
  * \param variableSpecs list of variable specifications for the new variable list.The list
- *        elements have to be of type MmsVariableSpecification.
+ *        elements have to be of type MmsVariableAccessSpecification*.
  *
  * \return MMS_OK on success. MMS_ERROR if the write attempt failed.
  */
@@ -372,7 +396,7 @@ MmsConnection_defineNamedVariableListAssociationSpecific(MmsConnection self, Mms
  *
  * \return List of names of the variable list entries or NULL if the request failed
  */
-LinkedList /* <MmsVariableSpecification*> */
+LinkedList /* <MmsVariableAccessSpecification*> */
 MmsConnection_readNamedVariableListDirectory(MmsConnection self, MmsClientError* mmsError,
         char* domainId, char* listName, bool* deletable);
 
@@ -385,7 +409,7 @@ MmsConnection_readNamedVariableListDirectory(MmsConnection self, MmsClientError*
  *
  * \return List of names of the variable list entries or NULL if the request failed
  */
-LinkedList /* <MmsVariableSpecification*> */
+LinkedList /* <MmsVariableAccessSpecification*> */
 MmsConnection_readAssociationSpecificNamedVariableListDirectory(MmsConnection self, MmsClientError* mmsError,
         char* listName);
 
@@ -446,6 +470,14 @@ MmsVariableAccessSpecification_create(char* domainId, char* itemId);
 MmsVariableAccessSpecification*
 MmsVariableAccessSpecification_createAlternateAccess(char* domainId, char* itemId, int32_t index,
 		char* componentName);
+
+/**
+ * Delete the MmsVariableAccessSpecification data structure
+ *
+ * \param self the instance to delete
+ */
+void
+MmsVariableAccessSpecification_destroy(MmsVariableAccessSpecification* self);
 
 /**
  * Get the MMS local detail parameter (local detail means maximum MMS PDU size). This defaults to

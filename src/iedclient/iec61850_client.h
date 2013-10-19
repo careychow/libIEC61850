@@ -32,15 +32,9 @@
 #include "linked_list.h"
 
 /**
- * \addtogroup  client_api_group
+ *  * \defgroup iec61850_client_api_group IEC 61850/MMS client API
  */
 /**@{*/
-
-#define TRG_OPT_DATA_CHANGED 1
-#define TRG_OPT_QUALITY_CHANGED 2
-#define TRG_OPT_DATA_UPDATE 4
-#define TRG_OPT_INTEGRITY 8
-#define TRG_OPT_GI 16
 
 typedef struct sIedConnection* IedConnection;
 typedef struct sClientDataSet* ClientDataSet;
@@ -62,12 +56,39 @@ typedef enum {
     IED_ERROR_OBJECT_REFERENCE_INVALID,
 } IedClientError;
 
+
+/**************************************************
+ * Connection creation and destruction
+ **************************************************/
+
 IedConnection
 IedConnection_create();
 
 void
+IedConnection_destroy(IedConnection self);
+
+/**************************************************
+ * Association service
+ **************************************************/
+
+/**
+ * \brief Connect to a server
+ *
+ * \param self the connection object
+ * \param error the error code if an error occurs
+ * \param hostname the host name or IP address of the server to connect to
+ * \param tcpPort the TCP port number of the server to connect to
+ */
+void
 IedConnection_connect(IedConnection self, IedClientError* error, char* hostname, int tcpPort);
 
+/**
+ * \brief Close the connection
+ *
+ * This will close the MMS association and the underlying TCP connection.
+ *
+ * \param self the connection object
+ */
 void
 IedConnection_close(IedConnection self);
 
@@ -84,18 +105,41 @@ IedConnection_close(IedConnection self);
 MmsConnection
 IedConnection_getMmsConnection(IedConnection self);
 
-void
-IedConnection_destroy(IedConnection self);
+
 
 
 /********************************************
  * Reporting services
  ********************************************/
 
+/**
+ * \brief Reserve a report control block (RCB)
+ *
+ * \param self the connection object
+ * \param error the error code if an error occurs
+ * \param rcbReference object reference of the report control block
+ */
+void
+IedConnection_reserveRCB(IedConnection self, IedClientError* error, char* rcbReference);
+
+/**
+ * \brief Release a report control block (RCB)
+ *
+ * \param self the connection object
+ * \param error the error code if an error occurs
+ * \param rcbReference object reference of the report control block
+ */
+void
+IedConnection_releaseRCB(IedConnection self, IedClientError* error, char* rcbReference);
+
 typedef void (*ReportCallbackFunction) (void* parameter, ClientReport report);
 
 /**
  * \brief enable a report control block (RCB)
+ *
+ * It is important that you provide a ClientDataSet instance that is already populated with an MmsValue object
+ * of type MMS_STRUCTURE that contains the data set entries as structure elements. This is required because otherwise
+ * the report handler is not able to correctly parse the report message from the server.
  *
  * \param connection the connection object
  * \param error the error code if an error occurs
@@ -112,8 +156,27 @@ void
 IedConnection_enableReporting(IedConnection self, IedClientError* error, char* rcbReference, ClientDataSet dataSet,
         int triggerOptions, ReportCallbackFunction callback, void* callbackParameter);
 
+/**
+ * \brief disable a report control block (RCB)
+ *
+ * \param self the connection object
+ * \param error the error code if an error occurs
+ * \param rcbReference object reference of the report control block
+ */
 void
 IedConnection_disableReporting(IedConnection self, IedClientError* error, char* rcbReference);
+
+/**
+ * \brief Trigger a general interrogation (GI) report for the specified report control block (RCB)
+ *
+ * The RCB must have been enabled and GI set as trigger option before this command can be performed.
+ *
+ * \param connection the connection object
+ * \param error the error code if an error occurs
+ * \param rcbReference object reference of the report control block
+ */
+void
+IedConnection_triggerGIReport(IedConnection self, IedClientError* error, char* rcbReference);
 
 
 /**
@@ -121,7 +184,7 @@ IedConnection_disableReporting(IedConnection self, IedClientError* error, char* 
  *
  * Create a new data set and enable reporting for that data set.
  *
- * \param connection the connection object
+ * \param self the connection object
  * \param error the error code if an error occurs
  * \param fcda the data set members of the newly created data set
  */
@@ -133,13 +196,33 @@ IedConnection_addSubscription(IedConnection self, IedClientError* error, char* f
  * Data model access services
  ****************************************/
 
-
+/**
+ * \brief read a functional constrained data attribute (FCDA) or functional constrained data (FCD).
+ *
+ * \param self  the connection object to operate on
+ * \param error the error code if an error occurs
+ * \param object reference of the object/attribute to read
+ * \param fc the functional contraint of the data attribute or data object to read
+ */
 MmsValue*
 IedConnection_readObject(IedConnection self, IedClientError* error, char* objectReference, FunctionalConstraint fc);
 
+/**
+ * \brief write a functional constrained data attribute (FCDA) or functional constrained data (FCD).
+ *
+ * \param self  the connection object to operate on
+ * \param error the error code if an error occurs
+ * \param object reference of the object/attribute to write
+ * \param fc the functional contraint of the data attribute or data object to write
+ * \param value the MmsValue to write (has to be of the correct type - MMS_STRUCTURE for FCD)
+ */
 void
 IedConnection_writeObject(IedConnection self, IedClientError* error, char* objectReference, FunctionalConstraint fc,
         MmsValue* value);
+
+/****************************************
+ * Data set handling
+ ****************************************/
 
 /**
  * \brief get data set values from a server device
@@ -153,8 +236,59 @@ IedConnection_writeObject(IedConnection self, IedClientError* error, char* objec
  * \return data set instance with retrieved values of NULL if an error occurred.
  */
 ClientDataSet
-IedConnection_getDataSet(IedConnection self, IedClientError* error, char* objectReference, ClientDataSet dataSet);
+IedConnection_getDataSetValues(IedConnection self, IedClientError* error, char* dataSetReference, ClientDataSet dataSet);
 
+/**
+ * \brief create a new data set at the connected server device (NOT YET IMPLEMENTED)
+ *
+ * This function creates a new data set at the server. The parameter dataSetReference is the name of the new data set
+ * to create. It is either in the form LDName/LNodeName.dataSetName or @dataSetName for an association specific data set.
+ *
+ * The dataSetElements parameter contains a linked list containing the object references of FCDs or FCDAs. The format of
+ * this object references is LDName/LNodeName.item(arrayIndex)component[FC].
+ *
+ * \param connection the connection object
+ * \param error the error code if an error occurs
+ * \param dataSetReference object reference of the data set
+ * \param dataSetElements a list of object references defining the members of the new data set
+ *
+ */
+void
+IedConnection_createDataSet(IedConnection self, IedClientError* error, char* dataSetReference, LinkedList /* char* */ dataSetElements);
+
+/**
+ * \brief delete a deletable data set at the connected server device (NOT YET IMPLEMENTED)
+ *
+ * This function deletes a data set at the server. The parameter dataSetReference is the name of the data set
+ * to delete. It is either in the form LDName/LNodeName.dataSetName or @dataSetName for an association specific data set.
+ *
+ *
+ * \param connection the connection object
+ * \param error the error code if an error occurs
+ * \param dataSetReference object reference of the data set
+ */
+void
+IedConnection_deleteDataSet(IedConnection self, IedClientError* error, char* dataSetReference);
+
+
+/******************************************************
+ * Data set object
+ *****************************************************/
+
+ClientDataSet
+ClientDataSet_create(char* dataSetReference);
+
+void
+ClientDataSet_setDataSetValues(ClientDataSet self, MmsValue* dataSetValues);
+
+MmsValue*
+ClientDataSet_getDataSetValues(ClientDataSet self);
+
+char*
+ClientDataSet_getReference(ClientDataSet self);
+
+int
+ClientDataSet_getDataSetSize(ClientDataSet self);
 
 /************************************
  *  Control service functions
@@ -284,20 +418,6 @@ IedConnection_getVariableSpecification(IedConnection self, IedClientError* error
 GooseSubscriber
 IedConnection_createGooseSubscriber(IedConnection self, char* gooseCBReference);
 
-ClientDataSet
-ClientDataSet_create(char* dataSetReference);
-
-void
-ClientDataSet_setDataSetValues(ClientDataSet self, MmsValue* dataSetValues);
-
-MmsValue*
-ClientDataSet_getDataSetValues(ClientDataSet self);
-
-char*
-ClientDataSet_getReference(ClientDataSet self);
-
-int
-ClientDataSet_getDataSetSize(ClientDataSet self);
 
 /**@}*/
 

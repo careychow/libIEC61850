@@ -54,6 +54,7 @@ ReportControl_create(bool buffered)
     self->triggered = false;
     self->timeOfEntry = NULL;
     self->reservationTimeout = 0;
+    self->triggerOps = 0;
     return self;
 }
 
@@ -217,6 +218,7 @@ sendReport(ReportControl* self, bool isIntegrity, bool isGI)
         }
     }
 
+    /* add reason code to report if requested */
     if (MmsValue_getBitStringBit(optFlds, 3)) {
         for (i = 0; i < self->dataSet->elementCount; i++) {
 
@@ -253,6 +255,11 @@ sendReport(ReportControl* self, bool isIntegrity, bool isGI)
         }
     }
 
+    /* clear inclusion flags */
+    for (i = 0; i < self->dataSet->elementCount; i++) {
+        self->inclusionFlags[i] = REPORT_CONTROL_NONE;
+    }
+
     MmsServerConnection_sendInformationReportVMDSpecific(self->clientConnection, "RPT", reportElements);
 
     /* Increase sequence number */
@@ -270,16 +277,11 @@ sendReport(ReportControl* self, bool isIntegrity, bool isGI)
     }
 }
 
-
-
-
 void
 ReportControl_triggerGI(ReportControl* self)
 {
     self->gi = true;
 }
-
-
 
 void
 ReportControl_valueUpdated(ReportControl* self, int dataSetEntryIndex, ReportInclusionFlag flag)
@@ -725,103 +727,123 @@ Reporting_createMmsUnbufferedRCBs(MmsMapping* self, MmsDomain* domain,
 }
 
 
-MmsValueIndication
+MmsDataAccessError
 Reporting_RCBWriteAccessHandler(MmsMapping* self, ReportControl* rc, char* elementName, MmsValue* value,
         MmsServerConnection* connection)
 {
     if (strcmp(elementName, "RptEna") == 0) {
 
-      if (value->value.boolean == true) {
+        if (value->value.boolean == true) {
 
-          if (rc->enabled == true)
-              return MMS_VALUE_ACCESS_DENIED;
+            if (rc->enabled == true)
+                return DATA_ACCESS_ERROR_TEMPORARILY_UNAVAILABLE;
 
-          if (DEBUG) printf("Activate report for client %s\n",
-                  MmsServerConnection_getClientAddress(connection));
+            if (DEBUG)
+                printf("Activate report for client %s\n",
+                        MmsServerConnection_getClientAddress(connection));
 
-          MmsValue* dataSetValue;
+            MmsValue* dataSetValue;
 
-          dataSetValue = ReportControl_getRCBValue(rc, "DatSet");
+            dataSetValue = ReportControl_getRCBValue(rc, "DatSet");
 
-          char* dataSetName = MmsValue_toString(dataSetValue);
+            char* dataSetName = MmsValue_toString(dataSetValue);
 
-          if (rc->isDynamicDataSet) {
-        	  if (rc->dataSet != NULL)
-        		  MmsMapping_freeDynamicallyCreatedDataSet(rc->dataSet);
-          }
+            if (rc->isDynamicDataSet) {
+                if (rc->dataSet != NULL)
+                    MmsMapping_freeDynamicallyCreatedDataSet(rc->dataSet);
+            }
 
-          if (dataSetValue != NULL ) {
-              DataSet* dataSet = IedModel_lookupDataSet(self->model, dataSetName);
+            if (dataSetValue != NULL) {
+                DataSet* dataSet = IedModel_lookupDataSet(self->model, dataSetName);
 
-              if (dataSet == NULL) {
-            	  dataSet = MmsMapping_getDomainSpecificDataSet(self, dataSetName);
+                if (dataSet == NULL) {
+                    dataSet = MmsMapping_getDomainSpecificDataSet(self, dataSetName);
 
-            	  if (dataSet == NULL)
-            		  return MMS_VALUE_VALUE_INVALID;
+                    if (dataSet == NULL)
+                        return DATA_ACCESS_ERROR_OBJECT_ATTRIBUTE_INCONSISTENT;
 
-            	  rc->isDynamicDataSet = true;
+                    rc->isDynamicDataSet = true;
 
-              }
-              else
-            	  rc->isDynamicDataSet = false;
+                }
+                else
+                    rc->isDynamicDataSet = false;
 
-              rc->dataSet = dataSet;
+                rc->dataSet = dataSet;
 
-              rc->inclusionField = MmsValue_newBitString(
-                      dataSet->elementCount);
+                rc->inclusionField = MmsValue_newBitString(
+                        dataSet->elementCount);
 
-              rc->clientConnection = connection;
+                rc->clientConnection = connection;
 
-              // TODO check integrity bit in trigger options
+                // TODO check integrity bit in trigger options
 
-              MmsValue* intgPd = ReportControl_getRCBValue(rc, "IntgPd");
+                MmsValue* intgPd = ReportControl_getRCBValue(rc, "IntgPd");
 
-              rc->intgPd = MmsValue_toUint32(intgPd);
+                rc->intgPd = MmsValue_toUint32(intgPd);
 
-              MmsValue* rptEna = ReportControl_getRCBValue(rc, "RptEna");
+                MmsValue* rptEna = ReportControl_getRCBValue(rc, "RptEna");
 
-              MmsValue_update(rptEna, value);
+                MmsValue_update(rptEna, value);
 
-              MmsValue* bufTm = ReportControl_getRCBValue(rc, "BufTm");
+                MmsValue* bufTm = ReportControl_getRCBValue(rc, "BufTm");
 
-              rc->bufTm = MmsValue_toUint32(bufTm);
+                rc->bufTm = MmsValue_toUint32(bufTm);
 
-              rc->sqNum = 0;
+                rc->triggerOps = 0;
 
-              rc->inclusionFlags = (ReportInclusionFlag*) calloc(dataSet->elementCount, sizeof(ReportInclusionFlag));
+                MmsValue* trgOps = ReportControl_getRCBValue(rc, "TrgOps");
 
-              rc->enabled = true;
+                if (MmsValue_getBitStringBit(trgOps, 1))
+                    rc->triggerOps += TRG_OPT_DATA_CHANGED;
+                if (MmsValue_getBitStringBit(trgOps, 2))
+                    rc->triggerOps += TRG_OPT_QUALITY_CHANGED;
+                if (MmsValue_getBitStringBit(trgOps, 3))
+                    rc->triggerOps += TRG_OPT_DATA_UPDATE;
+                if (MmsValue_getBitStringBit(trgOps, 4))
+                    rc->triggerOps += TRG_OPT_INTEGRITY;
+                if (MmsValue_getBitStringBit(trgOps, 5))
+                    rc->triggerOps += TRG_OPT_GI;
 
-              return MMS_VALUE_OK;
-          }
+                rc->sqNum = 0;
 
-          return MMS_VALUE_ACCESS_DENIED;
-      } else {
-          if (((rc->enabled) || (rc->reserved)) && (rc->clientConnection != connection))
-              return MMS_VALUE_ACCESS_DENIED;
+                rc->inclusionFlags = (ReportInclusionFlag*) calloc(dataSet->elementCount, sizeof(ReportInclusionFlag));
 
-          if (DEBUG) printf("Deactivate report for client %s\n",
-                          MmsServerConnection_getClientAddress(connection));
+                rc->enabled = true;
 
-          free(rc->inclusionFlags);
-          rc->inclusionFlags = NULL;
+                return DATA_ACCESS_ERROR_SUCCESS;
+            }
 
-          rc->enabled = false;
-      }
+            return DATA_ACCESS_ERROR_OBJECT_ATTRIBUTE_INCONSISTENT;
+        }
+        else {
+            if (((rc->enabled) || (rc->reserved)) && (rc->clientConnection != connection))
+                return DATA_ACCESS_ERROR_TEMPORARILY_UNAVAILABLE;
+
+            if (DEBUG)
+                printf("Deactivate report for client %s\n",
+                        MmsServerConnection_getClientAddress(connection));
+
+            free(rc->inclusionFlags);
+            rc->inclusionFlags = NULL;
+
+            rc->enabled = false;
+        }
 
     }
 
     if (strcmp(elementName, "GI") == 0) {
-      if ((rc->enabled) && (rc->clientConnection == connection)) {
-          rc->gi = true;
-          return MMS_VALUE_OK;
-      }
+        if ((rc->enabled) && (rc->clientConnection == connection)) {
+            rc->gi = true;
+            return DATA_ACCESS_ERROR_SUCCESS;;
+        }
+        else
+            return DATA_ACCESS_ERROR_TEMPORARILY_UNAVAILABLE;
     }
 
     if (rc->enabled == false) {
 
         if ((rc->reserved) && (rc->clientConnection != connection))
-            return MMS_VALUE_ACCESS_DENIED;
+            return DATA_ACCESS_ERROR_TEMPORARILY_UNAVAILABLE;
 
         if (rc->bufferd == false) {
             if (strcmp(elementName, "Resv") == 0) {
@@ -834,15 +856,15 @@ Reporting_RCBWriteAccessHandler(MmsMapping* self, ReportControl* rc, char* eleme
 
         MmsValue* rcbValue = ReportControl_getRCBValue(rc, elementName);
 
-        if (rcbValue != NULL )
+        if (rcbValue != NULL)
             MmsValue_update(rcbValue, value);
         else
-            return MMS_VALUE_VALUE_INVALID;
+            return DATA_ACCESS_ERROR_OBJECT_VALUE_INVALID;
     }
     else
-        return MMS_VALUE_ACCESS_DENIED;
+        return DATA_ACCESS_ERROR_TEMPORARILY_UNAVAILABLE;
 
-    return MMS_VALUE_OK;
+    return DATA_ACCESS_ERROR_SUCCESS;;
 }
 
 void
@@ -854,18 +876,22 @@ Reporting_processReportEvents(MmsMapping* self, uint64_t currentTimeInMs)
         ReportControl* rc = (ReportControl*) element->data;
 
         if (rc->enabled) {
-            if (rc->gi) {
-                updateTimeOfEntry(rc, currentTimeInMs);
-                sendReport(rc, false, true);
-                rc->triggered = false;
+            if (rc->triggerOps & TRG_OPT_GI) {
+                if (rc->gi) {
+                    updateTimeOfEntry(rc, currentTimeInMs);
+                    sendReport(rc, false, true);
+                    rc->triggered = false;
+                }
             }
 
-            if (rc->intgPd > 0) {
-                if (currentTimeInMs >= rc->nextIntgReportTime) {
-                    rc->nextIntgReportTime = currentTimeInMs + rc->intgPd;
-                    updateTimeOfEntry(rc, currentTimeInMs);
-                    sendReport(rc, true, false);
-                    rc->triggered = false;
+            if (rc->triggerOps & TRG_OPT_INTEGRITY) {
+                if (rc->intgPd > 0) {
+                    if (currentTimeInMs >= rc->nextIntgReportTime) {
+                        rc->nextIntgReportTime = currentTimeInMs + rc->intgPd;
+                        updateTimeOfEntry(rc, currentTimeInMs);
+                        sendReport(rc, true, false);
+                        rc->triggered = false;
+                    }
                 }
             }
 

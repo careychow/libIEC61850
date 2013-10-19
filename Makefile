@@ -33,35 +33,36 @@ LIB_SOURCE_DIRS += src/hal/thread/linux
 LIB_SOURCE_DIRS += src/hal/ethernet/linux
 endif
 
-LIB_INCLUDES = -Isrc/mms/iso_presentation/asn1c
-LIB_INCLUDES +=	-Isrc/mms/iso_presentation
-LIB_INCLUDES +=	-Isrc/mms/iso_session
-LIB_INCLUDES +=	-Isrc/mms/iso_cotp
-LIB_INCLUDES +=	-Isrc/mms/iso_acse
-LIB_INCLUDES +=	-Isrc/mms/iso_acse/asn1c
-LIB_INCLUDES +=	-Iinc
-LIB_INCLUDES += -Isrc/mms/asn1
-LIB_INCLUDES += -Isrc/mms/iso_client
-LIB_INCLUDES +=	-Isrc/mms/iso_mms/server
-LIB_INCLUDES +=	-Isrc/mms/iso_mms/common
-LIB_INCLUDES += -Isrc/mms/iso_mms/client
-LIB_INCLUDES +=	-Isrc/mms/iso_mms/asn1c
-LIB_INCLUDES +=	-Isrc/common
-LIB_INCLUDES +=	-Isrc/hal/socket
-LIB_INCLUDES +=	-Isrc/hal/thread
-LIB_INCLUDES +=	-Isrc/hal/ethernet
-LIB_INCLUDES +=	-Isrc/hal
-LIB_INCLUDES +=	-Isrc/goose
-LIB_INCLUDES +=	-Isrc/mms/iso_server
-LIB_INCLUDES += -Isrc/iedclient
-LIB_INCLUDES += -Isrc/iedcommon
-LIB_INCLUDES += -Isrc/iedserver
-LIB_INCLUDES += -Isrc/iedserver/model
-LIB_INCLUDES += -Isrc/iedserver/mms_mapping
+LIB_INCLUDE_DIRS = src/mms/iso_presentation/asn1c
+LIB_INCLUDE_DIRS +=	src/mms/iso_presentation
+LIB_INCLUDE_DIRS +=	src/mms/iso_session
+LIB_INCLUDE_DIRS +=	src/mms/iso_cotp
+LIB_INCLUDE_DIRS +=	src/mms/iso_acse
+LIB_INCLUDE_DIRS +=	src/mms/iso_acse/asn1c
+LIB_INCLUDE_DIRS +=	inc
+LIB_INCLUDE_DIRS += src/mms/asn1
+LIB_INCLUDE_DIRS += src/mms/iso_client
+LIB_INCLUDE_DIRS +=	src/mms/iso_mms/server
+LIB_INCLUDE_DIRS +=	src/mms/iso_mms/common
+LIB_INCLUDE_DIRS += src/mms/iso_mms/client
+LIB_INCLUDE_DIRS +=	src/mms/iso_mms/asn1c
+LIB_INCLUDE_DIRS +=	src/common
+LIB_INCLUDE_DIRS +=	src/hal/socket
+LIB_INCLUDE_DIRS +=	src/hal/thread
+LIB_INCLUDE_DIRS +=	src/hal/ethernet
+LIB_INCLUDE_DIRS +=	src/hal
+LIB_INCLUDE_DIRS +=	src/goose
+LIB_INCLUDE_DIRS +=	src/mms/iso_server
+LIB_INCLUDE_DIRS += src/iedclient
+LIB_INCLUDE_DIRS += src/iedcommon
+LIB_INCLUDE_DIRS += src/iedserver
+LIB_INCLUDE_DIRS += src/iedserver/model
+LIB_INCLUDE_DIRS += src/iedserver/mms_mapping
 ifeq ($(HAL_IMPL), WIN32)
-LIB_INCLUDES += -Ithird_party/winpcap/Include
+LIB_INCLUDE_DIRS += third_party/winpcap/Include
 endif
 
+LIB_INCLUDES = $(addprefix -I,$(LIB_INCLUDE_DIRS))
 
 get_sources_from_directory  = $(wildcard $1/*.c)
 get_sources = $(foreach dir, $1, $(call get_sources_from_directory,$(dir)))
@@ -92,7 +93,7 @@ $(LIB_NAME):	$(LIB_OBJS)
 $(DYN_LIB_NAME):	$(LIB_OBJS)
 	$(CC) $(LDFLAGS) $(DYNLIB_LDFLAGS) -shared -o $(DYN_LIB_NAME) $(LIB_OBJS) $(LDLIBS)
 
-$(LIB_OBJS_DIR)/%.o: %.c
+$(LIB_OBJS_DIR)/%.o: %.c inc
 	@echo compiling $(notdir $<)
 	$(SILENCE)mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $(LIB_INCLUDES) $(OUTPUT_OPTION) $<

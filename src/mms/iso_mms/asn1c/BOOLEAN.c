@@ -117,7 +117,7 @@ BOOLEAN_encode_der(asn_TYPE_descriptor_t *td, void *sptr,
 	if(cb) {
 		uint8_t bool_value;
 
-		bool_value = *st ? 0xff : 0; /* 0xff mandated by DER */
+		bool_value = *st ? 0x01 : 0; /* 0xff mandated by DER - 0x01 required by some IEDs */
 
 		if(cb(&bool_value, 1, app_key) < 0) {
 			erval.encoded = -1;

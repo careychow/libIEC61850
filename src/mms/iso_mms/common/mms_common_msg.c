@@ -245,6 +245,20 @@ mmsMsg_parseDataElement(Data_t* dataElement)
                     dataElement->choice.visiblestring.buf,
                     dataElement->choice.visiblestring.size);
         }
+        else if (dataElement->present == Data_PR_mMSString) {
+        	value = (MmsValue*) calloc(1, sizeof(MmsValue));
+
+        	value->type = MMS_STRING;
+
+        	int strSize = dataElement->choice.mMSString.size;
+
+        	value->value.mmsString = (char*) malloc(strSize + 1);
+
+        	memcpy(value->value.mmsString, dataElement->choice.mMSString.buf, strSize);
+
+        	value->value.mmsString[strSize] = 0;
+
+        }
         else if (dataElement->present == Data_PR_bitstring) {
             value = (MmsValue*) calloc(1, sizeof(MmsValue));
 

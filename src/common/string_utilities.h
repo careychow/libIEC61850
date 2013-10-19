@@ -49,4 +49,16 @@ createStringInBuffer(char* buffer, int count, ...);
 char*
 createStringFromBuffer(uint8_t* buf, int size);
 
+void
+StringUtils_replace(char* string, char oldChar, char newChar);
+
+bool
+StringUtils_isDigit(char character);
+
+int
+StringUtils_digitToInt(char digit);
+
+int
+StringUtils_digitsToInt(char* digits, int count);
+
 #endif /* STRING_UTILITIES_H_ */

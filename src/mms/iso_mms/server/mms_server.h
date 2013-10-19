@@ -53,7 +53,7 @@ typedef struct sMmsServerConnection {
 typedef MmsValue* (*ReadVariableHandler)(void* parameter, MmsDomain* domain,
 		char* variableId, MmsServerConnection* connection);
 
-typedef MmsValueIndication (*WriteVariableHandler)(void* parameter,
+typedef MmsDataAccessError (*WriteVariableHandler)(void* parameter,
 		MmsDomain* domain, char* variableId, MmsValue* value,
 		MmsServerConnection* connection);
 

@@ -28,12 +28,41 @@
 #include "mms_value.h"
 #include "iec61850_common.h"
 
+/** \addtogroup server_api_group
+ *  @{
+ */
+
+/**
+ * \brief abstract base type for IEC 61850 data model nodes
+ */
 typedef struct sModelNode ModelNode;
-typedef struct sLogicalNode LogicalNode;
-typedef struct sDataObject DataObject;
+
+/**
+ * \brief IEC 61850 data model element of type data attribute
+ */
 typedef struct sDataAttribute DataAttribute;
+
+/**
+ * \brief IEC 61850 data model element of type data object
+ */
+typedef struct sDataObject DataObject;
+
+/**
+ * \brief IEC 61850 data model element of type logical node
+ */
+typedef struct sLogicalNode LogicalNode;
+
+/**
+ * \brief IEC 61850 data model element of type logical device
+ */
 typedef struct sLogicalDevice LogicalDevice;
+
+/**
+ * \brief Root node of the IEC 61850 data model. This is usually created by the model generator tool (genmodel.jar)
+ */
 typedef struct sIedModel IedModel;
+
+/**@}*/
 
 typedef struct sDataSet DataSet;
 typedef struct sReportControlBlock ReportControlBlock;
