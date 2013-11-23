@@ -28,37 +28,84 @@
     <div id="content-wrapper">
       <div class="inner clearfix">
         <section id="main-content">
-          <h3>
-<a name="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages"><span class="octicon octicon-link"></span></a>Welcome to GitHub Pages.</h3>
+          <h2>
+<a name="readme" class="anchor" href="#readme"><span class="octicon octicon-link"></span></a>README:</h2>
 
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
+<p>This file is part of the documentation of libiec61850.</p>
 
-<pre><code>$ cd your_repo_root/repo_name
-$ git fetch origin
-$ git checkout gh-pages
-</code></pre>
+<p>Build Status:</p>
 
-<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
+<ul>
+<li><a href="https://travis-ci.org/careychow/libIEC61850"><img src="https://travis-ci.org/careychow/libIEC61850.png?branch=master" alt="Build Status"></a></li>
+</ul><p>Content:</p>
 
-<h3>
-<a name="designer-templates" class="anchor" href="#designer-templates"><span class="octicon octicon-link"></span></a>Designer Templates</h3>
+<ul>
+<li>Overview</li>
+<li>Building and running the example server</li>
+<li>Building on Windows with GOOSE support</li>
+<li>Implementing your own IEC61850 MMS devices</li>
+</ul><h2>
+<a name="overview" class="anchor" href="#overview"><span class="octicon octicon-link"></span></a>Overview</h2>
 
-<p>We've crafted some handsome templates for you to use. Go ahead and continue to layouts to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved if it remained markdown format.</p>
+<p>libiec61850 is an open-source (GPLv3) implementation of an IEC 61850 client and server library. It is implemented in C to provide maximum portability. It can be used to implement IEC 61850 compliant client and server applications on embedded systems and PCs running Linux and Windows. Included is a set of simple example applications that can be used as a starting point to implement your own IEC 61850 compliant devices or to communicate with IEC 61850 devices.</p>
 
-<h3>
-<a name="rather-drive-stick" class="anchor" href="#rather-drive-stick"><span class="octicon octicon-link"></span></a>Rather Drive Stick?</h3>
+<p>The library implements parts of the IEC 61850 specification on top of the MMS mapping. It provides the MMS protocol stack on top of TCP/IP.</p>
 
-<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator written by our own Tom Preston-Werner. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
+<p>The goal of this project is to provide an implementation that can run on memory constrained microcontrollers. But currently the library only runs on embedded linux systems as well as Desktop PCs running Linux or Windows.</p>
 
-<h3>
-<a name="authors-and-contributors" class="anchor" href="#authors-and-contributors"><span class="octicon octicon-link"></span></a>Authors and Contributors</h3>
+<h2>
+<a name="building-and-running-the-examples" class="anchor" href="#building-and-running-the-examples"><span class="octicon octicon-link"></span></a>Building and running the examples</h2>
 
-<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
+<p>In the project root directoy type</p>
 
-<h3>
-<a name="support-or-contact" class="anchor" href="#support-or-contact"><span class="octicon octicon-link"></span></a>Support or Contact</h3>
+<blockquote>
+<p>make examples</p>
+</blockquote>
 
-<p>Having trouble with Pages? Check out the documentation at <a href="http://help.github.com/pages">http://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
+<p>If the build succeeds you can find a few binary files in the projects root directory. You can also find a binary version of the library ("libiec61850.a") in the "build" directory.</p>
+
+<p>Run the sample applications in the example folders. E.g.:</p>
+
+<blockquote>
+<p>cd examples/server_example1
+sudo ./server_example1</p>
+</blockquote>
+
+<p>on the Linux command line.</p>
+
+<p>The example server is tested against the openIEC61850 client example. You can find and download openIEC61850 a Java implementation of IEC 61590 MMS for client and server applications at <a href="http://www.openmuc.org">http://www.openmuc.org</a>.</p>
+
+<h2>
+<a name="building-on-windows-with-goose-support" class="anchor" href="#building-on-windows-with-goose-support"><span class="octicon octicon-link"></span></a>Building on windows with GOOSE support</h2>
+
+<p>To build the library and run libiec61850 applications with GOOSE support on Windows (7/8) the use of a third-party library (winpcap) is required. This is necessary because current versions of Windows have no working support for raw sockets. You can download winpcap here (<a href="http://www.winpcap.org">http://www.winpcap.org</a>).</p>
+
+<ol>
+<li>Download and install winpcap. Make sure that the winpcap driver is loaded at boot time (you can choose this option at the last screen of the winpcap installer).</li>
+<li>Reboot the system (you can do this also later, but you need to reboot or load the winpcap driver before running any llibiec61850 applications that use GOOSE).</li>
+<li>Download the winpcap developers pack from here (<a href="http://www.winpcap.org/install/bin/WpdPack_4_1_2.zip">http://www.winpcap.org/install/bin/WpdPack_4_1_2.zip</a>)</li>
+<li>Unpack the zip file. Copy the folders Lib and Include from the WpdPack directory in the third_party/winpcap directory of libiec61850</li>
+</ol><h2>
+<a name="building-with-the-cmake-build-system" class="anchor" href="#building-with-the-cmake-build-system"><span class="octicon octicon-link"></span></a>Building with the cmake build system</h2>
+
+<p>With the help of the cmake build system it is possible to create platform independet project descriptions and let cmake create specific project or build files for other tools like Make or Visual Studio.</p>
+
+<p>If you have cmake installed fire up a command line (cmd.exe) and create a new subdirectory in the libiec61850-0.x folder. Change to this subdirectory. Then you can invoke cmake. As an command line argument you have to supply a "generator" that is used by cmake to create the project file for the actual build tool (in our case Visual Studio).</p>
+
+<p>cmake -G "Visual Studio 11" ..</p>
+
+<p>will instruct cmake to create a "solution" for Visual Studio 2012. To do the same thing for Visual Studio 2010 type</p>
+
+<p>cmake -G "Visual Studio 10" ..</p>
+
+<p>Note: The ".." at the end of the command line tells cmake where to find the main build script file (called CMakeLists.txt). This should point to the folder libiec61850-0.x which is in our case the parent directory (..).</p>
+
+<h2>
+<a name="implementing-your-own-iec61850-mms-server-devices" class="anchor" href="#implementing-your-own-iec61850-mms-server-devices"><span class="octicon octicon-link"></span></a>Implementing your own IEC61850 MMS server devices</h2>
+
+<p>Until now libiec61850 uses a static server model. That means that the IEC61850 data model is not generated at runtime by reading an ICD file, but by converting an ICD file to static C data structures at compile time.</p>
+
+<p>To provide your own IEC 61850 compliant device model a tool is provided that translates an IED file to C code that can be compiled into the server application.</p>
         </section>
 
         <aside id="sidebar">
