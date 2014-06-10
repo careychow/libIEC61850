@@ -21,8 +21,51 @@
  *  See COPYING file for the complete license text.
  */
 
-
 #include "model.h"
+
+#include "libiec61850_platform_includes.h"
+
+static void
+setAttributeValuesToNull(ModelNode* node)
+{
+    if (node->modelType == DataAttributeModelType) {
+        DataAttribute* da = (DataAttribute*) node;
+
+        da->mmsValue = NULL;
+    }
+
+    ModelNode* child = node->firstChild;
+
+    while (child != NULL) {
+        setAttributeValuesToNull(child);
+        child = child->sibling;
+    }
+}
+
+void
+IedModel_setAttributeValuesToNull(IedModel* iedModel)
+{
+    LogicalDevice* ld = iedModel->firstChild;
+
+    while (ld != NULL) {
+
+        LogicalNode* ln = (LogicalNode*) ld->firstChild;
+
+        while (ln != NULL) {
+            ModelNode* node = ln->firstChild;
+
+            while (node != NULL) {
+                setAttributeValuesToNull(node);
+                node = node->sibling;
+            }
+
+            ln = (LogicalNode*) ln->sibling;
+        }
+
+        ld = (LogicalDevice*) ld->sibling;
+    }
+}
+
 
 
 int
@@ -36,7 +79,7 @@ IedModel_getLogicalDeviceCount(IedModel* iedModel)
 	int ldCount = 1;
 
 	while (logicalDevice->sibling != NULL) {
-		logicalDevice = logicalDevice->sibling;
+		logicalDevice = (LogicalDevice*) logicalDevice->sibling;
 		ldCount++;
 	}
 
@@ -46,7 +89,7 @@ IedModel_getLogicalDeviceCount(IedModel* iedModel)
 DataSet*
 IedModel_lookupDataSet(IedModel* model, char* dataSetReference  /* e.g. ied1Inverter/LLN0$dataset1 */)
 {
-	DataSet* dataSet = model->dataSets[0];
+	DataSet* dataSet = model->dataSets;
 
 	char* separator = strchr(dataSetReference, '/');
 
@@ -55,7 +98,6 @@ IedModel_lookupDataSet(IedModel* model, char* dataSetReference  /* e.g. ied1Inve
 
 	int ldNameLen = separator - dataSetReference;
 
-	int i = 0;
 	while (dataSet != NULL) {
 		if (strncmp(dataSet->logicalDeviceName, dataSetReference, ldNameLen) == 0) {
 			if (strcmp(dataSet->name, separator + 1) == 0) {
@@ -63,12 +105,183 @@ IedModel_lookupDataSet(IedModel* model, char* dataSetReference  /* e.g. ied1Inve
 			}
 		}
 
-		i++;
-		dataSet = model->dataSets[i];
+		dataSet = dataSet->sibling;
 	}
 
 	return NULL;
 }
+
+LogicalDevice*
+IedModel_getDevice(IedModel* model, char* deviceName)
+{
+    LogicalDevice* device = model->firstChild;
+
+    while (device != NULL) {
+        if (strcmp(device->name, deviceName) == 0)
+            return device;
+
+        device = (LogicalDevice*) device->sibling;
+    }
+
+    return NULL;
+}
+
+static DataAttribute*
+ModelNode_getDataAttributeByMmsValue(ModelNode* self, MmsValue* value)
+{
+    ModelNode* node = self->firstChild;
+
+    while (node != NULL) {
+        if (node->modelType == DataAttributeModelType) {
+            DataAttribute* da = (DataAttribute*) node;
+
+            if (da->mmsValue == value)
+                return da;
+        }
+
+        DataAttribute* da = ModelNode_getDataAttributeByMmsValue(node, value);
+
+        if (da != NULL)
+            return da;
+
+        node = node->sibling;
+    }
+
+    return NULL;
+}
+
+DataAttribute*
+IedModel_lookupDataAttributeByMmsValue(IedModel* model, MmsValue* value)
+{
+    LogicalDevice* ld = model->firstChild;
+
+    while (ld != NULL) {
+
+        DataAttribute* da =
+                ModelNode_getDataAttributeByMmsValue((ModelNode*) ld, value);
+
+        if (da != NULL)
+            return da;
+
+
+        ld = (LogicalDevice*) ld->sibling;
+    }
+
+    return NULL;
+}
+
+static ModelNode*
+getChildWithShortAddress(ModelNode* node, uint32_t sAddr)
+{
+    ModelNode* child;
+
+    child = node->firstChild;
+
+    while (child != NULL) {
+        if (child->modelType == DataAttributeModelType) {
+            DataAttribute* da = (DataAttribute*) child;
+
+            if (da->sAddr == sAddr)
+                return child;
+        }
+
+        ModelNode* childChild = getChildWithShortAddress(child, sAddr);
+
+        if (childChild != NULL)
+            return childChild;
+
+        child = child->sibling;
+    }
+
+    return NULL;
+}
+
+ModelNode*
+IedModel_getModelNodeByShortAddress(IedModel* model, uint32_t sAddr)
+{
+    ModelNode* node = NULL;
+
+    LogicalDevice* ld = (LogicalDevice*) model->firstChild;
+
+    while (ld != NULL) {
+
+        LogicalNode* ln = (LogicalNode*) ld->firstChild;
+
+        while (ln != NULL) {
+
+            ModelNode* doNode = ln->firstChild;
+
+            while (doNode != NULL) {
+                ModelNode* matchingNode = getChildWithShortAddress(doNode, sAddr);
+
+                if (matchingNode != NULL)
+                    return matchingNode;
+
+                doNode = doNode->sibling;
+            }
+
+            ln = (LogicalNode*) ln->sibling;
+        }
+
+        ld = (LogicalDevice*) ld->sibling;
+    }
+
+    return node;
+}
+
+ModelNode*
+IedModel_getModelNodeByObjectReference(IedModel* model, char* objectReference)
+{
+    assert(strlen(objectReference) < 129);
+
+    char objRef[130];
+
+    strncpy(objRef, objectReference, 129);
+    objRef[129] = 0;
+
+    char* separator = strchr(objRef, '/');
+
+    if (separator == NULL)
+        return NULL;
+
+    *separator = 0;
+
+    LogicalDevice* ld = IedModel_getDevice(model, objRef);
+
+    if (ld == NULL) return NULL;
+
+    return ModelNode_getChild((ModelNode*) ld, separator + 1);
+}
+
+ModelNode*
+IedModel_getModelNodeByShortObjectReference(IedModel* model, char* objectReference)
+{
+    assert(strlen(objectReference) < 129);
+    assert((strlen(model->name) + strlen(objRef)) < 65);
+
+    char objRef[130];
+
+    strncpy(objRef, objectReference, 129);
+    objRef[129] = 0;
+
+    char* separator = strchr(objRef, '/');
+
+    if (separator == NULL)
+        return NULL;
+
+    *separator = 0;
+
+    char ldName[65];
+    strcpy(ldName, model->name);
+    strcat(ldName, objRef);
+
+    LogicalDevice* ld = IedModel_getDevice(model, ldName);
+
+    if (ld == NULL) return NULL;
+
+    return ModelNode_getChild((ModelNode*) ld, separator + 1);
+}
+
 
 bool
 DataObject_hasFCData(DataObject* dataObject, FunctionalConstraint fc)
@@ -84,9 +297,8 @@ DataObject_hasFCData(DataObject* dataObject, FunctionalConstraint fc)
 				return true;
 		}
 		else if (modelNode->modelType == DataObjectModelType) {
-			DataObject* dataObject = (DataObject*) modelNode;
 
-			if (DataObject_hasFCData(dataObject, fc))
+			if (DataObject_hasFCData((DataObject*) modelNode, fc))
 				return true;
 		}
 
@@ -116,7 +328,7 @@ LogicalDevice_getLogicalNodeCount(LogicalDevice* logicalDevice)
 {
 	int lnCount = 0;
 
-	LogicalNode* logicalNode = logicalDevice->firstChild;
+	LogicalNode* logicalNode = (LogicalNode*) logicalDevice->firstChild;
 
 	while (logicalNode != NULL) {
 		logicalNode = (LogicalNode*) logicalNode->sibling;
@@ -126,13 +338,9 @@ LogicalDevice_getLogicalNodeCount(LogicalDevice* logicalDevice)
 	return lnCount;
 }
 
-//ModelNode_getObjectReference
-
 static int
 createObjectReference(ModelNode* node, char* objectReference)
 {
-    ModelNodeType type;
-
     int bufPos;
 
     if (node->modelType != LogicalNodeModelType) {
@@ -143,7 +351,7 @@ createObjectReference(ModelNode* node, char* objectReference)
     else {
         LogicalNode* lNode = (LogicalNode*) node;
 
-        LogicalDevice* lDevice = lNode->parent;
+        LogicalDevice* lDevice = (LogicalDevice*) lNode->parent;
 
         bufPos = 0;
 
@@ -195,3 +403,48 @@ ModelNode_getChildCount(ModelNode* modelNode) {
 	return childCount;
 }
 
+
+ModelNode*
+ModelNode_getChild(ModelNode* self, char* name)
+{
+    // check for separator
+   char* separator = strchr(name, '.');
+
+   int nameElementLength = 0;
+
+   if (separator != NULL)
+       nameElementLength = (separator - name);
+   else
+       nameElementLength = strlen(name);
+
+   ModelNode* nextNode = self->firstChild;
+
+   ModelNode* matchingNode = NULL;
+
+   while (nextNode != NULL) {
+       int nodeNameLen = strlen(nextNode->name);
+
+       if (nodeNameLen == nameElementLength) {
+           if (memcmp(nextNode->name, name, nodeNameLen) == 0) {
+               matchingNode = nextNode;
+               break;
+           }
+       }
+
+       nextNode = nextNode->sibling;
+   }
+
+   if ((separator != NULL) && (matchingNode != NULL)) {
+       return ModelNode_getChild(matchingNode, separator + 1);
+   }
+   else
+       return matchingNode;
+}
+
+
+inline
+LogicalNode*
+LogicalDevice_getLogicalNode(LogicalDevice* device, char* nodeName)
+{
+    return (LogicalNode*) ModelNode_getChild((ModelNode*) device, nodeName);
+}

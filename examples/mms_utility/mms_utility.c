@@ -59,15 +59,12 @@ int main(int argc, char** argv) {
 
 	MmsConnection con = MmsConnection_create();
 
-	MmsIndication indication;
-	MmsClientError error;
+	MmsError error;
 
 	/* Set maximum MMS PDU size (local detail) to 2000 byte */
 	MmsConnection_setLocalDetail(con, maxPduSize);
 
-	indication = MmsConnection_connect(con, &error, hostname, tcpPort);
-
-	if (indication != MMS_OK) {
+	if (!MmsConnection_connect(con, &error, hostname, tcpPort)) {
 		printf("MMS connect failed!\n");
 		goto exit;
 	}

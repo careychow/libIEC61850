@@ -25,27 +25,17 @@
 #define MMS_CLIENT_CONNECTION_H_
 
 /**
- * \defgroup mms_client_api_group MMS client API
+ * \defgroup mms_client_api_group MMS client API (for IEC 61850 use IEC 61850 client API instead!)
  */
 /**@{*/
 
-#include "libiec61850_platform_includes.h"
+#include "libiec61850_common_api.h"
 
 #include "mms_common.h"
 #include "mms_type_spec.h"
 #include "mms_value.h"
 #include "iso_client_connection.h"
 #include "linked_list.h"
-
-/**
- * Detailed MMS Client error codes
- */
-typedef enum {
-    MMS_ERROR_NONE,
-    MMS_ERROR_TIMEOUT,
-    MMS_ERROR_CONNECTION_LOST,
-    MMS_ERROR_SERVICE_ERROR
-} MmsClientError;
 
 /**
  * Contains MMS layer specific parameters
@@ -77,12 +67,12 @@ typedef struct sMmsConnection* MmsConnection;
  *******************************************************************************/
 
 /**
- * Create a new MmsConnection instance
+ * \brief Create a new MmsConnection instance
  *
  * \return the newly created instance.
  */
 MmsConnection
-MmsConnection_create();
+MmsConnection_create(void);
 
 /**
  * \brief Set the request timeout for this connection
@@ -94,7 +84,8 @@ void
 MmsConnection_setRequestTimeout(MmsConnection self, uint32_t timeoutInMs);
 
 /**
- * Install a handler function for MMS information reports (unsolicited messages from the server).
+ * \brief Install a handler function for MMS information reports (unsolicited messages from the server).
+ *
  * The handler function will be called whenever the client receives an MMS information report message.
  * Note that the API user is responsible to properly free the passed MmsValue object.
  *
@@ -108,16 +99,33 @@ MmsConnection_setInformationReportHandler(MmsConnection self, MmsInformationRepo
         void* parameter);
 
 /**
- * Set the connection parameters for a MmsConnection instance
+ * \brief Get the connection parameters for an MmsConnection instance
  *
  * \param self MmsConnection instance to operate on
- * \param params the parameters to use
+ * \return params the to be used by this connection
  */
-void
-MmsConnection_setConnectionParameters(MmsConnection self, MmsConnectionParameters params);
+IsoConnectionParameters
+MmsConnection_getIsoConnectionParameters(MmsConnection self);
 
 /**
- * Set the ISO connection parameters for a MmsConnection instance
+ * \brief User provided handler function that will be called if the connection to the server is lost
+ *
+ * \param connection MmsConnection object of the lost connection
+ * \param parameter user provided parameter.
+ */
+typedef void (*MmsConnectionLostHandler) (MmsConnection connection, void* parameter);
+
+/**
+ * \brief Install a callback function that will be called by the client stack if the MMS connection to the server is lost
+ *
+ * \param handler the user provided callback function
+ * \param handlerParameter a parameter that will be passed to the callback function. Can be set to NULL if not required.
+ */
+void
+MmsConnection_setConnectionLostHandler(MmsConnection self, MmsConnectionLostHandler handler, void* handlerParameter);
+
+/**
+ * \brief Set the ISO connection parameters for a MmsConnection instance
  *
  * \param self MmsConnection instance to operate on
  * \param params the ISO client parameters to use
@@ -126,21 +134,12 @@ void
 MmsConnection_setIsoConnectionParameters(MmsConnection self, IsoConnectionParameters* params);
 
 /**
- * Destroy a MmsConnection instance and release all resources
+ * \brief Destroy an MmsConnection instance and release all resources
  *
  * \param self MmsConnection instance to operate on
  */
 void
 MmsConnection_destroy(MmsConnection self);
-
-/**
- * Get a detailed description of the last error occurred.
- *
- * \param self MmsConnection instance to operate on
- */
-MmsClientError
-MmsConnection_getError(MmsConnection self);
-
 
 /*******************************************************************************
  * Blocking functions for connection establishment and data access
@@ -148,21 +147,64 @@ MmsConnection_getError(MmsConnection self);
 
 
 /**
- * Connect to a MMS server. This will open a new TCP connection and send
- * a MMS initiate request.
+ * \brief Connect to an MMS server.
+ *
+ * This will open a new TCP connection and send a MMS initiate request.
  *
  * \param self MmsConnection instance to operate on
  * \param mmsError user provided variable to store error code
  * \param serverName hostname or IP address of the server to connect
  * \param serverPort TCP port number of the server to connect (usually 102)
  *
- * \return MMS_OK on success. MMS_ERROR if the connection attempt failed.
+ * \return true on success. false if the connection attempt failed.
  */
-MmsIndication
-MmsConnection_connect(MmsConnection self, MmsClientError* mmsError, char* serverName, int serverPort);
+bool
+MmsConnection_connect(MmsConnection self, MmsError* mmsError, char* serverName, int serverPort);
 
 /**
- * Get the domains names for all domains of the server.
+ * \brief Uses the MMS/ACSE abort service to close the connection to the server
+ *
+ * This service should be used to abruptly interrupt the connection to the server. The TCP connection will
+ * be closed immediately after sending the ACSE abort message to the server. It is not quite clear what the
+ * benefit of this service is (simply closing the TCP connection should do the same). Though it is required by
+ * conformance tests.
+ *
+ * \param self MmsConnection instance to operate on
+ * \param mmsError user provided variable to store error code
+ */
+void
+MmsConnection_abort(MmsConnection self, MmsError* mmsError);
+
+/**
+ * \brief Uses the MMS conclude service to close the connection to the server
+ *
+ * This should be used to orderly release the connection to the server. If the server denies the conclude
+ * request (by sending a concludeError PDU) this service fails with an error (mmsError set accordingly) and
+ * the connection remains open. In this case the close or abort methods have to be used to close the connection.
+ * It is not quite clear if this service is really useful but it is required by conformance tests.
+ *
+ * \param self MmsConnection instance to operate on
+ * \param mmsError user provided variable to store error code
+ */
+void
+MmsConnection_conclude(MmsConnection self, MmsError* mmsError);
+
+
+/**
+ * \brief Get the names of all VMD scope variables of the server.
+ *
+ * This will result in a VMD specific GetNameList request.
+ *
+ * \param self MmsConnection instance to operate on
+ * \param mmsError user provided variable to store error code
+ *
+ * \return the of VMD specific variable names or NULL if the request failed.
+ */
+LinkedList /* <char*> */
+MmsConnection_getVMDVariableNames(MmsConnection self, MmsError* mmsError);
+
+/**
+ * \brief Get the domains names for all domains of the server.
  *
  * This will result in a VMD specific GetNameList request.
  *
@@ -173,10 +215,10 @@ MmsConnection_connect(MmsConnection self, MmsClientError* mmsError, char* server
  *
  */
 LinkedList /* <char*> */
-MmsConnection_getDomainNames(MmsConnection self, MmsClientError* mmsError);
+MmsConnection_getDomainNames(MmsConnection self, MmsError* mmsError);
 
 /**
- * Get the names of all variables present in a MMS domain of the server.
+ * \brief Get the names of all variables present in a MMS domain of the server.
  *
  * This will result in a domain specific GetNameList request.
  *
@@ -187,10 +229,10 @@ MmsConnection_getDomainNames(MmsConnection self, MmsClientError* mmsError);
  * \return the of domain specific variable names or NULL if the request failed.
  */
 LinkedList /* <char*> */
-MmsConnection_getDomainVariableNames(MmsConnection self, MmsClientError* mmsError, char* domainId);
+MmsConnection_getDomainVariableNames(MmsConnection self, MmsError* mmsError, char* domainId);
 
 /**
- * Get the names of all named variable lists present in a MMS domain of the server.
+ * \brief Get the names of all named variable lists present in a MMS domain of the server.
  *
  * This will result in a domain specific GetNameList request.
  *
@@ -201,10 +243,10 @@ MmsConnection_getDomainVariableNames(MmsConnection self, MmsClientError* mmsErro
  * \return the domain specific named variable list names or NULL if the request failed.
  */
 LinkedList /* <char*> */
-MmsConnection_getDomainVariableListNames(MmsConnection self, MmsClientError* mmsError, char* domainId);
+MmsConnection_getDomainVariableListNames(MmsConnection self, MmsError* mmsError, char* domainId);
 
 /**
- * Get the names of all named variable lists associated with this client connection.
+ * \brief Get the names of all named variable lists associated with this client connection.
  *
  * This will result in an association specific GetNameList request.
  *
@@ -214,25 +256,25 @@ MmsConnection_getDomainVariableListNames(MmsConnection self, MmsClientError* mms
  * \return the association specific named variable list names or NULL if the request failed.
  */
 LinkedList /* <char*> */
-MmsConnection_getVariableListNamesAssociationSpecific(MmsConnection self, MmsClientError* mmsError);
+MmsConnection_getVariableListNamesAssociationSpecific(MmsConnection self, MmsError* mmsError);
 
 
 /**
- * Read a single variable from the server.
+ * \brief Read a single variable from the server.
  *
  * \param self MmsConnection instance to operate on
  * \param mmsError user provided variable to store error code
- * \param domainId the domain name of the variable to be read
+ * \param domainId the domain name of the variable to be read or NULL to read a VMD specific named variable
  * \param itemId name of the variable to be read
  *
  * \return Returns a MmsValue object or NULL if the request failed. The MmsValue object can
  * either be a simple value or a complex value or array.
  */
 MmsValue*
-MmsConnection_readVariable(MmsConnection self, MmsClientError* mmsError, char* domainId, char* itemId);
+MmsConnection_readVariable(MmsConnection self, MmsError* mmsError, char* domainId, char* itemId);
 
 /**
- * Read an element of a single array variable from the server.
+ * \brief Read an element of a single array variable from the server.
  *
  * \param self MmsConnection instance to operate on
  * \param mmsError user provided variable to store error code
@@ -246,11 +288,11 @@ MmsConnection_readVariable(MmsConnection self, MmsClientError* mmsError, char* d
  * array elements of numberOfElements > 0.
  */
 MmsValue*
-MmsConnection_readArrayElements(MmsConnection self, MmsClientError* mmsError, char* domainId, char* itemId,
+MmsConnection_readArrayElements(MmsConnection self, MmsError* mmsError, char* domainId, char* itemId,
 		uint32_t startIndex, uint32_t numberOfElements);
 
 /**
- * Read multiple variables of a domain from the server with one request message.
+ * \brief Read multiple variables of a domain from the server with one request message.
  *
  * \param self MmsConnection instance to operate on
  * \param mmsError user provided variable to store error code
@@ -262,7 +304,7 @@ MmsConnection_readArrayElements(MmsConnection self, MmsClientError* mmsError, ch
  * in the order as they appeared in the item ID list.
  */
 MmsValue*
-MmsConnection_readMultipleVariables(MmsConnection self, MmsClientError* mmsError, char* domainId,
+MmsConnection_readMultipleVariables(MmsConnection self, MmsError* mmsError, char* domainId,
 		LinkedList /*<char*>*/ items);
 
 /**
@@ -273,11 +315,9 @@ MmsConnection_readMultipleVariables(MmsConnection self, MmsClientError* mmsError
  * \param domainId the domain name of the variable to be written
  * \param itemId name of the variable to be written
  * \param value value of the variable to be written
- *
- * \return MMS_OK on success. MMS_ERROR if the write attempt failed.
  */
-MmsIndication
-MmsConnection_writeVariable(MmsConnection self, MmsClientError* mmsError,
+void
+MmsConnection_writeVariable(MmsConnection self, MmsError* mmsError,
         char* domainId, char* itemId, MmsValue* value);
 
 /**
@@ -296,16 +336,14 @@ MmsConnection_writeVariable(MmsConnection self, MmsClientError* mmsError,
  * \param values values of the variables to be written
  * \param (OUTPUT) the MmsValue objects of type MMS_DATA_ACCESS_ERROR representing the write success of a single variable
  *        write.
- *
- * \return MMS_OK if the service succeeded. MMS_ERROR if a service error occurred.
  */
-MmsIndication
-MmsConnection_writeMultipleVariables(MmsConnection self, MmsClientError* mmsError, char* domainId,
+void
+MmsConnection_writeMultipleVariables(MmsConnection self, MmsError* mmsError, char* domainId,
         LinkedList /*<char*>*/ items, LinkedList /* <MmsValue*> */ values,
         LinkedList* /* <MmsValue*> */ accessResults);
 
 /**
- * Get the variable access attributes of a MMS named variable of the server
+ * \brief Get the variable access attributes of a MMS named variable of the server
  *
  * \param self MmsConnection instance to operate on
  * \param mmsError user provided variable to store error code
@@ -315,11 +353,11 @@ MmsConnection_writeMultipleVariables(MmsConnection self, MmsClientError* mmsErro
  * \return Returns a MmsTypeSpecification object or NULL if the request failed.
  */
 MmsVariableSpecification*
-MmsConnection_getVariableAccessAttributes(MmsConnection self, MmsClientError* mmsError,
+MmsConnection_getVariableAccessAttributes(MmsConnection self, MmsError* mmsError,
 		char* domainId, char* itemId);
 
 /**
- * Read the values of a domain specific named variable list
+ * \brief Read the values of a domain specific named variable list
  *
  * \param self MmsConnection instance to operate on
  * \param mmsError user provided variable to store error code
@@ -332,12 +370,12 @@ MmsConnection_getVariableAccessAttributes(MmsConnection self, MmsClientError* mm
  * in the order as they appeared in named variable list definition.
  */
 MmsValue*
-MmsConnection_readNamedVariableListValues(MmsConnection self, MmsClientError* mmsError, char* domainId,
+MmsConnection_readNamedVariableListValues(MmsConnection self, MmsError* mmsError, char* domainId,
         char* listName,	bool specWithResult);
 
 
 /**
- * Read the values of a association specific named variable list
+ * \brief Read the values of a association specific named variable list
  *
  * \param self MmsConnection instance to operate on
  * \param mmsError user provided variable to store error code
@@ -349,11 +387,11 @@ MmsConnection_readNamedVariableListValues(MmsConnection self, MmsClientError* mm
  * in the order as they appeared in named variable list definition.
  */
 MmsValue*
-MmsConnection_readNamedVariableListValuesAssociationSpecific(MmsConnection self, MmsClientError* mmsError,
+MmsConnection_readNamedVariableListValuesAssociationSpecific(MmsConnection self, MmsError* mmsError,
         char* listName,	bool specWithResult);
 
 /**
- * Define a new named variable list at the server.
+ * \brief Define a new named variable list at the server.
  *
  * \param self MmsConnection instance to operate on
  * \param mmsError user provided variable to store error code
@@ -361,31 +399,27 @@ MmsConnection_readNamedVariableListValuesAssociationSpecific(MmsConnection self,
  * \param listName the name of the named variable list
  * \param variableSpecs a list of variable specifications for the new variable list. The list
  *        elements have to be of type MmsVariableAccessSpecification*.
- *
- * \return MMS_OK on success. MMS_ERROR if the write attempt failed.
  */
-MmsIndication
-MmsConnection_defineNamedVariableList(MmsConnection self, MmsClientError* mmsError, char* domainId,
+void
+MmsConnection_defineNamedVariableList(MmsConnection self, MmsError* mmsError, char* domainId,
         char* listName,	LinkedList variableSpecs);
 
 
 /**
- * Define a new association specific named variable list at the server.
+ * \brief Define a new association specific named variable list at the server.
  *
  * \param self MmsConnection instance to operate on
  * \param mmsError user provided variable to store error code
  * \param listName the name of the named variable list
  * \param variableSpecs list of variable specifications for the new variable list.The list
  *        elements have to be of type MmsVariableAccessSpecification*.
- *
- * \return MMS_OK on success. MMS_ERROR if the write attempt failed.
  */
-MmsIndication
-MmsConnection_defineNamedVariableListAssociationSpecific(MmsConnection self, MmsClientError* mmsError,
+void
+MmsConnection_defineNamedVariableListAssociationSpecific(MmsConnection self, MmsError* mmsError,
         char* listName,	LinkedList variableSpecs);
 
 /**
- * Read the entry list of a named variable list at the server.
+ * \brief Read the entry list of a named variable list at the server.
  *
  * \param self MmsConnection instance to operate on
  * \param mmsError user provided variable to store error code
@@ -397,11 +431,13 @@ MmsConnection_defineNamedVariableListAssociationSpecific(MmsConnection self, Mms
  * \return List of names of the variable list entries or NULL if the request failed
  */
 LinkedList /* <MmsVariableAccessSpecification*> */
-MmsConnection_readNamedVariableListDirectory(MmsConnection self, MmsClientError* mmsError,
+MmsConnection_readNamedVariableListDirectory(MmsConnection self, MmsError* mmsError,
         char* domainId, char* listName, bool* deletable);
 
+
+
 /**
- * Read the entry list of an association specific named variable list at the server.
+ * \brief Read the entry list of an association specific named variable list at the server.
  *
  * \param self MmsConnection instance to operate on
  * \param mmsError user provided variable to store error code
@@ -410,37 +446,34 @@ MmsConnection_readNamedVariableListDirectory(MmsConnection self, MmsClientError*
  * \return List of names of the variable list entries or NULL if the request failed
  */
 LinkedList /* <MmsVariableAccessSpecification*> */
-MmsConnection_readAssociationSpecificNamedVariableListDirectory(MmsConnection self, MmsClientError* mmsError,
-        char* listName);
+MmsConnection_readNamedVariableListDirectoryAssociationSpecific(MmsConnection self, MmsError* mmsError,
+        char* listName, bool* deletable);
 
 /**
- * Delete a named variable list at the server.
+ * \brief Delete a named variable list at the server.
  *
  * \param self MmsConnection instance to operate on
  * \param mmsError user provided variable to store error code
  * \param domainId the domain name of the domain of the variable list
  * \param listName the name of the named variable list
- *
- * \return MMS_OK on success. MMS_ERROR if the request failed.
  */
-MmsIndication
-MmsConnection_deleteNamedVariableList(MmsConnection self, MmsClientError* mmsError, char* domainId, char* listName);
+void
+MmsConnection_deleteNamedVariableList(MmsConnection self, MmsError* mmsError, char* domainId, char* listName);
 
 /**
- * Delete an association specific named variable list at the server.
+ * \brief Delete an association specific named variable list at the server.
  *
  * \param self MmsConnection instance to operate on
  * \param mmsError user provided variable to store error code
  * \param listName the name of the named variable list
- *
- * \return MMS_OK on success. MMS_ERROR if the request failed.
  */
-MmsIndication
-MmsConnection_deleteAssociationSpecificNamedVariableList(MmsConnection self, MmsClientError* mmsError,
+void
+MmsConnection_deleteAssociationSpecificNamedVariableList(MmsConnection self, MmsError* mmsError,
         char* listName);
 
 /**
- * Create a new MmsVariableSpecification that can be used to define named variable lists.
+ * \brief Create a new MmsVariableSpecification that can be used to define named variable lists.
+ *
  * The created object can be deleted with free(). If the parameter strings were dynamically
  * allocated the deallocation is in the responsibility of the user.
  *
@@ -453,7 +486,8 @@ MmsVariableAccessSpecification*
 MmsVariableAccessSpecification_create(char* domainId, char* itemId);
 
 /**
- * Create a new MmsVariableSpecification that can be used to define named variable lists.
+ * \brief Create a new MmsVariableSpecification that can be used to define named variable lists.
+ *
  * The created object can be deleted with free(). If the parameter strings were dynamically
  * allocated the deallocation is in the responsibility of the user. This function should be
  * used for named variable list entries that are array elements or components of array elements
@@ -472,7 +506,7 @@ MmsVariableAccessSpecification_createAlternateAccess(char* domainId, char* itemI
 		char* componentName);
 
 /**
- * Delete the MmsVariableAccessSpecification data structure
+ * \brief Delete the MmsVariableAccessSpecification data structure
  *
  * \param self the instance to delete
  */
@@ -480,9 +514,12 @@ void
 MmsVariableAccessSpecification_destroy(MmsVariableAccessSpecification* self);
 
 /**
- * Get the MMS local detail parameter (local detail means maximum MMS PDU size). This defaults to
- * 65000. This function should not be called after a successful connection attempt.
+ * \brief Get the MMS local detail parameter (local detail means maximum MMS PDU size).
  *
+ * This defaults to 65000 (or the value specified in the stack_config.h file.
+ * This function should not be called after a successful connection attempt.
+ *
+ * \param  self MmsConnection instance to operate on
  * \param localDetail the maximum size of the MMS PDU that will be accepted.
  */
 void
@@ -501,10 +538,111 @@ MmsConnection_getLocalDetail(MmsConnection self);
  * \param mmsError user provided variable to store error code
  */
 MmsServerIdentity*
-MmsConnection_identify(MmsConnection self, MmsClientError* mmsError);
+MmsConnection_identify(MmsConnection self, MmsError* mmsError);
 
 void
 MmsServerIdentity_destroy(MmsServerIdentity* self);
+
+/**
+ * \brief get the VMD status of the connected server (is MMS status service)
+ *
+ * This function will return the status of the connected server by invoking the MMS status service.
+ * The services returns the logical and physical states of the server.
+ *
+ * \param self MmsConnection instance to operate on
+ * \param mmsError user provided variable to store error code
+ * \param vmdLogicalStatus user provided variable to store the logical state of the VMD
+ * \param vmdPhysicalStatus user provided variable to store the physical state of the VMD
+ * \param extendedDerivation instructs the server to invoke self-diagnosis routines to determine server status
+ */
+void
+MmsConnection_getServerStatus(MmsConnection self, MmsError* mmsError, int* vmdLogicalStatus, int* vmdPhysicalStatus,
+        bool extendedDerivation);
+
+/*******************************************************************************
+ * functions for MMS file services
+ *******************************************************************************/
+
+typedef void
+(*MmsFileDirectoryHandler) (void* parameter, char* filename, uint32_t size, uint64_t lastModified);
+
+typedef void
+(*MmsFileReadHandler) (void* parameter, int32_t frsmId, uint8_t* buffer, uint32_t bytesReceived);
+
+/**
+ * \brief open a file for read
+ *
+ * \return the FRSM ID (file read state machine) handle of the opened file
+ */
+int32_t
+MmsConnection_fileOpen(MmsConnection self, MmsError* mmsError, char* filename, uint32_t initialPosition,
+        uint32_t* fileSize, uint64_t* lastModified);
+
+/**
+ * \brief read the next data block from the file
+ *
+ * \param self MmsConnection instance to operate on
+ * \param mmsError user provided variable to store error code
+ * \param frsmId the FRSM ID (file read state machine) handle of the file
+ * \param handler callback that is invoked to deliver the received data
+ * \param handlerParameter user provided paramter that is passed to the callback function
+ *
+ * \return true if more data follows, false if last data has been received.
+ */
+bool
+MmsConnection_fileRead(MmsConnection self, MmsError* mmsError, int32_t frsmId, MmsFileReadHandler handler, void* handlerParameter);
+
+/**
+ * \brief close the file with the specified frsmID
+ *
+ * \param self MmsConnection instance to operate on
+ * \param mmsError user provided variable to store error code
+ * \param frsmId id of the file to close
+ */
+void
+MmsConnection_fileClose(MmsConnection self, MmsError* mmsError, int32_t frsmId);
+
+/**
+ * \brief delete the file with the specified name
+ *
+ * \param self MmsConnection instance to operate on
+ * \param mmsError user provided variable to store error code
+ * \param fileName name of the file to delete
+ */
+void
+MmsConnection_fileDelete(MmsConnection self, MmsError* mmsError, char* fileName);
+
+/**
+ * \brief rename the file with the specified name
+ *
+ * \param self MmsConnection instance to operate on
+ * \param mmsError user provided variable to store error code
+ * \param currentFileName name of the file to rename
+ * \param newFileName new name of the file
+ */
+void
+MmsConnection_fileRename(MmsConnection self, MmsError* mmsError, char* currentFileName, char* newFileName);
+
+/**
+ * \brief get the file directory of the server.
+ *
+ * This function will return the directory entries of the given server directory. For each directory entry
+ * the provided callback handler is called. If the
+ *
+ * \param self MmsConnection instance to operate on
+ * \param mmsError user provided variable to store error code
+ * \param fileSpecification the file specification of the directory to browse or NULL to browse the root directory
+ * \param continueAfter continuation point or NULL for the first request. The continuation point is the first entry
+ *                      after the provided continuation file name.
+ * \param handler user provided callback handler
+ * \param handlerParameter user provided parameter that is passed to the handler
+ *
+ * \return (more follows) true if more data is available
+ */
+bool
+MmsConnection_getFileDirectory(MmsConnection self, MmsError* mmsError, char* fileSpecification, char* continueAfter,
+        MmsFileDirectoryHandler handler, void* handlerParameter);
+
 
 /**@}*/
 

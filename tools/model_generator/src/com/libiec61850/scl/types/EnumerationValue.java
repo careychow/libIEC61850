@@ -39,7 +39,7 @@ public class EnumerationValue {
 		String ordString = ParserUtils.parseAttribute(xmlNode, "ord");
 		
 		if (ordString == null)
-			throw new SclParserException("ord attribute missing");
+			throw new SclParserException(xmlNode, "ord attribute missing");
 		
 		this.ord = new Integer(ordString);
 		

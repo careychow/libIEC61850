@@ -903,8 +903,6 @@ SET_OF_decode_uper(asn_codec_ctx_t *opt_codec_ctx, asn_TYPE_descriptor_t *td,
 		if(nelems < 0) {
 			nelems = uper_get_length(pd,
 				ct ? ct->effective_bits : -1, &repeat);
-			ASN_DEBUG("Got to decode %d elements (eff %d)",
-				(int)nelems, (int)ct ? ct->effective_bits : -1);
 			if(nelems < 0) _ASN_DECODE_STARVED;
 		}
 
@@ -921,7 +919,6 @@ SET_OF_decode_uper(asn_codec_ctx_t *opt_codec_ctx, asn_TYPE_descriptor_t *td,
 				ASN_DEBUG("Failed to add element into %s",
 					td->name);
 				/* Fall through */
-				rv.code == RC_FAIL;
 			} else {
 				ASN_DEBUG("Failed decoding %s of %s (SET OF)",
 					elm->type->name, td->name);

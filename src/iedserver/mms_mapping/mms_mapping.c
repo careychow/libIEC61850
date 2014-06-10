@@ -1,7 +1,7 @@
 /*
  *  mms_mapping.c
  *
- *  Copyright 2013 Michael Zillgith
+ *  Copyright 2013, 2014 Michael Zillgith
  *
  *  This file is part of libIEC61850.
  *
@@ -30,17 +30,29 @@
 #include "mms_goose.h"
 #include "reporting.h"
 #include "control.h"
+#include "ied_server_private.h"
 
-typedef struct sAttributeObserver
+#ifndef DEBUG_IDE_SERVER
+#define DEBUG_IDE_SERVER 0
+#endif
+
+typedef struct
 {
     DataAttribute* attribute;
-    void
-    (*handler)(DataAttribute* dataAttribute);
+    AttributeChangedHandler handler;
 } AttributeObserver;
 
+typedef struct
+{
+    DataAttribute* attribute;
+    WriteAccessHandler handler;
+} AttributeAccessHandler;
+
+#if (CONFIG_IEC61850_CONTROL_SERVICE == 1)
 MmsValue*
 Control_readAccessControlObject(MmsMapping* self, MmsDomain* domain, char* variableIdOrig,
         MmsServerConnection* connection);
+#endif
 
 void /* Create PHYCOMADDR ACSI type instance */
 MmsMapping_createPhyComAddrStructure(MmsVariableSpecification* namedVariable)
@@ -167,7 +179,7 @@ createNamedVariableFromDataAttribute(DataAttribute* attribute)
             namedVariable->type = MMS_FLOAT;
             break;
         case ENUMERATED:
-            namedVariable->typeSpec.integer = 8; // TODO fixme
+            namedVariable->typeSpec.integer = 8; /* 8 bit integer should be enough for all enumerations */
             namedVariable->type = MMS_INTEGER;
             break;
         case CHECK:
@@ -232,7 +244,8 @@ createNamedVariableFromDataAttribute(DataAttribute* attribute)
             MmsMapping_createPhyComAddrStructure(namedVariable);
             break;
         default:
-            printf("MMS-MAPPING: type cannot be mapped %i\n", attribute->type);
+            if (DEBUG_IDE_SERVER)
+                printf("MMS-MAPPING: type cannot be mapped %i\n", attribute->type);
             break;
         }
     }
@@ -273,7 +286,19 @@ createFCNamedVariableFromDataObject(DataObject* dataObject,
 {
     MmsVariableSpecification* namedVariable = (MmsVariableSpecification*) calloc(1,
             sizeof(MmsVariableSpecification));
+
+    MmsVariableSpecification* completeNamedVariable = namedVariable;
+
     namedVariable->name = copyString(dataObject->name);
+
+    if (dataObject->elementCount > 0) {
+        namedVariable->type = MMS_ARRAY;
+        namedVariable->typeSpec.array.elementCount = dataObject->elementCount;
+        namedVariable->typeSpec.array.elementTypeSpec = (MmsVariableSpecification*) calloc(1,
+                sizeof(MmsVariableSpecification));
+        namedVariable = namedVariable->typeSpec.array.elementTypeSpec;
+    }
+
     namedVariable->type = MMS_STRUCTURE;
 
     int elementCount = countChildrenWithFc(dataObject, fc);
@@ -310,7 +335,8 @@ createFCNamedVariableFromDataObject(DataObject* dataObject,
     }
 
     namedVariable->typeSpec.structure.elementCount = elementCount;
-    return namedVariable;
+
+    return completeNamedVariable;
 }
 
 static MmsVariableSpecification*
@@ -318,7 +344,7 @@ createFCNamedVariable(LogicalNode* logicalNode, FunctionalConstraint fc)
 {
     MmsVariableSpecification* namedVariable = (MmsVariableSpecification*) calloc(1,
             sizeof(MmsVariableSpecification));
-    namedVariable->name = copyString(FunctionalConstrained_toString(fc));
+    namedVariable->name = copyString(FunctionalConstraint_toString(fc));
     namedVariable->type = MMS_STRUCTURE;
 
     int dataObjectCount = 0;
@@ -402,26 +428,29 @@ determineLogicalNodeComponentCount(LogicalNode* logicalNode)
     return componentCount;
 }
 
+
+#if (CONFIG_IEC61850_REPORT_SERVICE == 1)
 static int
 countReportControlBlocksForLogicalNode(MmsMapping* self, LogicalNode* logicalNode, bool buffered)
 {
     int rcbCount = 0;
 
-    ReportControlBlock** reportControlBlocks = (ReportControlBlock**) self->model->rcbs;
+    ReportControlBlock* rcb = self->model->rcbs;
 
-    int i = 0;
-
-    while (reportControlBlocks[i] != NULL) {
-        if (reportControlBlocks[i]->parent == logicalNode) {
-            if (reportControlBlocks[i]->buffered == buffered)
+    /* Iterate list of RCBs */
+    while (rcb != NULL) {
+        if (rcb->parent == logicalNode) {
+            if (rcb->buffered == buffered)
                 rcbCount++;
         }
 
-        i++;
+        rcb = rcb->sibling;
     }
 
     return rcbCount;
 }
+#endif /* (CONFIG_IEC61850_CONTROL_SERVICE == 1) */
+
 
 #if (CONFIG_INCLUDE_GOOSE_SUPPORT == 1)
 
@@ -430,22 +459,20 @@ countGSEControlBlocksForLogicalNode(MmsMapping* self, LogicalNode* logicalNode)
 {
     int gseCount = 0;
 
-    GSEControlBlock** gseControlBlocks = (GSEControlBlock**) self->model->gseCBs;
+    GSEControlBlock* gcb = self->model->gseCBs;
 
-    int i = 0;
-
-    while (gseControlBlocks[i] != NULL) {
-        if (gseControlBlocks[i]->parent == logicalNode) {
+    while (gcb != NULL) {
+        if (gcb->parent == logicalNode) {
             gseCount++;
         }
 
-        i++;
+        gcb = gcb->sibling;
     }
 
     return gseCount;
 }
 
-#endif
+#endif /* (CONFIG_INCLUDE_GOOSE_SUPPORT == 1) */
 
 static MmsVariableSpecification*
 createNamedVariableFromLogicalNode(MmsMapping* self, MmsDomain* domain,
@@ -460,15 +487,16 @@ createNamedVariableFromLogicalNode(MmsMapping* self, MmsDomain* domain,
 
     int componentCount = determineLogicalNodeComponentCount(logicalNode);
 
-    if (DEBUG)
+    if (DEBUG_IDE_SERVER)
         printf("LogicalNode %s has %i fc components\n", logicalNode->name,
                 componentCount);
 
+#if (CONFIG_IEC61850_REPORT_SERVICE == 1)
     int brcbCount = countReportControlBlocksForLogicalNode(self, logicalNode,
     true);
 
     if (brcbCount > 0) {
-        if (DEBUG)
+        if (DEBUG_IDE_SERVER)
             printf("  and %i buffered RCBs\n", brcbCount);
         componentCount++;
     }
@@ -477,22 +505,23 @@ createNamedVariableFromLogicalNode(MmsMapping* self, MmsDomain* domain,
     false);
 
     if (urcbCount > 0) {
-        if (DEBUG)
+        if (DEBUG_IDE_SERVER)
             printf("  and %i unbuffered RCBs\n", urcbCount);
         componentCount++;
     }
+#endif /* (CONFIG_IEC61850_REPORT_SERVICE == 1) */
 
-#if CONFIG_INCLUDE_GOOSE_SUPPORT == 1
+#if (CONFIG_INCLUDE_GOOSE_SUPPORT == 1)
 
     int gseCount = countGSEControlBlocksForLogicalNode(self, logicalNode);
 
     if (gseCount > 0) {
-        if (DEBUG)
+        if (DEBUG_IDE_SERVER)
             printf("   and %i GSE control blocks\n", gseCount);
         componentCount++;
     }
 
-#endif
+#endif /* (CONFIG_INCLUDE_GOOSE_SUPPORT == 1) */
 
     namedVariable->typeSpec.structure.elements = (MmsVariableSpecification**) calloc(componentCount,
             sizeof(MmsVariableSpecification*));
@@ -542,21 +571,25 @@ createNamedVariableFromLogicalNode(MmsMapping* self, MmsDomain* domain,
         currentComponent++;
     }
 
+#if (CONFIG_IEC61850_REPORT_SERVICE == 1)
     if (urcbCount > 0) {
         namedVariable->typeSpec.structure.elements[currentComponent] =
                 Reporting_createMmsUnbufferedRCBs(self, domain, logicalNode,
                         urcbCount);
         currentComponent++;
     }
+#endif /* (CONFIG_IEC61850_REPORT_SERVICE == 1) */
 
     /* TODO create LCBs here */
 
+#if (CONFIG_IEC61850_REPORT_SERVICE == 1)
     if (brcbCount > 0) {
         namedVariable->typeSpec.structure.elements[currentComponent] =
                 Reporting_createMmsBufferedRCBs(self, domain, logicalNode,
                         brcbCount);
         currentComponent++;
     }
+#endif /* (CONFIG_IEC61850_REPORT_SERVICE == 1) */
 
 #if (CONFIG_INCLUDE_GOOSE_SUPPORT == 1)
     if (gseCount > 0) {
@@ -565,7 +598,7 @@ createNamedVariableFromLogicalNode(MmsMapping* self, MmsDomain* domain,
 
         currentComponent++;
     }
-#endif
+#endif /* (CONFIG_INCLUDE_GOOSE_SUPPORT == 1) */
 
     if (LogicalNode_hasFCData(logicalNode, SV)) {
         namedVariable->typeSpec.structure.elements[currentComponent] =
@@ -619,7 +652,7 @@ createMmsDomainFromIedDevice(MmsMapping* self, LogicalDevice* logicalDevice)
     domain->namedVariablesCount = nodesCount;
     domain->namedVariables = (MmsVariableSpecification**) malloc(nodesCount * sizeof(MmsVariableSpecification*));
 
-    LogicalNode* logicalNode = logicalDevice->firstChild;
+    LogicalNode* logicalNode = (LogicalNode*) logicalDevice->firstChild;
 
     int i = 0;
     while (logicalNode != NULL) {
@@ -647,46 +680,44 @@ createMmsDataModel(MmsMapping* self, int iedDeviceCount,
         mmsDevice->domains[i] = createMmsDomainFromIedDevice(self,
                 logicalDevice);
         i++;
-        logicalDevice = logicalDevice->sibling;
+        logicalDevice = (LogicalDevice*) logicalDevice->sibling;
     }
 }
 
 static void
 createDataSets(MmsDevice* mmsDevice, IedModel* iedModel)
 {
-    DataSet** datasets = (DataSet**) iedModel->dataSets;
+    DataSet* dataset = iedModel->dataSets;
 
-    int i = 0;
+    while (dataset != NULL) {
+        MmsDomain* dataSetDomain = MmsDevice_getDomain(mmsDevice, dataset->logicalDeviceName);
 
-    while (datasets[i] != NULL) {
-        MmsDomain* dataSetDomain = MmsDevice_getDomain(mmsDevice,
-                datasets[i]->logicalDeviceName);
+        MmsNamedVariableList varList = MmsNamedVariableList_create(dataset->name, false);
 
-        MmsNamedVariableList varList = MmsNamedVariableList_create(
-                datasets[i]->name, false);
+        DataSetEntry* dataSetEntry = dataset->fcdas;
 
-        int fcdaCount = datasets[i]->elementCount;
-        int fcdaIdx = 0;
+        while (dataSetEntry != NULL) {
 
-        DataSetEntry** fcdas = datasets[i]->fcda;
-
-        for (fcdaIdx = 0; fcdaIdx < fcdaCount; fcdaIdx++) {
             MmsAccessSpecifier accessSpecifier;
+
             accessSpecifier.domain = MmsDevice_getDomain(mmsDevice,
-                    fcdas[fcdaIdx]->logicalDeviceName);
-            accessSpecifier.variableName = fcdas[fcdaIdx]->variableName;
-            accessSpecifier.arrayIndex = fcdas[fcdaIdx]->index;
-            accessSpecifier.componentName = fcdas[fcdaIdx]->componentName;
+                    dataSetEntry->logicalDeviceName);
+
+            accessSpecifier.variableName = dataSetEntry->variableName;
+            accessSpecifier.arrayIndex = dataSetEntry->index;
+            accessSpecifier.componentName = dataSetEntry->componentName;
 
             MmsNamedVariableListEntry variableListEntry =
                     MmsNamedVariableListEntry_create(accessSpecifier);
 
             MmsNamedVariableList_addVariable(varList, variableListEntry);
+
+            dataSetEntry = dataSetEntry->sibling;
         }
 
         MmsDomain_addNamedVariableList(dataSetDomain, varList);
 
-        i++;
+        dataset = dataset->sibling;
     }
 }
 
@@ -716,16 +747,27 @@ MmsMapping_create(IedModel* model)
 
     self->model = model;
 
+#if (CONFIG_IEC61850_REPORT_SERVICE == 1)
     self->reportControls = LinkedList_create();
+#endif
 
-    if (CONFIG_INCLUDE_GOOSE_SUPPORT)
+#if (CONFIG_INCLUDE_GOOSE_SUPPORT == 1)
         self->gseControls = LinkedList_create();
+#endif
 
+#if (CONFIG_IEC61850_CONTROL_SERVICE == 1)
     self->controlObjects = LinkedList_create();
+#endif
 
     self->observedObjects = LinkedList_create();
 
+    self->attributeAccessHandlers = LinkedList_create();
+
     self->mmsDevice = createMmsModelFromIedModel(self, model);
+
+#if (CONFIG_IEC61850_REPORT_SERVICE == 1)
+    Reporting_activateBufferedReports(self);
+#endif
 
     return self;
 }
@@ -742,15 +784,23 @@ MmsMapping_destroy(MmsMapping* self)
     if (self->mmsDevice != NULL)
         MmsDevice_destroy(self->mmsDevice);
 
+#if (CONFIG_IEC61850_REPORT_SERVICE == 1)
     LinkedList_destroyDeep(self->reportControls, (LinkedListValueDeleteFunction) ReportControl_destroy);
+#endif
 
-#if CONFIG_INCLUDE_GOOSE_SUPPORT == 1
+#if (CONFIG_INCLUDE_GOOSE_SUPPORT == 1)
     LinkedList_destroyDeep(self->gseControls, (LinkedListValueDeleteFunction) MmsGooseControlBlock_destroy);
 #endif
 
+#if (CONFIG_IEC61850_CONTROL_SERVICE == 1)
     LinkedList_destroyDeep(self->controlObjects, (LinkedListValueDeleteFunction) ControlObject_destroy);
+#endif
 
     LinkedList_destroy(self->observedObjects);
+
+    LinkedList_destroy(self->attributeAccessHandlers);
+
+    IedModel_setAttributeValuesToNull(self->model);
 
     free(self);
 }
@@ -761,6 +811,7 @@ MmsMapping_getMmsDeviceModel(MmsMapping* mapping)
     return mapping->mmsDevice;
 }
 
+#if (CONFIG_IEC61850_REPORT_SERVICE == 1)
 static bool
 isReportControlBlock(char* separator)
 {
@@ -772,25 +823,63 @@ isReportControlBlock(char* separator)
 
     return false;
 }
+#endif /* (CONFIG_IEC61850_REPORT_SERVICE == 1) */
+
+static bool
+isFunctionalConstraintCF(char* separator)
+{
+    if (strncmp(separator + 1, "CF", 2) == 0)
+        return true;
+    else
+        return false;
+}
+
+static bool
+isFunctionalConstraintDC(char* separator)
+{
+    if (strncmp(separator + 1, "DC", 2) == 0)
+        return true;
+    else
+        return false;
+}
+
+static bool
+isFunctionalConstraintSP(char* separator)
+{
+    if (strncmp(separator + 1, "SP", 2) == 0)
+        return true;
+    else
+        return false;
+}
+
+static bool
+isFunctionalConstraintSV(char* separator)
+{
+    if (strncmp(separator + 1, "SV", 2) == 0)
+        return true;
+    else
+        return false;
+}
 
 static bool
 isWritableFC(char* separator)
 {
-    if (strncmp(separator + 1, "CF", 2) == 0)
+    if (isFunctionalConstraintCF(separator))
         return true;
 
-    if (strncmp(separator + 1, "DC", 2) == 0)
+    if (isFunctionalConstraintDC(separator))
         return true;
 
-    if (strncmp(separator + 1, "SP", 2) == 0)
+    if (isFunctionalConstraintSP(separator))
         return true;
 
-    if (strncmp(separator + 1, "SV", 2) == 0)
+    if (isFunctionalConstraintSV(separator))
         return true;
 
     return false;
 }
 
+#if (CONFIG_IEC61850_CONTROL_SERVICE == 1)
 static bool
 isControllable(char* separator)
 {
@@ -799,8 +888,9 @@ isControllable(char* separator)
     else
         return false;
 }
+#endif /* (CONFIG_IEC61850_CONTROL_SERVICE == 1) */
 
-#if CONFIG_INCLUDE_GOOSE_SUPPORT == 1
+#if (CONFIG_INCLUDE_GOOSE_SUPPORT == 1)
 
 static bool
 isGooseControlBlock(char* separator)
@@ -811,7 +901,7 @@ isGooseControlBlock(char* separator)
         return false;
 }
 
-#endif
+#endif /* (CONFIG_INCLUDE_GOOSE_SUPPORT == 1) */
 
 char*
 MmsMapping_getNextNameElement(char* name)
@@ -829,7 +919,7 @@ MmsMapping_getNextNameElement(char* name)
     return separator;
 }
 
-#if CONFIG_INCLUDE_GOOSE_SUPPORT == 1
+#if (CONFIG_INCLUDE_GOOSE_SUPPORT == 1)
 
 static MmsGooseControlBlock
 lookupGCB(MmsMapping* self, MmsDomain* domain, char* lnName, char* objectName)
@@ -857,7 +947,7 @@ static MmsDataAccessError
 writeAccessGooseControlBlock(MmsMapping* self, MmsDomain* domain, char* variableIdOrig,
         MmsValue* value)
 {
-	MmsDataAccessError indication = DATA_ACCESS_ERROR_OBJECT_ACCESS_DENIED;
+    MmsDataAccessError indication = DATA_ACCESS_ERROR_OBJECT_ACCESS_DENIED;
 
     char* variableId = copyString(variableIdOrig);
 
@@ -928,9 +1018,9 @@ writeAccessGooseControlBlock(MmsMapping* self, MmsDomain* domain, char* variable
     return indication;
 }
 
-#endif
+#endif /* (CONFIG_INCLUDE_GOOSE_SUPPORT == 1) */
 
-bool
+static bool
 checkIfValueBelongsToModelNode(DataAttribute* dataAttribute, MmsValue* value)
 {
     if (dataAttribute->mmsValue == value)
@@ -946,11 +1036,11 @@ checkIfValueBelongsToModelNode(DataAttribute* dataAttribute, MmsValue* value)
     }
 
     if (MmsValue_getType(value) == MMS_STRUCTURE) {
-        int elementCount = value->value.structure.size;
+        int elementCount = MmsValue_getArraySize(value);
 
         int i = 0;
         for (i = 0; i < elementCount; i++) {
-            MmsValue* childValue = value->value.structure.components[i];
+            MmsValue* childValue = MmsValue_getElement(value, i);
 
             if (checkIfValueBelongsToModelNode(dataAttribute, childValue))
                 return true;
@@ -966,10 +1056,8 @@ mmsWriteHandler(void* parameter, MmsDomain* domain,
 {
     MmsMapping* self = (MmsMapping*) parameter;
 
-    if (DEBUG)
+    if (DEBUG_IED_SERVER)
         printf("Write requested %s\n", variableId);
-
-    int variableIdLen = strlen(variableId);
 
     /* Access control based on functional constraint */
 
@@ -978,19 +1066,24 @@ mmsWriteHandler(void* parameter, MmsDomain* domain,
     if (separator == NULL)
         return DATA_ACCESS_ERROR_INVALID_ADDRESS;
 
+    int lnNameLength = separator - variableId;
+
+#if (CONFIG_IEC61850_CONTROL_SERVICE == 1)
     /* Controllable objects - CO */
     if (isControllable(separator)) {
         return Control_writeAccessControlObject(self, domain, variableId, value,
                 connection);
     }
+#endif /* (CONFIG_IEC61850_CONTROL_SERVICE == 1) */
 
-#if CONFIG_INCLUDE_GOOSE_SUPPORT == 1
+#if (CONFIG_INCLUDE_GOOSE_SUPPORT == 1)
     /* Goose control block - GO */
     if (isGooseControlBlock(separator)) {
         return writeAccessGooseControlBlock(self, domain, variableId, value);
     }
-#endif
+#endif /* (CONFIG_INCLUDE_GOOSE_SUPPORT == 1) */
 
+#if (CONFIG_IEC61850_REPORT_SERVICE == 1)
     /* Report control blocks - BR, RP */
     if (isReportControlBlock(separator)) {
 
@@ -1013,43 +1106,105 @@ mmsWriteHandler(void* parameter, MmsDomain* domain,
         while ((nextElement = LinkedList_getNext(nextElement)) != NULL) {
             ReportControl* rc = (ReportControl*) nextElement->data;
 
-            int rcNameLen = strlen(rc->name);
+            if (rc->domain == domain) {
 
-            if (rcNameLen == variableIdLen) {
+                int parentLNNameStrLen = strlen(rc->parentLN->name);
 
-                if (strncmp(variableId, rc->name, variableIdLen) == 0) {
-                    char* elementName = variableId + rcNameLen + 1;
+                if (parentLNNameStrLen != lnNameLength)
+                    continue;
 
-                    return Reporting_RCBWriteAccessHandler(self, rc, elementName, value, connection);
+                if (memcmp(rc->parentLN->name, variableId, parentLNNameStrLen) != 0)
+                    continue;
+
+                int rcNameLen = strlen(rc->name);
+
+                if (rcNameLen == variableIdLen) {
+
+                    if (strncmp(variableId, rc->name, variableIdLen) == 0) {
+                        char* elementName = variableId + rcNameLen + 1;
+
+                        return Reporting_RCBWriteAccessHandler(self, rc, elementName, value, connection);
+                    }
                 }
             }
         }
 
         return DATA_ACCESS_ERROR_OBJECT_NONE_EXISTENT;
     }
+#endif /* (CONFIG_IEC61850_REPORT_SERVICE == 1) */
+
 
     /* writable data model elements - SP, SV, CF, DC */
     if (isWritableFC(separator)) {
 
         MmsValue* cachedValue;
 
-        cachedValue = MmsServer_getValueFromCache(self->mmsServer, domain,
-                variableId);
+        cachedValue = MmsServer_getValueFromCache(self->mmsServer, domain, variableId);
 
         if (cachedValue != NULL) {
-            MmsValue_update(cachedValue, value);
 
-            LinkedList element = LinkedList_getNext(self->observedObjects);
+            if (!MmsValue_equalTypes(cachedValue, value))
+                return DATA_ACCESS_ERROR_OBJECT_VALUE_INVALID;
 
-            while (element != NULL) {
-                AttributeObserver* observer = (AttributeObserver*) element->data;
+            bool handlerFound = false;
+
+            /* Call writer access handlers */
+            LinkedList writeHandlerListElement = LinkedList_getNext(self->attributeAccessHandlers);
+
+            while (writeHandlerListElement != NULL) {
+                AttributeAccessHandler* accessHandler = (AttributeAccessHandler*) writeHandlerListElement->data;
+                DataAttribute* dataAttribute = accessHandler->attribute;
+
+                if (checkIfValueBelongsToModelNode(dataAttribute, cachedValue)) {
+                    if (accessHandler->handler(dataAttribute, value, (ClientConnection) connection)) {
+                        handlerFound = true;
+                        break;
+                    }
+                    else
+                        return DATA_ACCESS_ERROR_OBJECT_ACCESS_DENIED;
+                }
+
+                writeHandlerListElement = LinkedList_getNext(writeHandlerListElement);
+            }
+
+            /* if no access handler is found check for default policy for FC */
+            if (!handlerFound) {
+                if (isFunctionalConstraintCF(separator)) {
+                    if (!(self->iedServer->writeAccessPolicies & ALLOW_WRITE_ACCESS_CF))
+                        return DATA_ACCESS_ERROR_OBJECT_ACCESS_DENIED;
+                }
+                else if (isFunctionalConstraintDC(separator)) {
+                    if (!(self->iedServer->writeAccessPolicies & ALLOW_WRITE_ACCESS_DC))
+                        return DATA_ACCESS_ERROR_OBJECT_ACCESS_DENIED;
+                }
+                else if (isFunctionalConstraintSP(separator)) {
+                    if (!(self->iedServer->writeAccessPolicies & ALLOW_WRITE_ACCESS_SP))
+                        return DATA_ACCESS_ERROR_OBJECT_ACCESS_DENIED;
+                }
+                else if (isFunctionalConstraintSV(separator)) {
+                    if (!(self->iedServer->writeAccessPolicies & ALLOW_WRITE_ACCESS_SV))
+                        return DATA_ACCESS_ERROR_OBJECT_ACCESS_DENIED;
+                }
+            }
+
+            DataAttribute* da = IedModel_lookupDataAttributeByMmsValue(self->model, cachedValue);
+
+            if (da != NULL)
+                IedServer_updateAttributeValue(self->iedServer, da, value);
+
+            /* Call observer callback */
+            LinkedList observerListElement = LinkedList_getNext(self->observedObjects);
+
+            while (observerListElement != NULL) {
+                AttributeObserver* observer = (AttributeObserver*) observerListElement->data;
                 DataAttribute* dataAttribute = observer->attribute;
 
                 if (checkIfValueBelongsToModelNode(dataAttribute, cachedValue)) {
-                    observer->handler(dataAttribute);
+                    observer->handler(dataAttribute, (ClientConnection) connection);
+                    break; /* only all one handler per data attribute */
                 }
 
-                element = LinkedList_getNext(element);
+                observerListElement = LinkedList_getNext(observerListElement);
             }
 
             return DATA_ACCESS_ERROR_SUCCESS;
@@ -1065,18 +1220,49 @@ void
 MmsMapping_addObservedAttribute(MmsMapping* self, DataAttribute* dataAttribute,
         void* handler)
 {
-    AttributeObserver* observer = (AttributeObserver*) malloc(sizeof(struct sAttributeObserver));
+    AttributeObserver* observer = (AttributeObserver*) malloc(sizeof(AttributeObserver));
 
     observer->attribute = dataAttribute;
-    observer->handler = (void
-    (*)(DataAttribute*)) handler;
+    observer->handler = (AttributeChangedHandler) handler;
 
     LinkedList_add(self->observedObjects, observer);
 }
 
-#if CONFIG_INCLUDE_GOOSE_SUPPORT == 1
+static AttributeAccessHandler*
+getAccessHandlerForAttribute(MmsMapping* self, DataAttribute* dataAttribute)
+{
+    LinkedList element = LinkedList_getNext(self->attributeAccessHandlers);
 
-MmsValue*
+    while (element != NULL) {
+        AttributeAccessHandler* accessHandler = (AttributeAccessHandler*) element->data;
+
+        if (accessHandler->attribute == dataAttribute)
+            return accessHandler;
+
+        element = LinkedList_getNext(element);
+    }
+
+    return NULL;
+}
+
+void
+MmsMapping_installWriteAccessHandler(MmsMapping* self, DataAttribute* dataAttribute, WriteAccessHandler handler)
+{
+    AttributeAccessHandler* accessHandler = getAccessHandlerForAttribute(self, dataAttribute);
+
+    if (accessHandler == NULL) {
+        accessHandler = (AttributeAccessHandler*) malloc(sizeof(AttributeAccessHandler));
+
+        accessHandler->attribute = dataAttribute;
+        LinkedList_add(self->attributeAccessHandlers, (void*) accessHandler);
+    }
+
+    accessHandler->handler = handler;
+}
+
+#if (CONFIG_INCLUDE_GOOSE_SUPPORT == 1)
+
+static MmsValue*
 readAccessGooseControlBlock(MmsMapping* self, MmsDomain* domain, char* variableIdOrig)
 {
     MmsValue* value = NULL;
@@ -1119,33 +1305,38 @@ readAccessGooseControlBlock(MmsMapping* self, MmsDomain* domain, char* variableI
     return value;
 }
 
-#endif
+#endif /* (CONFIG_INCLUDE_GOOSE_SUPPORT == 1) */
 
 static MmsValue*
 mmsReadHandler(void* parameter, MmsDomain* domain, char* variableId, MmsServerConnection* connection)
 {
     MmsMapping* self = (MmsMapping*) parameter;
 
-    if (DEBUG)
-        printf("Requested %s\n", variableId);
+    if (DEBUG_IDE_SERVER)
+        printf("mmsReadHandler: Requested %s\n", variableId);
 
     char* separator = strchr(variableId, '$');
 
     if (separator == NULL)
         return NULL;
 
+    int lnNameLength = separator - variableId;
+
+#if (CONFIG_IEC61850_CONTROL_SERVICE == 1)
     /* Controllable objects - CO */
     if (isControllable(separator)) {
         return Control_readAccessControlObject(self, domain, variableId, connection);
     }
+#endif
 
     /* GOOSE control blocks - GO */
-#if CONFIG_INCLUDE_GOOSE_SUPPORT == 1
+#if (CONFIG_INCLUDE_GOOSE_SUPPORT == 1)
     if (isGooseControlBlock(separator)) {
         return readAccessGooseControlBlock(self, domain, variableId);
     }
 #endif
 
+#if (CONFIG_IEC61850_REPORT_SERVICE == 1)
     /* Report control blocks - BR, RP */
     if (isReportControlBlock(separator)) {
 
@@ -1160,7 +1351,7 @@ mmsReadHandler(void* parameter, MmsDomain* domain, char* variableId, MmsServerCo
 
         separator = strchr(reportName, '$');
 
-        int variableIdLen;
+        size_t variableIdLen;
 
         if (separator != NULL)
             variableIdLen = separator - variableId;
@@ -1170,24 +1361,37 @@ mmsReadHandler(void* parameter, MmsDomain* domain, char* variableId, MmsServerCo
         while ((nextElement = LinkedList_getNext(nextElement)) != NULL) {
             ReportControl* rc = (ReportControl*) nextElement->data;
 
-            if (strlen(rc->name) == variableIdLen) {
-                if (strncmp(variableId, rc->name, variableIdLen) == 0) {
+            if (rc->domain == domain) {
 
-                    char* elementName = MmsMapping_getNextNameElement(reportName);
+                int parentLNNameStrLen = strlen(rc->parentLN->name);
 
-                    MmsValue* value = NULL;
+                if (parentLNNameStrLen != lnNameLength)
+                    continue;
 
-                    if (elementName != NULL)
-                        value = ReportControl_getRCBValue(rc, elementName);
-                    else
-                        value = rc->rcbValues;
+                if (memcmp(rc->parentLN->name, variableId, parentLNNameStrLen) != 0)
+                    continue;
 
-                    return value;
+                if (strlen(rc->name) == variableIdLen) {
+                    if (strncmp(variableId, rc->name, variableIdLen) == 0) {
+
+                        char* elementName = MmsMapping_getNextNameElement(reportName);
+
+                        MmsValue* value = NULL;
+
+                        if (elementName != NULL)
+                            value = ReportControl_getRCBValue(rc, elementName);
+                        else
+                            value = rc->rcbValues;
+
+                        return value;
+                    }
                 }
+
             }
 
         }
     }
+#endif /* (CONFIG_IEC61850_REPORT_SERVICE == 1) */
 
     return NULL;
 }
@@ -1198,6 +1402,7 @@ MmsMapping_setMmsServer(MmsMapping* self, MmsServer server)
     self->mmsServer = server;
 }
 
+#if (CONFIG_IEC61850_CONTROL_SERVICE == 1)
 static void
 unselectControlsForConnection(MmsMapping* self, MmsServerConnection* connection)
 {
@@ -1212,46 +1417,47 @@ unselectControlsForConnection(MmsMapping* self, MmsServerConnection* connection)
         controlObjectElement = LinkedList_getNext(controlObjectElement);
     }
 }
+#endif /* (CONFIG_IEC61850_CONTROL_SERVICE == 1) */
 
-static void
-deactivateReportsForConnection(MmsMapping* self, MmsServerConnection* connection)
-{
-    LinkedList reportControl = self->reportControls;
-
-    while ((reportControl = LinkedList_getNext(reportControl)) != NULL) {
-        ReportControl* rc = (ReportControl*) reportControl->data;
-
-        if (rc->clientConnection == connection) {
-            // ?? TODO make thread safe!
-            rc->enabled = false;
-            rc->clientConnection = NULL;
-
-            MmsValue* rptEna = ReportControl_getRCBValue(rc, "RptEna");
-            MmsValue_setBoolean(rptEna, false);
-
-            if (rc->inclusionField != NULL) {
-                MmsValue_delete(rc->inclusionField);
-                rc->inclusionField = NULL;
-            }
-
-            if (rc->bufferd == false) {
-                MmsValue* resv = ReportControl_getRCBValue(rc, "Resv");
-                MmsValue_setBoolean(resv, false);
-
-                rc->reserved = false;
-            }
-        }
-    }
-}
-
-static void
+static void /* is called by MMS server layer */
 mmsConnectionHandler(void* parameter, MmsServerConnection* connection, MmsServerEvent event)
 {
     MmsMapping* self = (MmsMapping*) parameter;
 
     if (event == MMS_SERVER_CONNECTION_CLOSED) {
-        deactivateReportsForConnection(self, connection);
+        ClientConnection clientConnection = private_IedServer_getClientConnectionByHandle(self->iedServer, connection);
+
+        /* call user provided handler function */
+        if (self->connectionIndicationHandler != NULL)
+            self->connectionIndicationHandler(self->iedServer, clientConnection, false,
+                    self->connectionIndicationHandlerParameter);
+
+        private_IedServer_removeClientConnection(self->iedServer, clientConnection);
+
+        /* wait until control threads are finished */
+        while (private_ClientConnection_getTasksCount(clientConnection) > 0)
+            Thread_sleep(10);
+
+#if (CONFIG_IEC61850_REPORT_SERVICE == 1)
+        Reporting_deactivateReportsForConnection(self, connection);
+#endif
+
+#if (CONFIG_IEC61850_CONTROL_SERVICE == 1)
         unselectControlsForConnection(self, connection);
+#endif
+
+        private_ClientConnection_destroy(clientConnection);
+    }
+    else if (event == MMS_SERVER_NEW_CONNECTION) {
+        /* call user provided handler function */
+        ClientConnection newClientConnection = private_ClientConnection_create(connection);
+
+        private_IedServer_addNewClientConnection(self->iedServer, newClientConnection);
+
+        /* call user provided handler function */
+        if (self->connectionIndicationHandler != NULL)
+            self->connectionIndicationHandler(self->iedServer, newClientConnection, true,
+                    self->connectionIndicationHandlerParameter);
     }
 }
 
@@ -1263,6 +1469,21 @@ MmsMapping_installHandlers(MmsMapping* self)
     MmsServer_installConnectionHandler(self->mmsServer, mmsConnectionHandler, (void*) self);
 }
 
+void
+MmsMapping_setIedServer(MmsMapping* self, IedServer iedServer)
+{
+    self->iedServer = iedServer;
+}
+
+void
+MmsMapping_setConnectionIndicationHandler(MmsMapping* self, IedConnectionIndicationHandler handler, void* parameter)
+{
+    self->connectionIndicationHandler = handler;
+    self->connectionIndicationHandlerParameter = parameter;
+}
+
+#if ((CONFIG_IEC61850_REPORT_SERVICE == 1) || (CONFIG_INCLUDE_GOOSE_SUPPORT))
+
 static bool
 isMemberValueRecursive(MmsValue* container, MmsValue* value)
 {
@@ -1271,11 +1492,12 @@ isMemberValueRecursive(MmsValue* container, MmsValue* value)
     else {
         if ((MmsValue_getType(container) == MMS_STRUCTURE) ||
                 (MmsValue_getType(container) == MMS_ARRAY))
-                {
-            int compCount = container->value.structure.size;
+        {
+
+            int compCount = MmsValue_getArraySize(container);
             int i;
             for (i = 0; i < compCount; i++) {
-                if (isMemberValueRecursive(container->value.structure.components[i], value))
+                if (isMemberValueRecursive(MmsValue_getElement(container, i), value))
                     return true;
             }
 
@@ -1288,19 +1510,30 @@ isMemberValueRecursive(MmsValue* container, MmsValue* value)
 static bool
 DataSet_isMemberValue(DataSet* dataSet, MmsValue* value, int* index)
 {
-    int i;
-    for (i = 0; i < dataSet->elementCount; i++) {
-        MmsValue* dataSetValue = dataSet->fcda[i]->value;
+    int i = 0;
+
+    DataSetEntry* dataSetEntry = dataSet->fcdas;
+
+    while (dataSetEntry != NULL) {
+
+        MmsValue* dataSetValue = dataSetEntry->value;
 
         if (isMemberValueRecursive(dataSetValue, value)) {
-            *index = i;
+            if (index != NULL)
+                *index = i;
             return true;
         }
+
+        i++;
+
+        dataSetEntry = dataSetEntry->sibling;
     }
 
     return false;
 }
+#endif /* ((CONFIG_IEC61850_REPORT_SERVICE == 1) || (CONFIG_INCLUDE_GOOSE_SUPPORT)) */
 
+#if (CONFIG_IEC61850_REPORT_SERVICE == 1)
 void
 MmsMapping_triggerReportObservers(MmsMapping* self, MmsValue* value, ReportInclusionFlag flag)
 {
@@ -1309,7 +1542,7 @@ MmsMapping_triggerReportObservers(MmsMapping* self, MmsValue* value, ReportInclu
     while ((element = LinkedList_getNext(element)) != NULL) {
         ReportControl* rc = (ReportControl*) element->data;
 
-        if (rc->enabled) {
+        if (rc->enabled || (rc->buffered && rc->dataSet != NULL)) {
             int index;
 
             switch (flag) {
@@ -1318,7 +1551,8 @@ MmsMapping_triggerReportObservers(MmsMapping* self, MmsValue* value, ReportInclu
                     continue;
                 break;
             case REPORT_CONTROL_VALUE_CHANGED:
-                if ((rc->triggerOps & TRG_OPT_DATA_CHANGED) == 0)
+                if (((rc->triggerOps & TRG_OPT_DATA_CHANGED) == 0) &&
+                        ((rc->triggerOps & TRG_OPT_DATA_UPDATE) == 0))
                     continue;
                 break;
             case REPORT_CONTROL_QUALITY_CHANGED:
@@ -1330,13 +1564,15 @@ MmsMapping_triggerReportObservers(MmsMapping* self, MmsValue* value, ReportInclu
             }
 
             if (DataSet_isMemberValue(rc->dataSet, value, &index)) {
-                ReportControl_valueUpdated(rc, index, flag);
+                ReportControl_valueUpdated(rc, index, flag, value);
             }
         }
     }
 }
 
-#if CONFIG_INCLUDE_GOOSE_SUPPORT == 1
+#endif /* (CONFIG_IEC61850_REPORT_SERVICE == 1) */
+
+#if (CONFIG_INCLUDE_GOOSE_SUPPORT == 1)
 
 void
 MmsMapping_triggerGooseObservers(MmsMapping* self, MmsValue* value)
@@ -1349,21 +1585,16 @@ MmsMapping_triggerGooseObservers(MmsMapping* self, MmsValue* value)
         if (MmsGooseControlBlock_isEnabled(gcb)) {
             DataSet* dataSet = MmsGooseControlBlock_getDataSet(gcb);
 
-            int index;
-
-            if (DataSet_isMemberValue(dataSet, value, &index)) {
+            if (DataSet_isMemberValue(dataSet, value, NULL)) {
                 MmsGooseControlBlock_observedObjectChanged(gcb);
             }
         }
     }
 }
 
-#endif
-
 void
 MmsMapping_enableGoosePublishing(MmsMapping* self)
 {
-#if CONFIG_INCLUDE_GOOSE_SUPPORT == 1
 
     LinkedList element = self->gseControls;
 
@@ -1373,9 +1604,11 @@ MmsMapping_enableGoosePublishing(MmsMapping* self)
         MmsGooseControlBlock_enable(gcb);
     }
 
-#endif
 }
 
+#endif /* (CONFIG_INCLUDE_GOOSE_SUPPORT == 1) */
+
+#if (CONFIG_IEC61850_CONTROL_SERVICE == 1)
 void
 MmsMapping_addControlObject(MmsMapping* self, ControlObject* controlObject)
 {
@@ -1387,6 +1620,8 @@ MmsMapping_getControlObject(MmsMapping* self, MmsDomain* domain, char* lnName, c
 {
     return Control_lookupControlObject(self, domain, lnName, coName);
 }
+#endif /* (CONFIG_IEC61850_CONTROL_SERVICE == 1) */
+
 
 char*
 MmsMapping_getMmsDomainFromObjectReference(char* objectReference, char* buffer)
@@ -1440,7 +1675,7 @@ MmsMapping_createMmsVariableNameFromObjectReference(char* objectReference,
     else
         i++;
 
-    char* fcString = FunctionalConstrained_toString(fc);
+    char* fcString = FunctionalConstraint_toString(fc);
 
     if (fcString == NULL)
         return NULL;
@@ -1479,9 +1714,9 @@ MmsMapping_createMmsVariableNameFromObjectReference(char* objectReference,
     return mmsVariableName;
 }
 
-#if CONFIG_INCLUDE_GOOSE_SUPPORT == 1
+#if (CONFIG_INCLUDE_GOOSE_SUPPORT == 1)
 
-void
+static void
 GOOSE_processGooseEvents(MmsMapping* self, uint64_t currentTimeInMs)
 {
     LinkedList element = LinkedList_getNext(self->gseControls);
@@ -1497,32 +1732,42 @@ GOOSE_processGooseEvents(MmsMapping* self, uint64_t currentTimeInMs)
     }
 }
 
-#endif
+#endif /* (CONFIG_INCLUDE_GOOSE_SUPPORT == 1) */
 
-/* single worker thread for all enabled GOOSE and report control blocks */
+/* single worker thread for all enabled GOOSE and report control blocks
+ *
+ * TODO move GOOSE processing to other (high-priority) thread
+ * */
 static void
 eventWorkerThread(MmsMapping* self)
 {
     bool running = true;
+    self->reportThreadFinished = false;
 
     while (running) {
         uint64_t currentTimeInMs = Hal_getTimeInMs();
 
-#if CONFIG_INCLUDE_GOOSE_SUPPORT == 1
+#if (CONFIG_INCLUDE_GOOSE_SUPPORT == 1)
         GOOSE_processGooseEvents(self, currentTimeInMs);
 #endif
 
+#if (CONFIG_IEC61850_CONTROL_SERVICE == 1)
         Control_processControlActions(self, currentTimeInMs);
+#endif
 
+#if (CONFIG_IEC61850_REPORT_SERVICE == 1)
         Reporting_processReportEvents(self, currentTimeInMs);
+#endif
 
-        Thread_sleep(10); /* sleep for 10 ms */
+        Thread_sleep(1); /* hand-over control to other threads */
 
         running = self->reportThreadRunning;
     }
 
-    if (DEBUG)
-        printf("event worker thread finished!\n");
+    if (DEBUG_IDE_SERVER)
+        printf("IED_SERVER: event worker thread finished!\n");
+
+    self->reportThreadFinished = true;
 }
 
 void
@@ -1535,40 +1780,53 @@ MmsMapping_startEventWorkerThread(MmsMapping* self)
     Thread_start(thread);
 }
 
+void
+MmsMapping_stopEventWorkerThread(MmsMapping* self)
+{
+    if (self->reportThreadRunning) {
+
+        self->reportThreadRunning = false;
+
+        while (self->reportThreadFinished == false)
+            Thread_sleep(1);
+    }
+}
+
 static DataSet*
 createDataSetByNamedVariableList(MmsMapping* self, MmsNamedVariableList variableList)
 {
     DataSet* dataSet = (DataSet*) malloc(sizeof(DataSet));
-
-    // dataSet->logicalDeviceName = MmsDomain_getName(domain);
 
     dataSet->logicalDeviceName = NULL; /* name is not relevant for dynamically created data set */
 
     dataSet->name = variableList->name;
     dataSet->elementCount = LinkedList_size(variableList->listOfVariables);
 
-    dataSet->fcda = (DataSetEntry**) calloc(dataSet->elementCount, sizeof(DataSetEntry*));
-
     LinkedList element = LinkedList_getNext(variableList->listOfVariables);
 
-    int i = 0;
+    DataSetEntry* lastDataSetEntry = NULL;
 
     while (element != NULL) {
         MmsAccessSpecifier* listEntry = (MmsAccessSpecifier*) element->data;
 
         DataSetEntry* dataSetEntry = (DataSetEntry*) malloc(sizeof(DataSetEntry));
 
-        dataSet->fcda[i] = dataSetEntry;
-
         dataSetEntry->logicalDeviceName = MmsDomain_getName(listEntry->domain);
         dataSetEntry->variableName = listEntry->variableName;
         dataSetEntry->index = listEntry->arrayIndex;
         dataSetEntry->componentName = listEntry->componentName;
+        dataSetEntry->sibling = NULL;
+
+        if (lastDataSetEntry == NULL)
+            dataSet->fcdas =dataSetEntry;
+        else
+            lastDataSetEntry->sibling = dataSetEntry;
 
         dataSetEntry->value =
                 MmsServer_getValueFromCache(self->mmsServer, listEntry->domain, listEntry->variableName);
 
-        i++;
+        lastDataSetEntry = dataSetEntry;
+
         element = LinkedList_getNext(element);
     }
 
@@ -1578,10 +1836,10 @@ createDataSetByNamedVariableList(MmsMapping* self, MmsNamedVariableList variable
 MmsNamedVariableList
 MmsMapping_getDomainSpecificVariableList(MmsMapping* self, char* variableListReference)
 {
-    int nameLen = strlen(variableListReference);
-    char* variableListReferenceCopy = (char*) alloca(nameLen + 1);
+    char variableListReferenceCopy[193];
 
-    strcpy(variableListReferenceCopy, variableListReference);
+    strncpy(variableListReferenceCopy, variableListReference, 192);
+	variableListReferenceCopy[192] = 0;
 
     char* separator = strchr(variableListReferenceCopy, '/');
 
@@ -1618,13 +1876,15 @@ MmsMapping_getDomainSpecificDataSet(MmsMapping* self, char* dataSetName)
 void
 MmsMapping_freeDynamicallyCreatedDataSet(DataSet* dataSet)
 {
-    int i;
+    DataSetEntry* dataSetEntry = dataSet->fcdas;
 
-    for (i = 0; i < dataSet->elementCount; i++) {
-        free(dataSet->fcda[i]);
+    while (dataSetEntry != NULL) {
+        DataSetEntry* nextEntry = dataSetEntry->sibling;
+
+        free (dataSetEntry);
+
+        dataSetEntry = nextEntry;
     }
-
-    free(dataSet->fcda);
 
     free(dataSet);
 }
@@ -1632,8 +1892,6 @@ MmsMapping_freeDynamicallyCreatedDataSet(DataSet* dataSet)
 MmsVariableAccessSpecification*
 MmsMapping_ObjectReferenceToVariableAccessSpec(char* objectReference)
 {
-    char* domainId;
-
     char* domainIdEnd = strchr(objectReference, '/');
 
     if (domainIdEnd == NULL) /* no logical device name present */
@@ -1641,47 +1899,183 @@ MmsMapping_ObjectReferenceToVariableAccessSpec(char* objectReference)
 
     int domainIdLen = domainIdEnd - objectReference;
 
+    char* fcStart = strchr(objectReference, '[');
+
+    if (fcStart == NULL) /* no FC present */
+        return NULL;
+
+    char* fcEnd = strchr(fcStart, ']');
+
+    if (fcEnd == NULL) /* syntax error in FC */
+        return NULL;
+
+    if ((fcEnd - fcStart) != 3) /* syntax error in FC */
+        return NULL;
+
+    FunctionalConstraint fc = FunctionalConstraint_fromString(fcStart + 1);
+
     MmsVariableAccessSpecification* accessSpec =
             (MmsVariableAccessSpecification*) calloc(1, sizeof(MmsVariableAccessSpecification));
 
     accessSpec->domainId = createStringFromBuffer((uint8_t*) objectReference, domainIdLen);
 
-    char* itemIdEnd = strchr(domainIdEnd, '(');
+    char* indexBrace = strchr(domainIdEnd, '(');
+
+    char* itemIdEnd = indexBrace;
+
+    if (itemIdEnd == NULL)
+        itemIdEnd = strchr(domainIdEnd, '[');
 
     int objRefLen = strlen(objectReference);
 
-    if (itemIdEnd == NULL) {
-        int itemIdLen = objRefLen - domainIdLen - 1;
+    accessSpec->arrayIndex = -1; /* -1 --> not present */
 
-        accessSpec->itemId = createStringFromBuffer((uint8_t*) (domainIdEnd + 1), itemIdLen);
-
-        StringUtils_replace(accessSpec->itemId, '.', '$');
-    }
-    else {
+    if (itemIdEnd != NULL) {
         int itemIdLen = itemIdEnd - domainIdEnd - 1;
 
-        accessSpec->itemId = createStringFromBuffer((uint8_t*) (domainIdEnd + 1), itemIdLen);
+        char itemIdStr[129];
 
-        StringUtils_replace(accessSpec->itemId, '.', '$');
+        memcpy(itemIdStr, (domainIdEnd + 1), itemIdLen);
+        itemIdStr[itemIdLen] = 0;
 
-        char* indexStart = itemIdEnd + 1;
+        accessSpec->itemId = MmsMapping_createMmsVariableNameFromObjectReference(itemIdStr, fc, NULL);
 
-        char* indexEnd = strchr(indexStart, ')');
+        if (indexBrace != NULL) {
 
-        int indexLen = indexEnd - indexStart;
+            char* indexStart = itemIdEnd + 1;
 
-        int index = StringUtils_digitsToInt(indexStart, indexLen);
+            char* indexEnd = strchr(indexStart, ')');
 
-        accessSpec->arrayIndex = (int32_t) index;
+            int indexLen = indexEnd - indexStart;
 
-        int componentNameLen = objRefLen - ((indexEnd + 2) - objectReference);
+            int index = StringUtils_digitsToInt(indexStart, indexLen);
 
-        if (componentNameLen > 0) {
-            accessSpec->componentName = createStringFromBuffer((uint8_t*) (indexEnd + 2), componentNameLen);
-            StringUtils_replace(accessSpec->componentName, '.', '$');
+            accessSpec->arrayIndex = (int32_t) index;
+
+            int componentNameLen = objRefLen - ((indexEnd + 2) - objectReference) - 4;
+
+            if (componentNameLen > 0) {
+                accessSpec->componentName = createStringFromBuffer((uint8_t*) (indexEnd + 2), componentNameLen);
+                StringUtils_replace(accessSpec->componentName, '.', '$');
+            }
         }
     }
 
     return accessSpec;
+}
+
+static int
+getNumberOfDigits(int value)
+{
+    int numberOfDigits = 1;
+
+    while (value > 9) {
+        numberOfDigits++;
+        value /= 10;
+    }
+
+    return numberOfDigits;
+}
+
+char*
+MmsMapping_varAccessSpecToObjectReference(MmsVariableAccessSpecification* varAccessSpec)
+{
+    char* domainId = varAccessSpec->domainId;
+
+    int domainIdLen = strlen(domainId);
+
+    char* itemId = varAccessSpec->itemId;
+
+    char* separator = strchr(itemId, '$');
+
+    int itemIdLen = strlen(itemId);
+
+    int arrayIndexLen = 0;
+
+    int componentPartLen = 0;
+
+    if (varAccessSpec->componentName != NULL)
+        componentPartLen = strlen(varAccessSpec->componentName);
+
+    if (varAccessSpec->arrayIndex > -1)
+        arrayIndexLen = 2 + getNumberOfDigits(varAccessSpec->arrayIndex);
+
+    int newStringLen = (domainIdLen + 1) + (itemIdLen - 2) + arrayIndexLen + 4 /* for FC */+ componentPartLen + 1;
+
+    char* newString = (char*) malloc(newStringLen);
+
+    char* targetPos = newString;
+
+    /* Copy domain id part */
+    char* currentPos = domainId;
+
+    while (currentPos < (domainId + domainIdLen)) {
+        *targetPos = *currentPos;
+        targetPos++;
+        currentPos++;
+    }
+
+    *targetPos = '/';
+    targetPos++;
+
+    /* Copy item id parts */
+    currentPos = itemId;
+
+    while (currentPos < separator) {
+        *targetPos = *currentPos;
+        targetPos++;
+        currentPos++;
+    }
+
+    *targetPos = '.';
+    targetPos++;
+
+    currentPos = separator + 4;
+
+    while (currentPos < (itemId + itemIdLen)) {
+        if (*currentPos == '$')
+            *targetPos = '.';
+        else
+            *targetPos = *currentPos;
+
+        targetPos++;
+        currentPos++;
+    }
+
+    /* Add array index part */
+    if (varAccessSpec->arrayIndex > -1) {
+        sprintf(targetPos, "(%i)", varAccessSpec->arrayIndex);
+        targetPos += arrayIndexLen;
+    }
+
+    /* Add component part */
+    if (varAccessSpec->componentName != NULL) {
+        *targetPos = '.';
+        targetPos++;
+
+        int i;
+        for (i = 0; i < componentPartLen; i++) {
+            if (varAccessSpec->componentName[i] == '$')
+                *targetPos = '.';
+            else
+                *targetPos = varAccessSpec->componentName[i];
+
+            targetPos++;
+        }
+    }
+
+    /* add FC part */
+    *targetPos = '[';
+    targetPos++;
+    *targetPos = *(separator + 1);
+    targetPos++;
+    *targetPos = *(separator + 2);
+    targetPos++;
+    *targetPos = ']';
+    targetPos++;
+
+    *targetPos = 0; /* add terminator */
+
+    return newString;
 }
 

@@ -25,6 +25,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "thread.h"
 
 struct sThread {
@@ -79,11 +80,11 @@ Thread_create(ThreadExecutionFunction function, void* parameter, bool autodestro
 }
 
 static void*
-destroyAutomaticThread(Thread thread)
+destroyAutomaticThread(void* parameter)
 {
-	thread->function(thread->parameter);
+    Thread thread = (Thread) parameter;
 
-	//pthread_detach(thread->pthread);
+	thread->function(thread->parameter);
 
 	free(thread);
 
@@ -109,6 +110,7 @@ Thread_destroy(Thread thread)
 	if (thread->state == 1) {
 		pthread_join(thread->pthread, NULL);
 	}
+
 	free(thread);
 }
 

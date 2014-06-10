@@ -22,11 +22,11 @@ asn_TYPE_descriptor_t asn_DEF_NativeEnumerated = {
 	"ENUMERATED",			/* The ASN.1 type is still ENUMERATED */
 	"ENUMERATED",
 	NativeInteger_free,
-	NativeInteger_print,
+	NULL,
 	asn_generic_no_constraint,
 	NativeInteger_decode_ber,
 	NativeInteger_encode_der,
-	NativeInteger_decode_xer,
+	NULL,
 	NativeEnumerated_encode_xer,
 	NativeEnumerated_decode_uper,
 	NativeEnumerated_encode_uper,

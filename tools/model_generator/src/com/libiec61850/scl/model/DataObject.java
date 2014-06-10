@@ -1,24 +1,24 @@
 package com.libiec61850.scl.model;
 
 /*
- *  Copyright 2013 Michael Zillgith
+ *  Copyright 2013, 2014 Michael Zillgith
  *
- *	This file is part of libIEC61850.
+ *  This file is part of libIEC61850.
+ * 
+ *  libIEC61850 is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
  *
- *	libIEC61850 is free software: you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation, either version 3 of the License, or
- *	(at your option) any later version.
+ *  libIEC61850 is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
- *	libIEC61850 is distributed in the hope that it will be useful,
- *	but WITHOUT ANY WARRANTY; without even the implied warranty of
- *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
+ *  You should have received a copy of the GNU General Public License
+ *  along with libIEC61850.  If not, see <http://www.gnu.org/licenses/>.
  *
- *	You should have received a copy of the GNU General Public License
- *	along with libIEC61850.  If not, see <http://www.gnu.org/licenses/>.
- *
- *	See COPYING file for the complete license text.
+ *  See COPYING file for the complete license text.
  */
 
 import java.util.LinkedList;
@@ -34,79 +34,72 @@ import com.libiec61850.scl.types.TypeDeclarations;
 
 public class DataObject implements DataModelNode {
 
-	private String name;
-	
-	private int count;
-	
-	private List<DataAttribute> dataAttributes = null;
-	private List<DataObject> subDataObjects = null;
-	private SclType sclType;
-	
-	public DataObject(DataObjectDefinition doDefinition, TypeDeclarations typeDeclarations) 
-			throws SclParserException 
-	{
-		this.name = doDefinition.getName();
-		this.count = doDefinition.getCount();
-		
-		this.dataAttributes = new LinkedList<DataAttribute>();
-		this.subDataObjects = new LinkedList<DataObject>();
-		
-		sclType = typeDeclarations.lookupType(doDefinition.getType(), DataObjectType.class);
-		
-		if (sclType == null)
-			throw new SclParserException("type declaration missing for data object.");
-				
-		createDataAttributes(typeDeclarations, sclType);
-			
-		createSubDataObjects(typeDeclarations, (DataObjectType) sclType);	
-	}
+    private String name;
 
-	private void createSubDataObjects(TypeDeclarations typeDeclarations,
-			DataObjectType doType) throws SclParserException 
-	{
-		
-		List<DataObjectDefinition> sdoDefinitions = doType.getSubDataObjects();
-		
-		for (DataObjectDefinition sdoDefinition : sdoDefinitions) {
-			this.subDataObjects.add(new DataObject(sdoDefinition, typeDeclarations));
-		}
-	}
+    private int count;
 
-	private void createDataAttributes(TypeDeclarations typeDeclarations,
-			SclType sclType) throws SclParserException 
-	{
-		
-		List<DataAttributeDefinition> daDefinitions = null;
-		
-		if (sclType instanceof DataObjectType)
-			daDefinitions = ((DataObjectType) sclType).getDataAttributes();
-		
-		
-		if (sclType instanceof DataAttributeType)
-			daDefinitions = ((DataAttributeType) sclType).getSubDataAttributes();
-		
-		
-		
-		for (DataAttributeDefinition daDefinition : daDefinitions) {
-			this.dataAttributes.add(new DataAttribute(daDefinition, typeDeclarations, null));
-		}
-	}
+    private List<DataAttribute> dataAttributes = null;
+    private List<DataObject> subDataObjects = null;
+    private SclType sclType;
+    private DataModelNode parent;
 
-	public String getName() {
-		return name;
-	}
+    public DataObject(DataObjectDefinition doDefinition, TypeDeclarations typeDeclarations, DataModelNode parent) throws SclParserException {
+        this.name = doDefinition.getName();
+        this.count = doDefinition.getCount();
+        this.parent = parent;
 
-	public List<DataAttribute> getDataAttributes() {
-		return dataAttributes;
-	}
+        this.dataAttributes = new LinkedList<DataAttribute>();
+        this.subDataObjects = new LinkedList<DataObject>();
 
-	public List<DataObject> getSubDataObjects() {
-		return subDataObjects;
-	}
+        sclType = typeDeclarations.lookupType(doDefinition.getType(), DataObjectType.class);
 
-	public int getCount() {
-		return count;
-	}
+        if (sclType == null)
+            throw new SclParserException("type declaration missing for data object.");
+
+        createDataAttributes(typeDeclarations, sclType);
+
+        createSubDataObjects(typeDeclarations, (DataObjectType) sclType);
+    }
+
+    private void createSubDataObjects(TypeDeclarations typeDeclarations, DataObjectType doType) throws SclParserException {
+
+        List<DataObjectDefinition> sdoDefinitions = doType.getSubDataObjects();
+
+        for (DataObjectDefinition sdoDefinition : sdoDefinitions) {
+            this.subDataObjects.add(new DataObject(sdoDefinition, typeDeclarations, this));
+        }
+    }
+
+    private void createDataAttributes(TypeDeclarations typeDeclarations, SclType sclType) throws SclParserException {
+
+        List<DataAttributeDefinition> daDefinitions = null;
+
+        if (sclType instanceof DataObjectType)
+            daDefinitions = ((DataObjectType) sclType).getDataAttributes();
+
+        if (sclType instanceof DataAttributeType)
+            daDefinitions = ((DataAttributeType) sclType).getSubDataAttributes();
+
+        for (DataAttributeDefinition daDefinition : daDefinitions) {
+            this.dataAttributes.add(new DataAttribute(daDefinition, typeDeclarations, null, this));
+        }
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public List<DataAttribute> getDataAttributes() {
+        return dataAttributes;
+    }
+
+    public List<DataObject> getSubDataObjects() {
+        return subDataObjects;
+    }
+
+    public int getCount() {
+        return count;
+    }
 
     @Override
     public DataModelNode getChildByName(String childName) {
@@ -114,14 +107,12 @@ public class DataObject implements DataModelNode {
             if (dataAttribute.getName().equals(childName))
                 return dataAttribute;
         }
-        
-        System.out.println("serach for " + childName);
-        
+
         for (DataObject dataObject : subDataObjects) {
             if (dataObject.getName().equals(childName))
                 return dataObject;
         }
-        
+
         return null;
     }
 
@@ -129,5 +120,10 @@ public class DataObject implements DataModelNode {
     public SclType getSclType() {
         return sclType;
     }
-	
+
+    @Override
+    public DataModelNode getParent() {
+        return parent;
+    }
+
 }

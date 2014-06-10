@@ -18,12 +18,12 @@ asn_TYPE_descriptor_t asn_DEF_INTEGER = {
 	"INTEGER",
 	"INTEGER",
 	ASN__PRIMITIVE_TYPE_free,
-	INTEGER_print,
+	NULL,
 	asn_generic_no_constraint,
 	ber_decode_primitive,
 	INTEGER_encode_der,
-	INTEGER_decode_xer,
-	INTEGER_encode_xer,
+	NULL,
+	NULL,
 	INTEGER_decode_uper,	/* Unaligned PER decoder */
 	INTEGER_encode_uper,	/* Unaligned PER encoder */
 	0, /* Use generic outmost tag fetcher */
@@ -97,6 +97,7 @@ INTEGER_encode_der(asn_TYPE_descriptor_t *td, void *sptr,
 
 static const asn_INTEGER_enum_map_t *INTEGER_map_enum2value(asn_INTEGER_specifics_t *specs, const char *lstart, const char *lstop);
 
+#if 0
 /*
  * INTEGER specific human-readable output.
  */
@@ -194,7 +195,10 @@ INTEGER__dump(asn_TYPE_descriptor_t *td, const INTEGER_t *st, asn_app_consume_by
 	wrote += p - scratch;
 	return (cb(scratch, p - scratch, app_key) < 0) ? -1 : wrote;
 }
+#endif
 
+
+#if 0
 /*
  * INTEGER specific human-readable output.
  */
@@ -214,6 +218,7 @@ INTEGER_print(asn_TYPE_descriptor_t *td, const void *sptr, int ilevel,
 
 	return (ret < 0) ? -1 : 0;
 }
+#endif
 
 struct e2v_key {
 	const char *start;
@@ -311,6 +316,7 @@ INTEGER_st_prealloc(INTEGER_t *st, int min_size) {
 	}
 }
 
+#if 0
 /*
  * Decode the chunk of XML text encoding INTEGER.
  */
@@ -531,7 +537,10 @@ INTEGER_decode_xer(asn_codec_ctx_t *opt_codec_ctx,
 		sptr, sizeof(INTEGER_t), opt_mname,
 		buf_ptr, size, INTEGER__xer_body_decode);
 }
+#endif
 
+
+#if 0
 asn_enc_rval_t
 INTEGER_encode_xer(asn_TYPE_descriptor_t *td, void *sptr,
 	int ilevel, enum xer_encoder_flags_e flags,
@@ -550,6 +559,7 @@ INTEGER_encode_xer(asn_TYPE_descriptor_t *td, void *sptr,
 
 	_ASN_ENCODED_OK(er);
 }
+#endif
 
 asn_dec_rval_t
 INTEGER_decode_uper(asn_codec_ctx_t *opt_codec_ctx, asn_TYPE_descriptor_t *td,

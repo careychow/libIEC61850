@@ -18,19 +18,14 @@ int main(int argc, char** argv) {
 
 	MmsConnection con = MmsConnection_create();
 
-	MmsClientError error;
-	MmsIndication indication;
+	MmsError error;
 
-	indication = MmsConnection_connect(con, &error, hostname, tcpPort);
-
-	if (indication != MMS_OK) {
+	if (!MmsConnection_connect(con, &error, hostname, tcpPort)) {
 		printf("MMS connect failed!\n");
 		goto exit;
 	}
 	else
 		printf("MMS connected.\n\n");
-
-
 
 	MmsValue* value =
 			MmsConnection_readVariable(con, &error, "simpleIOGenericIO", "LLN0$GO");

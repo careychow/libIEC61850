@@ -23,6 +23,7 @@
 
 #include "mms_access_result.h"
 #include "mms_server_internal.h"
+#include "mms_value_internal.h"
 
 static int
 encodeArrayAccessResult(MmsValue* value, uint8_t* buffer, int bufPos, bool encode)
@@ -132,9 +133,9 @@ mmsServer_encodeAccessResult(MmsValue* value, uint8_t* buffer, int bufPos, bool 
         break;
     case MMS_UNSIGNED:
         if (encode)
-            bufPos = BerEncoder_encodeAsn1PrimitiveValue(0x86, value->value.unsignedInteger, buffer, bufPos);
+            bufPos = BerEncoder_encodeAsn1PrimitiveValue(0x86, value->value.integer, buffer, bufPos);
         else
-            size = 2 + value->value.unsignedInteger->size;
+            size = 2 + value->value.integer->size;
         break;
     case MMS_INTEGER:
         if (encode)
@@ -194,12 +195,14 @@ mmsServer_encodeAccessResult(MmsValue* value, uint8_t* buffer, int bufPos, bool 
         break;
     case MMS_STRING:
         if (encode)
-            bufPos = BerEncoder_encodeStringWithTag(0x90, value->value.mmsString, buffer, bufPos);
+            bufPos = BerEncoder_encodeStringWithTag(0x90, value->value.visibleString, buffer, bufPos);
         else
-            size = BerEncoder_determineEncodedStringSize(value->value.mmsString);
+            size = BerEncoder_determineEncodedStringSize(value->value.visibleString);
         break;
     default:
-        printf("encodeAccessResult: error unsupported type!\n");
+        if (DEBUG_MMS_SERVER)
+            printf("encodeAccessResult: error unsupported type!\n");
+        size = 0;
         break;
     }
 

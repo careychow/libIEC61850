@@ -56,7 +56,7 @@ public class GSEAddress {
                String[] addressElements = pNode.getTextContent().split("-");
                
                if (addressElements.length != 6)
-                   throw new SclParserException("malformed address " + pNode.getTextContent());
+                   throw new SclParserException(addressNode, "malformed address " + pNode.getTextContent());
                
                macAddress = new int[6];
                

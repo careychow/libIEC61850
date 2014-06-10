@@ -112,6 +112,13 @@ createTypeSpecification(TypeSpecification_t* asnTypeSpec) {
 	case TypeSpecification_PR_utctime:
 		typeSpec->type = MMS_UTC_TIME;
 		break;
+	case TypeSpecification_PR_binarytime:
+	    typeSpec->type = MMS_BINARY_TIME;
+	    if (asnTypeSpec->choice.binarytime == 0)
+	        typeSpec->typeSpec.binaryTime = 4;
+	    else
+	        typeSpec->typeSpec.binaryTime = 6;
+	    break;
 	default:
 		printf("ERROR: unknown type in type specification\n");
 		break;
@@ -126,12 +133,11 @@ mmsClient_parseGetVariableAccessAttributesResponse(ByteBuffer* message, uint32_t
 	MmsPdu_t* mmsPdu = 0; /* allow asn1c to allocate structure */
 	MmsVariableSpecification* typeSpec = NULL;
 
-	asn_dec_rval_t rval;
-
-	rval = ber_decode(NULL, &asn_DEF_MmsPdu,
+	asn_dec_rval_t rval = ber_decode(NULL, &asn_DEF_MmsPdu,
 			(void**) &mmsPdu, ByteBuffer_getBuffer(message), ByteBuffer_getSize(message));
 
-	if (DEBUG) xer_fprint(stdout, &asn_DEF_MmsPdu, mmsPdu);
+	if (rval.code != RC_OK)
+	    return NULL;
 
 	if (mmsPdu->present == MmsPdu_PR_confirmedResponsePdu) {
 
@@ -184,8 +190,6 @@ mmsClient_createGetVariableAccessAttributesRequest(
 
 	rval = der_encode(&asn_DEF_MmsPdu, mmsPdu,
 		(asn_app_consume_bytes_f*) mmsClient_write_out, (void*) writeBuffer);
-
-	if (DEBUG) xer_fprint(stdout, &asn_DEF_MmsPdu, mmsPdu);
 
 	request->choice.name.choice.domainspecific.domainId.buf = 0;
 	request->choice.name.choice.domainspecific.domainId.size = 0;

@@ -42,7 +42,7 @@ public class LogicalDevice {
 		this.inst = ParserUtils.parseAttribute(ldNode, "inst");
 		
 		if (this.inst == null)
-			throw new SclParserException("Logical devices misses inst attribute.");
+			throw new SclParserException(ldNode, "Logical devices misses inst attribute.");
 		
 		this.ldName = ParserUtils.parseAttribute(ldNode, "ldName");
 		
@@ -53,16 +53,16 @@ public class LogicalDevice {
 		Node ln0Node = ParserUtils.getChildNodeWithTag(ldNode, "LN0");
 		
 		if (ln0Node == null)
-			throw new SclParserException("Logical devices misses LN0.");
+			throw new SclParserException(ldNode, "Logical device misses LN0.");
 		
 		logicalNodes = new LinkedList<LogicalNode>();
 		
-		logicalNodes.add(new LogicalNode(ln0Node, typeDeclarations));
+		logicalNodes.add(new LogicalNode(ln0Node, typeDeclarations, this));
 		
 		List<Node> lnNodes = ParserUtils.getChildNodesWithTag(ldNode, "LN");
 		
 		for (Node lnNode : lnNodes) {
-			logicalNodes.add(new LogicalNode(lnNode, typeDeclarations));
+			logicalNodes.add(new LogicalNode(lnNode, typeDeclarations, this));
 		}
 	}
 

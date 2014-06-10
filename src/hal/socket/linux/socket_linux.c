@@ -29,16 +29,22 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <errno.h>
+
+#include <fcntl.h>
 
 #include <netinet/tcp.h> // required for TCP keepalive
 
-#ifndef SOL_TCP
-#define SOL_TCP IPPROTO_TCP
-#endif
+#include "thread.h"
 
-#include "stack_config.h"
+#include "libiec61850_platform_includes.h"
+
+#ifndef DEBUG_SOCKET
+#define DEBUG_SOCKET 0
+#endif
 
 struct sSocket {
     int fd;
@@ -49,29 +55,31 @@ struct sServerSocket {
     int backLog;
 };
 
-//TODO this is linux specific!
 static void
 activateKeepAlive(int sd)
 {
+#if defined SO_KEEPALIVE
     int optval;
     socklen_t optlen = sizeof(optval);
 
     optval = 1;
     setsockopt(sd, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen);
 
-#if defined __linux__
+#if defined TCP_KEEPCNT
     optval = CONFIG_TCP_KEEPALIVE_IDLE;
-    setsockopt(sd, SOL_TCP, TCP_KEEPIDLE, &optval, optlen);
+    setsockopt(sd, IPPROTO_TCP, TCP_KEEPIDLE, &optval, optlen);
 
     optval = CONFIG_TCP_KEEPALIVE_INTERVAL;
-    setsockopt(sd, SOL_TCP, TCP_KEEPINTVL, &optval, optlen);
+    setsockopt(sd, IPPROTO_TCP, TCP_KEEPINTVL, &optval, optlen);
 
     optval = CONFIG_TCP_KEEPALIVE_CNT;
-    setsockopt(sd, SOL_TCP, TCP_KEEPCNT, &optval, optlen);
-#endif
+    setsockopt(sd, IPPROTO_TCP, TCP_KEEPCNT, &optval, optlen);
+#endif /* TCP_KEEPCNT */
+
+#endif /* SO_KEEPALIVE */
 }
 
-static void
+static bool
 prepareServerAddress(char* address, int port, struct sockaddr_in* sockaddr)
 {
 
@@ -80,6 +88,9 @@ prepareServerAddress(char* address, int port, struct sockaddr_in* sockaddr)
 	if (address != NULL) {
 		struct hostent *server;
 		server = gethostbyname(address);
+
+		if (server == NULL) return false;
+
 		memcpy((char *) &sockaddr->sin_addr.s_addr, (char *) server->h_addr, server->h_length);
 	}
 	else
@@ -87,7 +98,18 @@ prepareServerAddress(char* address, int port, struct sockaddr_in* sockaddr)
 
     sockaddr->sin_family = AF_INET;
     sockaddr->sin_port = htons(port);
+
+    return true;
 }
+
+#if 0
+static void
+setSocketNonBlocking(Socket self)
+{
+    int flags = fcntl(self->fd, F_GETFL, 0);
+    fcntl(self->fd, F_SETFL, flags | O_NONBLOCK);
+}
+#endif
 
 ServerSocket
 TcpServerSocket_create(char* address, int port)
@@ -99,9 +121,11 @@ TcpServerSocket_create(char* address, int port)
     if ((fd = socket(AF_INET, SOCK_STREAM, 0)) >= 0) {
         struct sockaddr_in serverAddress;
 
-        prepareServerAddress(address, port, &serverAddress);
+        if (!prepareServerAddress(address, port, &serverAddress)) {
+            close(fd);
+            return NULL;
+        }
 
-        //TODO check if this works with BSD
         int optionReuseAddr = 1;
         setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *) &optionReuseAddr, sizeof(int));
 
@@ -115,7 +139,7 @@ TcpServerSocket_create(char* address, int port)
             return NULL ;
         }
 
-#if (CONFIG_ACTIVATE_TCP_KEEPALIVE == 1)
+#if CONFIG_ACTIVATE_TCP_KEEPALIVE == 1
         activateKeepAlive(fd);
 #endif
     }
@@ -124,19 +148,19 @@ TcpServerSocket_create(char* address, int port)
 }
 
 void
-ServerSocket_listen(ServerSocket socket)
+ServerSocket_listen(ServerSocket self)
 {
-    listen(socket->fd, socket->backLog);
+    listen(self->fd, self->backLog);
 }
 
 Socket
-ServerSocket_accept(ServerSocket socket)
+ServerSocket_accept(ServerSocket self)
 {
     int fd;
 
     Socket conSocket = NULL;
 
-    fd = accept(socket->fd, NULL, NULL );
+    fd = accept(self->fd, NULL, NULL );
 
     if (fd >= 0) {
         conSocket = TcpSocket_create();
@@ -147,38 +171,48 @@ ServerSocket_accept(ServerSocket socket)
 }
 
 void
-ServerSocket_setBacklog(ServerSocket socket, int backlog)
+ServerSocket_setBacklog(ServerSocket self, int backlog)
 {
-    socket->backLog = backlog;
+    self->backLog = backlog;
 }
 
 static void
 closeAndShutdownSocket(int socketFd)
 {
     if (socketFd != -1) {
+
+        if (DEBUG_SOCKET)
+            printf("socket_linux.c: call shutdown for %i!\n", socketFd);
+
         // shutdown is required to unblock read or accept in another thread!
-        int res = shutdown(socketFd, SHUT_RDWR);
+        shutdown(socketFd, SHUT_RDWR);
 
         close(socketFd);
     }
 }
 
 void
-ServerSocket_destroy(ServerSocket socket)
+ServerSocket_destroy(ServerSocket self)
 {
-    closeAndShutdownSocket(socket->fd);
+    int fd = self->fd;
 
-    free(socket);
+    self->fd = -1;
+
+    closeAndShutdownSocket(fd);
+
+    Thread_sleep(10);
+
+    free(self);
 }
 
 Socket
 TcpSocket_create()
 {
-    Socket socket = malloc(sizeof(struct sSocket));
+    Socket self = malloc(sizeof(struct sSocket));
 
-    socket->fd = -1;
+    self->fd = -1;
 
-    return socket;
+    return self;
 }
 
 int
@@ -186,12 +220,16 @@ Socket_connect(Socket self, char* address, int port)
 {
     struct sockaddr_in serverAddress;
 
-    prepareServerAddress(address, port, &serverAddress);
+    if (DEBUG_SOCKET)
+        printf("Socket_connect: %s:%i\n", address, port);
+
+    if (!prepareServerAddress(address, port, &serverAddress))
+        return 0;
 
     self->fd = socket(AF_INET, SOCK_STREAM, 0);
 
-#if (CONFIG_ACTIVATE_TCP_KEEPALIVE == 1)
-        activateKeepAlive(self->fd);
+#if CONFIG_ACTIVATE_TCP_KEEPALIVE == 1
+    activateKeepAlive(self->fd);
 #endif
 
     if (connect(self->fd, (struct sockaddr *) &serverAddress, sizeof(serverAddress)) < 0)
@@ -204,53 +242,90 @@ char*
 Socket_getPeerAddress(Socket self)
 {
     struct sockaddr_storage addr;
-    int addrLen = sizeof(addr);
+    socklen_t addrLen = sizeof(addr);
 
     getpeername(self->fd, (struct sockaddr*) &addr, &addrLen);
 
     char addrString[INET6_ADDRSTRLEN + 7];
     int port;
 
+    bool isIPv6;
+
     if (addr.ss_family == AF_INET) {
         struct sockaddr_in* ipv4Addr = (struct sockaddr_in*) &addr;
         port = ntohs(ipv4Addr->sin_port);
         inet_ntop(AF_INET, &(ipv4Addr->sin_addr), addrString, INET_ADDRSTRLEN);
+        isIPv6 = false;
     }
     else if (addr.ss_family == AF_INET6) {
         struct sockaddr_in6* ipv6Addr = (struct sockaddr_in6*) &addr;
         port = ntohs(ipv6Addr->sin6_port);
         inet_ntop(AF_INET6, &(ipv6Addr->sin6_addr), addrString, INET6_ADDRSTRLEN);
+        isIPv6 = true;
     }
     else
         return NULL ;
 
-    char* clientConnection = malloc(strlen(addrString) + 8);
+    char* clientConnection = malloc(strlen(addrString) + 9);
 
-    sprintf(clientConnection, "%s[%i]", addrString, port);
+
+    if (isIPv6)
+        sprintf(clientConnection, "[%s]:%i", addrString, port);
+    else
+        sprintf(clientConnection, "%s:%i", addrString, port);
 
     return clientConnection;
 }
 
 int
-Socket_read(Socket socket, uint8_t* buf, int size)
+Socket_read(Socket self, uint8_t* buf, int size)
 {
-    return read(socket->fd, buf, size);
+    assert(self != NULL);
+
+    if (self->fd == -1)
+        return -1;
+
+    int read_bytes = read(self->fd, buf, size);
+
+    if (read_bytes == -1) {
+        int error = errno;
+
+        switch (error) {
+
+            case EAGAIN:
+                return 0;
+            case EBADF:
+                return -1;
+
+            default:
+                return -1;
+        }
+    }
+    else  {
+        return read_bytes;
+    }
 }
 
 int
-Socket_write(Socket socket, uint8_t* buf, int size)
+Socket_write(Socket self, uint8_t* buf, int size)
 {
+    if (self->fd == -1)
+        return -1;
+
     // MSG_NOSIGNAL - prevent send to signal SIGPIPE when peer unexpectedly closed the socket
-    return send(socket->fd, buf, size, MSG_NOSIGNAL);
+    return send(self->fd, buf, size, MSG_NOSIGNAL);
 }
 
 void
-Socket_destroy(Socket socket)
+Socket_destroy(Socket self)
 {
-    closeAndShutdownSocket(socket->fd);
+    int fd = self->fd;
 
-    /* Wait for other threads to realize that the socket has been closed */
-    Thread_sleep(100);
+    self->fd = -1;
 
-    free(socket);
+    closeAndShutdownSocket(fd);
+
+    Thread_sleep(10);
+
+    free(self);
 }

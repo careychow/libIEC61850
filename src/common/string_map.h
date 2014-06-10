@@ -24,5 +24,5 @@
 #include "map.h"
 
 Map
-StringMap_create();
+StringMap_create(void);
 

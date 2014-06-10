@@ -88,6 +88,9 @@ BerEncoder_determineEncodedBitStringSize(int bitStringSize);
  * helper functions
  */
 
+int
+BerEncoder_encodeOIDToBuffer(char* oidString, uint8_t* buffer, int maxBufLen);
+
 void
 BerEncoder_revertByteOrder(uint8_t* octets, const int size);
 

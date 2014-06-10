@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #include "mms_value.h"
 #include "goose_publisher.h"
@@ -22,9 +23,9 @@ main(int argc, char** argv)
 	LinkedList_add(dataSetValues, MmsValue_newBinaryTime(false));
 	LinkedList_add(dataSetValues, MmsValue_newIntegerFromInt32(5678));
 
-	GoosePublisher* publisher = GoosePublisher_create(NULL, "eth0");
+	GoosePublisher publisher = GoosePublisher_create(NULL, "eth0");
 
-	GoosePublisher_setGoCbRef(publisher, "Test1/LLN0.gocb1");
+	GoosePublisher_setGoCbRef(publisher, "Test1/LLN0$GO$gocb1");
 	GoosePublisher_setConfRev(publisher, 1);
 	GoosePublisher_setDataSetRef(publisher, "Test1/LLN0$dataset1");
 

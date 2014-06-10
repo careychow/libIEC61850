@@ -11,24 +11,24 @@
 
 #include "thread.h"
 
-static void
-printDataSetValues(MmsValue* dataSet)
-{
-    int i;
-    for (i = 0; i < 4; i++) {
-        printf("  GGIO1.SPCSO%i.stVal: %i\n", i,
-                MmsValue_getBoolean(MmsValue_getElement(dataSet, i)));
-    }
-}
-
 void
 reportCallbackFunction(void* parameter, ClientReport report)
 {
-    MmsValue* dataSetValues = (MmsValue*) parameter;
+    ClientDataSet dataSet = ClientReport_getDataSet(report);
 
-    printf("received report\n");
+    MmsValue* dataSetValues = ClientDataSet_getValues(dataSet);
 
-    printDataSetValues(dataSetValues);
+    printf("received report for %s\n", ClientReport_getRcbReference(report));
+
+    int i;
+    for (i = 0; i < 4; i++) {
+        ReasonForInclusion reason = ClientReport_getReasonForInclusion(report, i);
+
+        if (reason != REASON_NOT_INCLUDED) {
+            printf("  GGIO1.SPCSO%i.stVal: %i (included for reason %i)\n", i,
+                    MmsValue_getBoolean(MmsValue_getElement(dataSetValues, i)), reason);
+        }
+    }
 }
 
 int main(int argc, char** argv) {
@@ -73,24 +73,31 @@ int main(int argc, char** argv) {
         /* read data set */
         ClientDataSet clientDataSet;
 
-        clientDataSet = IedConnection_getDataSetValues(con, &error, "simpleIOGenericIO/LLN0.Events", NULL);
+        clientDataSet = IedConnection_readDataSetValues(con, &error, "simpleIOGenericIO/LLN0.Events", NULL);
 
         if (clientDataSet == NULL)
             printf("failed to read dataset\n");
 
-        printDataSetValues(ClientDataSet_getDataSetValues(clientDataSet));
+        /* Read RCB values */
+        IedConnection_getRCBValues(con, &error, "simpleIOGenericIO/LLN0.RP.EventsRCB", NULL);
 
         IedConnection_enableReporting(con, &error, "simpleIOGenericIO/LLN0.RP.EventsRCB", clientDataSet,
                 TRG_OPT_DATA_UPDATE | TRG_OPT_INTEGRITY | TRG_OPT_GI, reportCallbackFunction,
-                ClientDataSet_getDataSetValues(clientDataSet));
+                NULL);
 
         Thread_sleep(1000);
 
-        IedConnection_triggerGIReport(con, &error, "impleIOGenericIO/LLN0.RP.EventsRCB");
+        IedConnection_triggerGIReport(con, &error, "simpleIOGenericIO/LLN0.RP.EventsRCB");
 
-        Thread_sleep(5000);
+        if (error != IED_ERROR_OK) {
+            printf("Error triggering a GI report (code: %i)\n", error);
+        }
+
+        Thread_sleep(60000);
 
         IedConnection_disableReporting(con, &error, "simpleIOGenericIO/LLN0.RP.EventsRCB");
+
+        ClientDataSet_destroy(clientDataSet);
 
         IedConnection_close(con);
     }

@@ -3,24 +3,24 @@
  *
  *  IEC 61850 server API for libiec61850.
  *
- *  Copyright 2013 Michael Zillgith
+ *  Copyright 2013, 2014 Michael Zillgith
  *
- *	This file is part of libIEC61850.
+ *  This file is part of libIEC61850.
  *
- *	libIEC61850 is free software: you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation, either version 3 of the License, or
- *	(at your option) any later version.
+ *  libIEC61850 is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
  *
- *	libIEC61850 is distributed in the hope that it will be useful,
- *	but WITHOUT ANY WARRANTY; without even the implied warranty of
- *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
+ *  libIEC61850 is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
- *	You should have received a copy of the GNU General Public License
- *	along with libIEC61850.  If not, see <http://www.gnu.org/licenses/>.
+ *  You should have received a copy of the GNU General Public License
+ *  along with libIEC61850.  If not, see <http://www.gnu.org/licenses/>.
  *
- *	See COPYING file for the complete license text.
+ *  See COPYING file for the complete license text.
  *
  */
 
@@ -32,9 +32,27 @@
  */
 
 #include "mms_server.h"
+#include "dynamic_model.h"
 #include "model.h"
+#include "filesystem.h"
+#include "config_file_parser.h"
 
+/**
+ * An opaque handle for an IED server instance
+ */
 typedef struct sIedServer* IedServer;
+
+/**
+ * An opaque handle for a client connection
+ */
+typedef struct sClientConnection* ClientConnection;
+
+/**
+ * @defgroup IEC61850_SERVER_GENERAL General server setup and management functions
+ *
+ * @{
+ */
+
 
 /**
  * \brief Create a new IedServer instance
@@ -72,6 +90,16 @@ void
 IedServer_stop(IedServer self);
 
 /**
+ * \brief Return the data model of the server
+ *
+ * \param self the instance of IedServer to operate on.
+ *
+ * \return the IedModel* instance of the server
+ */
+IedModel*
+IedServer_getDataModel(IedServer self);
+
+/**
  * \brief Check if IedServer instance is listening for client connections
  *
  * \param self the instance of IedServer to operate on.
@@ -80,6 +108,19 @@ IedServer_stop(IedServer self);
  */
 bool
 IedServer_isRunning(IedServer self);
+
+/**
+ * \brief Get access to the underlying MmsServer instance.
+ *
+ * This function should be handled with care. Since direct interaction with the
+ * MmsServer can interfere with the IedServer.
+ *
+ * \param self the instance of IedServer to operate on.
+ *
+ * \return MmsServer instance that is used by the IedServer
+ */
+MmsServer
+IedServer_getMmsServer(IedServer self);
 
 /**
  * \brief get the IsoServer instance for this IedServer object
@@ -92,6 +133,125 @@ IsoServer
 IedServer_getIsoServer(IedServer self);
 
 /**
+ * \brief Enable all GOOSE control blocks.
+ *
+ * This will set the GoEna attribute of all configured GOOSE control blocks
+ * to true. If this method is not called at the startup or reset of the server
+ * then configured GOOSE control blocks keep inactive until a MMS client enables
+ * them by writing to the GOOSE control block.
+ *
+ * \param self the instance of IedServer to operate on.
+ */
+void
+IedServer_enableGoosePublishing(IedServer self);
+
+/**@}*/
+
+/**
+ * @defgroup IEC61850_SERVER_CONNECTION_HANDLING Connection handling and client authentication
+ *
+ * @{
+ */
+
+/**
+ * \brief set the authenticator for this server
+ *
+ * This function sets a user specified authenticator that is used to identify and authenticate clients that
+ * wants to connect. The authenticator is called on each connection attempt. Depending on the return value
+ * of the authenticator the client connection is accepted or refused. If no authenticator is set all client
+ * connections are accepted.
+ *
+ * \param self the instance of IedServer to operate on.
+ * \param authenticator the user provided authenticator callback
+ * \param authenticatorParameter user provided paremeter that is passed to the authenticator
+ */
+void
+IedServer_setAuthenticator(IedServer self, AcseAuthenticator authenticator, void* authenticatorParameter);
+
+
+
+/**
+ * \brief get the peer address of this connection as string
+ *
+ * Note: the returned string is only valid as long as the client connection exists. It is save to use
+ * the string inside of the connection indication callback function.
+ *
+ * \param self the ClientConnection instance
+ * \return peer address as C string.
+ */
+char*
+ClientConnection_getPeerAddress(ClientConnection self);
+
+/**
+ * \brief Get the security token associated with this connection
+ *
+ * The security token is an opaque handle that is associated with the connection. It is provided by the
+ * authenticator (if one is present). If no security token is used then this function returns NULL
+ *
+ * \param self the ClientConnection instance
+ *
+ * \return the security token or NULL
+ */
+void*
+ClientConnection_getSecurityToken(ClientConnection self);
+
+/**
+ * \brief User provided callback function that is invoked whenever a new client connects or an existing connection is closed
+ *        or detected as lost.
+ *
+ * \param self the instance of IedServer where the connection event occured.
+ * \param connection the new or closed client connect object
+ * \param connected true if a new connection is indicated, false if the connection has been closed or detected as lost.
+ * \param parameter a user provided parameter
+ */
+typedef void (*IedConnectionIndicationHandler) (IedServer self, ClientConnection connection, bool connected, void* parameter);
+
+/**
+ * \brief set a callback function that will be called on connection events (open or close).
+ *
+ * \param self the instance of IedServer to operate on.
+ * \param handler the user provided callback function
+ * \param parameter a user provided parameter that is passed to the callback function.
+ */
+void
+IedServer_setConnectionIndicationHandler(IedServer self, IedConnectionIndicationHandler handler, void* parameter);
+
+
+/**@}*/
+
+/**
+ * @defgroup IEC61850_SERVER_DATA_MODEL_ACCESS Data model access and data update
+ *
+ * @{
+ */
+
+
+/**
+ * \brief Lock the MMS server data model.
+ *
+ * Client requests will be postponed until the lock is removed.
+ *
+ * NOTE: This method should never be called inside of a library callback function. In the context of
+ * a library callback the data model is always already locked! Calling this function inside of a
+ * library callback may lead to a deadlock condition.
+ *
+ * \param self the instance of IedServer to operate on.
+ */
+void
+IedServer_lockDataModel(IedServer self);
+
+/**
+ * \brief Unlock the MMS server data model and process pending client requests.
+ *
+ * NOTE: This method should never be called inside of a library callback function. In the context of
+ * a library callback the data model is always already locked!
+ *
+ * \param self the instance of IedServer to operate on.
+ */
+void
+IedServer_unlockDataModel(IedServer self);
+
+/**
  * \brief Get data attribute value
  *
  * Get the MmsValue object of an MMS Named Variable that is part of the device model.
@@ -99,43 +259,177 @@ IedServer_getIsoServer(IedServer self);
  * the IedServer_updateValue method.
  *
  * \param self the instance of IedServer to operate on.
- * \param node the data attribute handle
+ * \param dataAttribute the data attribute handle
  *
  * \return MmsValue object of the MMS Named Variable or NULL if the value does not exist.
  */
 MmsValue*
-IedServer_getAttributeValue(IedServer self, ModelNode* node);
+IedServer_getAttributeValue(IedServer self, DataAttribute* dataAttribute);
 
+/**
+ * \brief Get the MmsValue object related to a FunctionalConstrainedData object
+ *
+ * Get the MmsValue from the server cache that is associated with the Functional Constrained Data (FCD)
+ * object that is specified by the DataObject and the given Function Constraint (FC).
+ * Accessing the value will directly influence the values presented by the server. This kind of direct
+ * access will also bypass the report notification mechanism (i.e. changes will not cause a report!).
+ * Therefore this function should be used with care. It could be useful to access arrays of DataObjects.
+ *
+ * \param self the instance of IedServer to operate on.
+ * \param dataObject the data object to specify the FCD
+ * \param fc the FC to specify the FCD
+ *
+ * \return MmsValue object cached by the server.
+ */
+MmsValue*
+IedServer_getFunctionalConstrainedData(IedServer self, DataObject* dataObject, FunctionalConstraint fc);
 
 /**
  * \brief Update the MmsValue object of an IEC 61850 data attribute.
  *
- * The data attribute handle of type ModelNode* are imported with static_model.h.
+ * The data attribute handle of type DataAttribute* are imported with static_model.h in the case when
+ * the static data model is used.
  * You should use this function instead of directly operating on the MmsValue instance
  * that is hold by the MMS server. Otherwise the IEC 61850 server is not aware of the
  * changed value and will e.g. not generate a report.
  *
- * \param self the instance of IedServer to operate on.
- * \param node the data attribute handle
- * \param value MmsValue object used to update the value cached by the server.
+ * This function will also check if a trigger condition is satisfied in the case when a report or GOOSE
+ * control block is enabled.
  *
- * \return MmsValue object of the MMS Named Variable or NULL if the value does not exist.
+ * \param self the instance of IedServer to operate on.
+ * \param dataAttribute the data attribute handle
+ * \param value MmsValue object used to update the value cached by the server.
  */
 void
-IedServer_updateAttributeValue(IedServer self, DataAttribute* node, MmsValue* value);
+IedServer_updateAttributeValue(IedServer self, DataAttribute* dataAttribute, MmsValue* value);
 
 /**
- * \brief Inform the IEC 61850 stack that the quality of a data attribute has changed.
+ * \brief Update the value of an IEC 61850 float data attribute.
  *
- * The data attribute handle of type ModelNode* are imported with static_model.h.
- * This function is required to trigger reports that have been configured with
- * QUALITY CHANGE trigger condition.
+ * Update the value of a float data attribute without handling with MmsValue instances.
+ *
+ * This function will also check if a trigger condition is satisfied in the case when a report or GOOSE
+ * control block is enabled.
  *
  * \param self the instance of IedServer to operate on.
- * \param node the data attribute handle
+ * \param dataAttribute the data attribute handle
+ * \param value the new float value of the data attribute.
  */
 void
-IedServer_attributeQualityChanged(IedServer self, ModelNode* node);
+IedServer_updateFloatAttributeValue(IedServer self, DataAttribute* dataAttribute, float value);
+
+/**
+ * \brief Update the value of an IEC 61850 integer32 data attribute.
+ *
+ * Update the value of a integer data attribute without handling with MmsValue instances.
+ *
+ * This function will also check if a trigger condition is satisfied in the case when a report or GOOSE
+ * control block is enabled.
+ *
+ * \param self the instance of IedServer to operate on.
+ * \param dataAttribute the data attribute handle
+ * \param value the new integer value of the data attribute.
+ */
+void
+IedServer_updateInt32AttributeValue(IedServer self, DataAttribute* dataAttribute, int32_t value);
+
+/**
+ * \brief Update the value of an IEC 61850 unsigned integer data attribute.
+ *
+ * Update the value of a unsigned data attribute without handling with MmsValue instances.
+ *
+ * This function will also check if a trigger condition is satisfied in the case when a report or GOOSE
+ * control block is enabled.
+ *
+ * \param self the instance of IedServer to operate on.
+ * \param dataAttribute the data attribute handle
+ * \param value the new unsigned integer value of the data attribute.
+ */
+void
+IedServer_updateUnsignedAttributeValue(IedServer self, DataAttribute* dataAttribute, uint32_t value);
+
+/**
+ * \brief Update the value of an IEC 61850 bit string data attribute.
+ *
+ * Update the value of a bit string data attribute without handling with MmsValue instances.
+ *
+ * This function will also check if a trigger condition is satisfied in the case when a report or GOOSE
+ * control block is enabled.
+ *
+ * \param self the instance of IedServer to operate on.
+ * \param dataAttribute the data attribute handle
+ * \param value the new bit string integer value of the data attribute.
+ */
+void
+IedServer_updateBitStringAttributeValue(IedServer self, DataAttribute* dataAttribute, uint32_t value);
+
+/**
+ * \brief Update the value of an IEC 61850 boolean data attribute.
+ *
+ * Update the value of a boolean data attribute without handling with MmsValue instances.
+ *
+ * This function will also check if a trigger condition is satisfied in the case when a report or GOOSE
+ * control block is enabled.
+ *
+ * \param self the instance of IedServer to operate on.
+ * \param dataAttribute the data attribute handle
+ * \param value the new boolean value of the data attribute.
+ */
+void
+IedServer_updateBooleanAttributeValue(IedServer self, DataAttribute* dataAttribute, bool value);
+
+/**
+ * \brief Update the value of an IEC 61850 UTC time (timestamp) data attribute.
+ *
+ * Update the value of a UTC time data attribute without handling with MmsValue instances.
+ *
+ * This function will also check if a trigger condition is satisfied in the case when a report or GOOSE
+ * control block is enabled.
+ *
+ * \param self the instance of IedServer to operate on.
+ * \param dataAttribute the data attribute handle
+ * \param value the new UTC time value of the data attribute.
+ */
+void
+IedServer_updateUTCTimeAttributeValue(IedServer self, DataAttribute* dataAttribute, uint64_t value);
+
+/**
+ * \brief Update a quality ("q") IEC 61850 data attribute.
+ *
+ * This is a specialized function to handle Quality data attributes. It can be used instead of the more
+ * generic IedServer_updateAttributeValue function.
+ *
+ * This function will also check if the quality change  (qchg) trigger condition is satisfied and inform a
+ * report control block accordingly.
+ *
+ * \param self the instance of IedServer to operate on.
+ * \param dataAttribute the data attribute handle
+ * \param quality the new quality value
+ *
+ */
+void
+IedServer_updateQuality(IedServer self, DataAttribute* dataAttribute, Quality quality);
+
+/**@}*/
+
+/**
+ * @defgroup IEC61850_SERVER_CONTROL Server side control model handling
+ *
+ * @{
+ */
+
+
+
+/**
+ * \brief result code for ControlPerformCheckHandler
+ */
+typedef enum {
+    CONTROL_ACCEPTED = -1, /** check passed */
+    CONTROL_HARDWARE_FAULT = 1, /** check failed due to hardware fault */
+    CONTROL_TEMPORARILY_UNAVAILABLE = 2, /** control is already selected or operated */
+    CONTROL_OBJECT_ACCESS_DENIED = 3, /** check failed due to access control reason - access denied for this client or state */
+    CONTROL_OBJECT_UNDEFINED = 4 /** object not visible in this security context ??? */
+} CheckHandlerResult;
 
 /**
  * \brief Control model callback to perform the static tests (optional).
@@ -149,10 +443,12 @@ IedServer_attributeQualityChanged(IedServer self, ModelNode* node);
  * \param ctlVal the control value of the control operation.
  * \param test indicates if the operate request is a test operation
  * \param interlockCheck the interlockCheck parameter provided by the client
+ * \param connection the connection object of the client connection that invoked the control operation
  *
- * \return true if the static tests had been successful, false otherwise
+ * \return CONTROL_ACCEPTED if the static tests had been successful, one of the error codes otherwise
  */
-typedef bool (*ControlPerformCheckHandler) (void* parameter, MmsValue* ctlVal, bool test, bool interlockCheck);
+typedef CheckHandlerResult (*ControlPerformCheckHandler) (void* parameter, MmsValue* ctlVal, bool test, bool interlockCheck,
+        ClientConnection connection);
 
 /**
  * \brief Control model callback to perform the dynamic tests (optional).
@@ -237,36 +533,13 @@ IedServer_setPerformCheckHandler(IedServer self, DataObject* node, ControlPerfor
 void
 IedServer_setWaitForExecutionHandler(IedServer self, DataObject* node, ControlWaitForExecutionHandler handler, void* parameter);
 
-/**
- * \brief Lock the MMS server data model.
- *
- * Client requests will be postponed until the lock is removed
- *
- * \param self the instance of IedServer to operate on.
- */
-void
-IedServer_lockDataModel(IedServer self);
+/**@}*/
 
 /**
- * \brief Unlock the MMS server data model and process pending client requests.
+ * @defgroup IEC61850_SERVER_EXTERNAL_ACCESS Handle external access to data model and access control
  *
- * \param self the instance of IedServer to operate on.
+ * @{
  */
-void
-IedServer_unlockDataModel(IedServer self);
-
-/**
- * \brief Enable all GOOSE control blocks.
- *
- * This will set the GoEna attribute of all configured GOOSE control blocks
- * to true. If this method is not called at the startup or reset of the server
- * then configured GOOSE control blocks keep inactive until a MMS client enables
- * them by writing to the GOOSE control block.
- *
- * \param self the instance of IedServer to operate on.
- */
-void
-IedServer_enableGoosePublishing(IedServer self);
 
 /**
  * \brief callback handler to monitor client access to data attributes
@@ -276,15 +549,18 @@ IedServer_enableGoosePublishing(IedServer self);
  * multiple times and distinguish data attributes by the dataAttribute parameter.
  *
  * \param the data attribute that has been written by an MMS client.
+ * \param connection the connection object of the client connection that invoked the write operation
  */
-typedef void (*AttributeChangedHandler) (DataAttribute* dataAttribute);
+typedef void (*AttributeChangedHandler) (DataAttribute* dataAttribute, ClientConnection connection);
 
 /**
+ * \deprecated Please use IedServer_handleWriteAccess instead!
  * \brief Install an observer for a data attribute.
  *
  * This instructs the server to monitor write attempts by MMS clients to specific
  * data attributes. If a successful write attempt happens the server will call
- * the provided callback function to inform the application.
+ * the provided callback function to inform the application. This can be used to
+ * monitor important configuration values.
  *
  * \param self the instance of IedServer to operate on.
  * \param dataAttribute the data attribute to monitor
@@ -294,6 +570,65 @@ typedef void (*AttributeChangedHandler) (DataAttribute* dataAttribute);
 void
 IedServer_observeDataAttribute(IedServer self, DataAttribute* dataAttribute,
         AttributeChangedHandler handler);
+
+/***************************************************************************
+ * Access control
+ **************************************************************************/
+
+/**
+ * \brief callback handler to intercept/control client access to data attributes
+ *
+ * User provided callback function to intercept/control MMS client access to
+ * IEC 61850 data attributes. The application can install the same handler
+ * multiple times and distinguish data attributes by the dataAttribute parameter.
+ * This handler can be used to perform write access control do data attributes.
+ * One application can be to allow write access only from a specific client. Another
+ * application could be to check if the value is in the allowed range before the write
+ * is accepted.
+ *
+ * \param the data attribute that has been written by an MMS client.
+ * \param the value the client want to write to the data attribtue
+ * \param connection the connection object of the client connection that invoked the write operation
+ *
+ * \return true if access is accepted, false if access is denied.
+ */
+typedef bool (*WriteAccessHandler) (DataAttribute* dataAttribute, MmsValue* value, ClientConnection connection);
+
+/**
+ * \brief Install a WriteAccessHandler for a data attribute.
+ *
+ * This instructs the server to monitor write attempts by MMS clients to specific
+ * data attributes. If a client tries to write to the monitored data attribute the
+ * handler is invoked. The handler can decide if the write access will be allowed
+ * or denied. If a WriteAccessHandler is set for a specific data attribute - the
+ * default write access policy will not be performed for that data attribute.
+ *
+ * \param self the instance of IedServer to operate on.
+ * \param dataAttribute the data attribute to monitor
+ * \param handler the callback function that is invoked if a client tries to write to
+ *        the monitored data attribute.
+ */
+void
+IedServer_handleWriteAccess(IedServer self, DataAttribute* dataAttribute,
+        WriteAccessHandler handler);
+
+typedef enum {
+    ACCESS_POLICY_ALLOW,
+    ACCESS_POLICY_DENY
+} AccessPolicy;
+
+/**
+ * \brief Change the default write access policy for functional constraint data with a specific FC.
+ *
+ * \param self the instance of IedServer to operate on.
+ * \param fc the FC for which to change the default write access policy.
+ * \param policy the new policy to apply.
+ *
+ */
+void
+IedServer_setWriteAccessPolicy(IedServer self, FunctionalConstraint fc, AccessPolicy policy);
+
+/**@}*/
 
 /**@}*/
 

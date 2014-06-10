@@ -25,6 +25,7 @@
 #include "mms_client_connection.h"
 #include "byte_buffer.h"
 
+#include "mms_client_internal.h"
 
 int
 mmsClient_write_out(void *buffer, size_t size, void *app_key)
@@ -38,7 +39,7 @@ uint32_t
 mmsClient_getInvokeId(ConfirmedResponsePdu_t* confirmedResponse)
 {
 	long invokeId;
-	confirmedResponse->invokeID;
+
 	asn_INTEGER2long(&confirmedResponse->invokeID, &invokeId);
 
 	return (uint32_t) invokeId;

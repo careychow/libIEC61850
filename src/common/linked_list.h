@@ -3,33 +3,39 @@
  *
  *  Copyright 2013 Michael Zillgith
  *
- *	This file is part of libIEC61850.
+ *  This file is part of libIEC61850.
  *
- *	libIEC61850 is free software: you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation, either version 3 of the License, or
- *	(at your option) any later version.
+ *  libIEC61850 is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
  *
- *	libIEC61850 is distributed in the hope that it will be useful,
- *	but WITHOUT ANY WARRANTY; without even the implied warranty of
- *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
+ *  libIEC61850 is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
- *	You should have received a copy of the GNU General Public License
- *	along with libIEC61850.  If not, see <http://www.gnu.org/licenses/>.
+ *  You should have received a copy of the GNU General Public License
+ *  along with libIEC61850.  If not, see <http://www.gnu.org/licenses/>.
  *
- *	See COPYING file for the complete license text.
+ *  See COPYING file for the complete license text.
  */
 
 #ifndef LINKED_LIST_H_
 #define LINKED_LIST_H_
 
-#include "libiec61850_platform_includes.h"
+#include "libiec61850_common_api.h"
 
 /**
  * \addtogroup common_api_group
  */
 /**@{*/
+
+/**
+ * \defgroup LINKED_LIST LinkedList data type definition and handling functions
+ */
+/**@{*/
+
 
 struct sLinkedList {
 	void* data;
@@ -47,7 +53,7 @@ typedef struct sLinkedList* LinkedList;
  * \return the newly created LinkedList instance
  */
 LinkedList
-LinkedList_create();
+LinkedList_create(void);
 
 /**
  * \brief Delete a LinkedList object
@@ -153,8 +159,13 @@ LinkedList_insertAfter(LinkedList listElement, void* data);
 int
 LinkedList_size(LinkedList self);
 
+void*
+LinkedList_getData(LinkedList self);
+
 void
 LinkedList_printStringList(LinkedList self);
+
+/**@}*/
 
 /**@}*/
 

@@ -1,25 +1,24 @@
 README:
 -------
 
-This file is part of the documentation of libiec61850.
-
 Build Status:
 - [![Build Status](https://travis-ci.org/careychow/libIEC61850.png?branch=master)](https://travis-ci.org/careychow/libIEC61850)
 
+This file is part of the documentation of libiec61850. More documentation can be found online at http://libiec61850.com or in the provided doxygen documentation.
+
 Content:
 - Overview
-- Building and running the example server
+- Building and running the examples
+- Installing the library and the API headers
 - Building on Windows with GOOSE support
-- Implementing your own IEC61850 MMS devices
+- Building with the cmake build script
+
 
 Overview
 ---------
 
-libiec61850 is an open-source (GPLv3) implementation of an IEC 61850 client and server library. It is implemented in C to provide maximum portability. It can be used to implement IEC 61850 compliant client and server applications on embedded systems and PCs running Linux and Windows. Included is a set of simple example applications that can be used as a starting point to implement your own IEC 61850 compliant devices or to communicate with IEC 61850 devices.
+libiec61850 is an open-source (GPLv3) implementation of an IEC 61850 client and server library. It is implemented in C (according to the C99 standard) to provide maximum portability. It can be used to implement IEC 61850 compliant client and server applications on embedded systems and PCs running Linux and Windows. Included is a set of simple example applications that can be used as a starting point to implement own IEC 61850 compliant devices or to communicate with IEC 61850 devices.
 
-The library implements parts of the IEC 61850 specification on top of the MMS mapping. It provides the MMS protocol stack on top of TCP/IP.
-
-The goal of this project is to provide an implementation that can run on memory constrained microcontrollers. But currently the library only runs on embedded linux systems as well as Desktop PCs running Linux or Windows.
 
 Building and running the examples
 ----------------------------------------
@@ -37,7 +36,26 @@ Run the sample applications in the example folders. E.g.:
 
 on the Linux command line.
 
-The example server is tested against the openIEC61850 client example. You can find and download openIEC61850 a Java implementation of IEC 61590 MMS for client and server applications at http://www.openmuc.org.
+You can test the server examples by using a generic client or the provided client example applications.
+
+
+Installing the library and the API headers
+--------------------------------------------
+
+The make and cmake build scripts provide an install target. This target copies the API header files and the static library to a single directory for the headers (INSTALL_PREFIX/include) and the static library (INSTALL_PREFIX/lib). With this feature it is more easy to integrate libiec61850 in an external application since you only have to add a simple include directory to the build tool of your choice.
+
+This can be invoked with
+
+make install
+
+The default install directory for the make build script is ".install".
+
+You can modify this by setting the INSTALL_PREFIX environment variable (e.g.):
+
+make INSTALL_PREFIX=/usr/local install
+
+For the cmake build script you have to provide the CMAKE_INSTALL_PREFIX variable
+
 
 Building on windows with GOOSE support
 ---------------------------------------
@@ -49,10 +67,10 @@ To build the library and run libiec61850 applications with GOOSE support on Wind
 3. Download the winpcap developers pack from here (http://www.winpcap.org/install/bin/WpdPack_4_1_2.zip)
 4. Unpack the zip file. Copy the folders Lib and Include from the WpdPack directory in the third_party/winpcap directory of libiec61850
 
-Building with the cmake build system
+Building with the cmake build script
 -------------------------------------
 
-With the help of the cmake build system it is possible to create platform independet project descriptions and let cmake create specific project or build files for other tools like Make or Visual Studio.
+With the help of the cmake build script it is possible to create platform independet project descriptions and let cmake create specific project or build files for other tools like Make or Visual Studio.
 
 If you have cmake installed fire up a command line (cmd.exe) and create a new subdirectory in the libiec61850-0.x folder. Change to this subdirectory. Then you can invoke cmake. As an command line argument you have to supply a "generator" that is used by cmake to create the project file for the actual build tool (in our case Visual Studio).
 
@@ -64,13 +82,8 @@ cmake -G "Visual Studio 10" ..
 
 Note: The ".." at the end of the command line tells cmake where to find the main build script file (called CMakeLists.txt). This should point to the folder libiec61850-0.x which is in our case the parent directory (..).
 
+To select some configuration options you can use ccmake or cmake-gui.
 
-Implementing your own IEC61850 MMS server devices
---------------------------------------------------
-
-Until now libiec61850 uses a static server model. That means that the IEC61850 data model is not generated at runtime by reading an ICD file, but by converting an ICD file to static C data structures at compile time.
-
-To provide your own IEC 61850 compliant device model a tool is provided that translates an IED file to C code that can be compiled into the server application.
 
 
 

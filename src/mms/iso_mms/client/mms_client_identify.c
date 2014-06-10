@@ -50,21 +50,17 @@ mmsClient_createIdentifyRequest(uint32_t invokeId, ByteBuffer* request)
 }
 
 MmsServerIdentity*
-mmsClient_parseIdentifyResponse(ByteBuffer* message, uint32_t* invokeId)
+mmsClient_parseIdentifyResponse(MmsConnection self)
 {
-    uint8_t* buffer = message->buffer;
-    int maxBufPos = message->size;
-    int bufPos = 0;
+    uint8_t* buffer = self->lastResponse->buffer;
+    int maxBufPos = self->lastResponse->size;
+    int bufPos = self->lastResponseBufPos;
     int length;
     MmsServerIdentity* identityInfo = NULL;
 
     uint8_t tag = buffer[bufPos++];
-    if (tag == 0xa2) {
-        // TODO parse confirmed error PDU
+    if (tag != 0xa2)
         goto exit_error;
-    }
-
-    if (tag != 0xa1) goto exit_error;
 
     bufPos = BerDecoder_decodeLength(buffer, &length, bufPos, maxBufPos);
     if (bufPos < 0) goto exit_error;
@@ -72,7 +68,8 @@ mmsClient_parseIdentifyResponse(ByteBuffer* message, uint32_t* invokeId)
     int endPos = bufPos + length;
 
     if (endPos > maxBufPos) {
-        printf("Message to short!\n");
+        if (DEBUG_MMS_CLIENT)
+            printf("mmsClient_parseIdentifyResponse: Message to short!\n");
         goto exit_error;
     }
 
@@ -82,14 +79,10 @@ mmsClient_parseIdentifyResponse(ByteBuffer* message, uint32_t* invokeId)
 
     while (bufPos < endPos) {
         tag = buffer[bufPos++];
+
         bufPos = BerDecoder_decodeLength(buffer, &length, bufPos, maxBufPos);
 
         switch (tag) {
-        case 0x02: /* invoke Id */
-            if (invokeId != NULL)
-                *invokeId = BerDecoder_decodeUint32(buffer, length, bufPos);
-            bufPos += length;
-            break;
         case 0x80: /* vendorName */
             vendorName = createStringFromBuffer(buffer + bufPos, length);
             bufPos += length;
@@ -107,7 +100,6 @@ mmsClient_parseIdentifyResponse(ByteBuffer* message, uint32_t* invokeId)
             break;
         }
     }
-
 
     identityInfo = (MmsServerIdentity*) malloc(sizeof(MmsServerIdentity));
 

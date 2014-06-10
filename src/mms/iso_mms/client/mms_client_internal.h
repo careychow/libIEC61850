@@ -27,8 +27,13 @@
 #include "MmsPdu.h"
 #include "linked_list.h"
 #include "mms_client_connection.h"
+#include "ber_decode.h"
 
 #include "thread.h"
+
+#ifndef DEBUG_MMS_CLIENT
+#define DEBUG_MMS_CLIENT 0
+#endif
 
 typedef enum {
 	MMS_STATE_CLOSED,
@@ -44,6 +49,11 @@ typedef enum {
 	MMS_CON_RESPONSE_PENDING
 } ConnectionState;
 
+#define CONCLUDE_STATE_CONNECTION_ACTIVE 0
+#define CONCLUDE_STATE_REQUESTED 1
+#define CONCLUDE_STATE_REJECTED 2
+#define CONCLUDE_STATE_ACCEPTED 3
+
 /* private instance variables */
 struct sMmsConnection {
     Semaphore lastInvokeIdLock;
@@ -52,25 +62,30 @@ struct sMmsConnection {
 	Semaphore lastResponseLock;
     uint32_t responseInvokeId;
 	ByteBuffer* lastResponse;
+	uint32_t lastResponseBufPos;
+	MmsError lastResponseError;
 
 	Semaphore outstandingCallsLock;
 	uint32_t* outstandingCalls;
 
 	uint32_t requestTimeout;
 
-	MmsClientError lastError;
 	IsoClientConnection isoClient;
 	AssociationState associationState;
 	ConnectionState connectionState;
-	uint8_t* buffer;
+	//uint8_t* buffer;
 
 	MmsConnectionParameters parameters;
-	IsoConnectionParameters* isoParameters;
-
-	int isoConnectionParametersSelfAllocated;
+	IsoConnectionParameters isoParameters;
 
 	MmsInformationReportHandler reportHandler;
 	void* reportHandlerParameter;
+
+	MmsConnectionLostHandler connectionLostHandler;
+	void* connectionLostHandlerParameter;
+
+	/* state of an active connection conclude/release process */
+	int concludeState;
 };
 
 
@@ -79,11 +94,12 @@ struct sMmsConnection {
  */
 typedef enum {
 	MMS_NAMED_VARIABLE,
-	MMS_NAMED_VARIABLE_LIST
+	MMS_NAMED_VARIABLE_LIST,
+	MMS_DOMAIN_NAMES
 } MmsObjectClass;
 
 MmsValue*
-mmsClient_parseListOfAccessResults(AccessResult_t** accessResultList, int listSize);
+mmsClient_parseListOfAccessResults(AccessResult_t** accessResultList, int listSize, bool createArray);
 
 uint32_t
 mmsClient_getInvokeId(ConfirmedResponsePdu_t* confirmedResponse);
@@ -104,11 +120,11 @@ bool
 mmsClient_parseGetNameListResponse(LinkedList* nameList, ByteBuffer* message, uint32_t* invokeId);
 
 int
-mmsClient_createGetNameListRequestDomainSpecific(long invokeId, char* domainName,
+mmsClient_createGetNameListRequestDomainOrVMDSpecific(long invokeId, char* domainName,
 		ByteBuffer* writeBuffer, MmsObjectClass objectClass, char* continueAfter);
 
 MmsValue*
-mmsClient_parseReadResponse(ByteBuffer* message, uint32_t* invokeId);
+mmsClient_parseReadResponse(ByteBuffer* message, uint32_t* invokeId, bool createArray);
 
 int
 mmsClient_createReadRequest(uint32_t invokeId, char* domainId, char* itemId, ByteBuffer* writeBuffer);
@@ -136,6 +152,10 @@ void
 mmsClient_createGetNamedVariableListAttributesRequest(uint32_t invokeId, ByteBuffer* writeBuffer,
 		char* domainId, char* listNameId);
 
+void
+mmsClient_createGetNamedVariableListAttributesRequestAssociationSpecific(uint32_t invokeId,
+        ByteBuffer* writeBuffer, char* listNameId);
+
 LinkedList
 mmsClient_parseGetNamedVariableListAttributesResponse(ByteBuffer* message, uint32_t* invokeId,
 		bool* /*OUT*/ deletable);
@@ -149,11 +169,12 @@ mmsClient_createGetVariableAccessAttributesRequest(
 MmsVariableSpecification*
 mmsClient_parseGetVariableAccessAttributesResponse(ByteBuffer* message, uint32_t* invokeId);
 
-MmsIndication
-mmsClient_parseWriteResponse(ByteBuffer* message);
+void
+mmsClient_parseWriteResponse(ByteBuffer* message, int32_t bufPos, MmsError* mmsError);
 
-MmsIndication
-mmsClient_parseWriteMultipleItemsResponse(ByteBuffer* message, int itemCount, LinkedList* accessResults);
+void
+mmsClient_parseWriteMultipleItemsResponse(ByteBuffer* message, int32_t bufPos, MmsError* mmsError,
+        int itemCount, LinkedList* accessResults);
 
 int
 mmsClient_createWriteRequest(uint32_t invokeId, char* domainId, char* itemId, MmsValue* value,
@@ -168,14 +189,14 @@ mmsClient_createDefineNamedVariableListRequest(uint32_t invokeId, ByteBuffer* wr
 		char* domainId, char* listNameId, LinkedList /*<char*>*/ listOfVariables,
 		bool associationSpecific);
 
-MmsIndication
+bool
 mmsClient_parseDefineNamedVariableResponse(ByteBuffer* message, uint32_t* invokeId);
 
 void
 mmsClient_createDeleteNamedVariableListRequest(long invokeId, ByteBuffer* writeBuffer,
 		char* domainId, char* listNameId);
 
-MmsIndication
+bool
 mmsClient_parseDeleteNamedVariableListResponse(ByteBuffer* message, uint32_t* invokeId);
 
 void
@@ -188,10 +209,47 @@ void
 mmsClient_createIdentifyRequest(uint32_t invokeId, ByteBuffer* request);
 
 MmsServerIdentity*
-mmsClient_parseIdentifyResponse(ByteBuffer* message, uint32_t* invokeId);
+mmsClient_parseIdentifyResponse(MmsConnection self);
+
+void
+mmsClient_createStatusRequest(uint32_t invokeId, ByteBuffer* request, bool extendedDerivation);
+
+bool
+mmsClient_parseStatusResponse(MmsConnection self, int* vmdLogicalStatus, int* vmdPhysicalStatus);
+
+void
+mmsClient_createFileOpenRequest(uint32_t invokeId, ByteBuffer* request, char* fileName, uint32_t initialPosition);
+
+bool
+mmsClient_parseFileOpenResponse(MmsConnection self, int32_t* frsmId, uint32_t* fileSize, uint64_t* lastModified);
+
+void
+mmsClient_createFileReadRequest(uint32_t invokeId, ByteBuffer* request, int32_t frsmId);
+
+bool
+mmsClient_parseFileReadResponse(MmsConnection self, int32_t frsmId, bool* moreFollows, MmsFileReadHandler handler, void* handlerParameter);
+
+void
+mmsClient_createFileCloseRequest(uint32_t invokeId, ByteBuffer* request, int32_t frsmId);
+
+void
+mmsClient_createFileRenameRequest(uint32_t invokeId, ByteBuffer* request, char* currentFileName, char* newFileName);
+
+void
+mmsClient_createFileDeleteRequest(uint32_t invokeId, ByteBuffer* request, char* fileName);
+
+void
+mmsClient_createFileDirectoryRequest(uint32_t invokeId, ByteBuffer* request, char* fileSpecification, char* continueAfter);
+
+bool
+mmsClient_parseFileDirectoryResponse(MmsConnection self, MmsFileDirectoryHandler handler, void* handlerParameter,
+        bool* moreFollows);
 
 bool
 mmsClient_parseInitiateResponse(MmsConnection self);
+
+int
+mmsClient_createConcludeRequest(MmsConnection self, ByteBuffer* message);
 
 int
 mmsClient_createMmsGetNameListRequestAssociationSpecific(long invokeId, ByteBuffer* writeBuffer,

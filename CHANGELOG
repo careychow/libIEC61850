@@ -1,3 +1,111 @@
+Changes to version 0.7.6
+------------------------
+- Server: fixed bug: authenticator will be called and can accept client connection even if no authentication value is provided
+- Tools: SCL parser accepts SCL files without communication section
+- Server: fixed missing support for nested control objects (required to support IEC 61400-25-2)
+- client API: fixed some bugs in client API functions of version 0.7.5
+- client API: added support to receive CommandTermination message of enhanced control models
+- server API: new function to get access to DataAttribute references without knowing the IED name
+- some other small changes...
+
+Changes to version 0.7.5
+------------------------
+- Client API: added convenience functions to avoid direct handling with MmsValue instances
+- Added timestamp handling functions
+- Configuration tools (genmodel/genconfig) allow specification of access point and IED for SCL files containing more then one IED / access point
+- client/server: COTP layer is now more efficient
+- added server example to illustrate using arrays of data objects
+- MMS server: fixed potential dead-lock problem server side
+- IED server: solved problem that client writes didn't trigger a report
+- MMS server: fixed problem in fileDirectory response
+- server: removed optional transfer syntax field in ACSE layer to improve compatibility with some clients
+- some other smaller bug fixes ...
+
+Changes to version 0.7.4
+------------------------
+- Configurations tools: fixed bug with default values and short addresses for sub data objects and sub data attributes
+- DLL build with Visual Studio now exports functions
+- server stack is more configurable (some services can be excluded to reduce binary size)
+- improved doxygen documentation
+- Client API: control service supports originator value (orIdent/orCat)
+- Server: control service checks for valid originator value
+- fixed problem with blocking client abort function
+- Server API: helper functions for dynamic data model creation now contains support for most CDCs of IEC 61850-7-3 (Ed.2)
+- Client API: client report structure now provides access to report timestamp
+- Configuration tool: fixed data set problem with static model generator of 0.7 series
+- fixed some other minor problems ...
+
+Changes to version 0.7.3
+------------------------
+- Server/Client: MMS deleteFile and renameFile services
+- IEC client API: deleteFile ACSI service
+- fixed bug when compiling for big endian systems
+- Client/Server API: added Quality data type and handling functions
+- Server API: added IedServer_updateQuality, IedServer_updateFloatAttributeValue.. convenience functions.
+- extended cmake builder (contains some experimental configuration options)
+- added install target to cmake and make build systems. 
+
+Changes to version 0.7.2
+------------------------
+
+- Server API: added API to create data models at runtime
+- Server: added some helper functions to create common CDCs at runtime
+- Server/ Server API: added configuration file parser
+- Server: Implemented AcseAuthenticator to provide more flexible authentication and access control schemes
+- Server: added windows support for file services (both for Visual Studio and MinGW)
+- Server/Tools: Added access to data attributes by simple integer short addresses ("sAddr" SCL file attribute)
+- Tools: added configuration file generator tool
+- Added examples for using file services and dynamic model features
+- GOOSE publisher: fixed bug - sending wrong confRef field
+
+Changes to version 0.7.1.1
+--------------------------
+
+- Server: fixed long term stack memory leak present in versions 0.7 and 0.7.1
+
+Changes to version 0.7.1
+------------------------
+- Server API: Added IedServer_getFunctionalConstrainedData function to simplify handling of arrays of data objects.
+- Client API: Made connetion parameters for ACSE and lower layers fully configurable (AP-title, AEQualifier, PSel, SSel, TSel) - required to be compatible with some servers
+- MMS server: made number of concurrent TCP connections configurable by CONFIG_MAXIMUM_... define
+- MMS client/server: added MMS status services
+- MMS server: made MMS identify service optional
+- added file access abstraction to HAL
+- MMS client/server: added getFileDirectory, fileOpen, fileRead, fileClose services
+- Client/server: added GetFile ACSI service 
+
+Changes to version 0.7
+-----------------------
+- Server: added support for buffered reporting
+- Server: Bug fix: trigger reasons for reports are taken from SCL file
+- Server/Server API: added callback to perform access control on write accesses
+- Server/Server API: added default access policies to writable FCs
+- Client API: get/setGoCBValues ACSI services - new ClientGooseControlBlock class
+- Client API: added callbacks for connection losses
+- GOOSE Subscriber: API change -> use GoCBReference instead of DataSetReference to identify a GOOSE message
+- GOOSE Subscriber: Bug fix: Linux driver now switches interface to promiscuous mode.
+- MMS Client: improved buffer handling
+- MMS Client/MMS Client API: Added functions to browse and read VMD scope variables
+- Client/Client API/Server: Implemented ABORT and RELEASE services
+- Client API: Allows definition of association specific data sets
+- MMS Client API: Removed all occurances of MmsIndication type in MMS client API
+
+Changes to version 0.6
+------------------------
+- Client API: getDataSetDirectory ACSI service
+- Client API: create and delete data set ACSI services
+- Client API: added getRCBValue/setRCBValues ACSI services to improve client support for reporting
+- client side stack: improved error handling
+- Client API: Methods to allow clients track the connection state
+- Client API: Report handler provides access to reason-for-inclusion
+- Server API: added callbacks for connection events 
+- Server API: new ClientConnection object that will be handed over to some callback functions to allow connection specific reactions on events -> some callback handler signatures have changed! 
+- Added server side support for indexed RCBs
+- more efficient server side buffer handling
+- added BeagleBone LED control demo
+- DEBUG output can be switched on/off for stack components
+- and a lot of small improvements and bug fixes
+
 Changes to version 0.5.3
 ------------------------
 - MMS client/server: multiple variables can be written with a single MMS write request

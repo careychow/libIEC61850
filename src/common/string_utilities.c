@@ -49,6 +49,16 @@ copyString(char* string)
 	return newString;
 }
 
+char*
+copyStringToBuffer(char* string, char* buffer)
+{
+    int newStringLength = strlen(string) + 1;
+
+    memcpy(buffer, string, newStringLength);
+
+    return buffer;
+}
+
 
 char*
 createStringFromBuffer(uint8_t* buf, int size)
@@ -169,4 +179,56 @@ StringUtils_digitsToInt(char* digits, int count)
 
 	return value;
 }
+
+static int
+toInt(char c)
+{
+  if (c >= '0' && c <= '9') return      c - '0';
+  if (c >= 'A' && c <= 'F') return 10 + c - 'A';
+  if (c >= 'a' && c <= 'f') return 10 + c - 'a';
+  return -1;
+}
+
+int
+StringUtils_createBufferFromHexString(char* hexString, uint8_t* buffer)
+{
+    int hexStringLen = strlen(hexString);
+    int i;
+    int bytesCount = 0;
+
+    if (hexStringLen % 2 != 0)
+        return -1;
+
+    for (i = 0; i < (hexStringLen/2); i++) {
+        int high = toInt(hexString[i * 2]);
+        if (high == -1) return -1;
+
+        int low = toInt(hexString[(i * 2) + 1]);
+        if (low == -1) return -1;
+
+        buffer[i] = (uint8_t) (high * 16 + low);
+        bytesCount += 1;
+    }
+
+    return bytesCount;
+}
+
+bool
+StringUtils_startsWith(char* string, char* prefix)
+{
+    int index = 0;
+
+    while ((string[index] != 0) && (prefix[index] != 0)) {
+        if (string[index] != prefix[index])
+            return false;
+
+        index++;
+    }
+
+    if (prefix[index] == 0)
+        return true;
+
+    return false;
+}
+
 

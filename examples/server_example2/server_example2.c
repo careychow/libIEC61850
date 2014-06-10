@@ -42,7 +42,8 @@ void sigint_handler(int signalId)
     running = 0;
 }
 
-int main(int argc, char** argv)
+int 
+main(int argc, char** argv)
 {
     IedServer iedServer = IedServer_create(&iedModel);
 
@@ -65,36 +66,27 @@ int main(int argc, char** argv)
 
     float power = 500.f;
 
-    MmsValue* powerValue = MmsValue_newFloat(power);
-
-    uint32_t timeval = (Hal_getTimeInMs()/ 1000);
-
-    MmsValue* powerTimestamp = MmsValue_newUtcTime(timeval);
-
     while (running) {
-        timeval = (Hal_getTimeInMs() / 1000);
-        MmsValue_setUtcTime(powerTimestamp, timeval);
+
+        uint64_t timeval = Hal_getTimeInMs();
 
         IedServer_lockDataModel(iedServer);
 
-        IedServer_updateAttributeValue(iedServer, IEDMODEL_Inverter_MMXU1_TotW_mag_f, powerValue);
-        IedServer_updateAttributeValue(iedServer, IEDMODEL_Inverter_MMXU1_TotW_t, powerTimestamp);
+        IedServer_updateFloatAttributeValue(iedServer, IEDMODEL_Inverter_MMXU1_TotW_mag_f, power);
+        IedServer_updateUTCTimeAttributeValue(iedServer, IEDMODEL_Inverter_MMXU1_TotW_t, timeval);
 
         IedServer_unlockDataModel(iedServer);
 
         power += 0.1f;
 
-        MmsValue_setFloat(powerValue, power);
-
         Thread_sleep(500);
     }
-
-    MmsValue_delete(powerValue);
-    MmsValue_delete(powerTimestamp);
 
     /* stop MMS server - close TCP server socket and all client sockets */
     IedServer_stop(iedServer);
 
     /* Cleanup - free all resources */
     IedServer_destroy(iedServer);
+
+    return 0;
 } /* main() */

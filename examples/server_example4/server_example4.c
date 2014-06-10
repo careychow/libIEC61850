@@ -3,29 +3,19 @@
  *
  *  Example server application with password authentication.
  *
- *  Copyright 2013 Michael Zillgith
+ *  - How to use a authenticator with password authentication
+ *  - How to distinguish between different clients for control actions and set points
  *
- *  This file is part of libIEC61850.
+ *  The server accepts only connections by clients using one of the two passwords:
  *
- *  libIEC61850 is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *      user1@testpw
+ *      user2@testpw
  *
- *  libIEC61850 is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with libIEC61850.  If not, see <http://www.gnu.org/licenses/>.
- *
- *  See COPYING file for the complete license text.
+ *  Only clients using the second password are allowed to perform control actions.
  */
 
 #include "iec61850_server.h"
-#include "iso_server.h"
-#include "acse.h"
+#include "static_model.h"
 #include "thread.h"
 #include <signal.h>
 #include <stdlib.h>
@@ -36,27 +26,118 @@ extern IedModel iedModel;
 
 static int running = 0;
 
+static IedServer iedServer;
+
 void sigint_handler(int signalId)
 {
 	running = 0;
 }
 
+/* password "database" */
+static char* password1 = "user1@testpw";
+static char* password2 = "user2@testpw";
+
+/**
+ * This is the AcseAuthenticator callback function that is invoked on each client connection attempt.
+ * When returning true the server stack accepts the client. Otherwise the connection is rejected.
+ */
+static bool
+clientAuthenticator(void* parameter, AcseAuthenticationParameter authParameter, void** securityToken)
+{
+    if (authParameter->mechanism == AUTH_PASSWORD) {
+        if (authParameter->value.password.passwordLength == strlen(password1)) {
+            if (memcmp(authParameter->value.password.octetString, password1,
+                    authParameter->value.password.passwordLength) == 0)
+            {
+                *securityToken = (void*) password1;
+                return true;
+            }
+
+        }
+        if (authParameter->value.password.passwordLength == strlen(password2)) {
+            if (memcmp(authParameter->value.password.octetString, password2,
+                    authParameter->value.password.passwordLength) == 0)
+            {
+                *securityToken = (void*) password2;
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+static CheckHandlerResult
+performCheckHandler (void* parameter, MmsValue* ctlVal, bool test, bool interlockCheck, ClientConnection connection)
+{
+    void* securityToken = ClientConnection_getSecurityToken(connection);
+
+    if (securityToken == password2)
+        return CONTROL_ACCEPTED;
+    else
+        return CONTROL_OBJECT_ACCESS_DENIED;
+}
+
+static void
+controlHandlerForBinaryOutput(void* parameter, MmsValue* value, bool test)
+{
+    MmsValue* timeStamp = MmsValue_newUtcTimeByMsTime(Hal_getTimeInMs());
+
+    if (parameter == IEDMODEL_GenericIO_GGIO1_SPCSO1) {
+        IedServer_updateAttributeValue(iedServer, IEDMODEL_GenericIO_GGIO1_SPCSO1_stVal, value);
+        IedServer_updateAttributeValue(iedServer, IEDMODEL_GenericIO_GGIO1_SPCSO1_t, timeStamp);
+    }
+
+    if (parameter == IEDMODEL_GenericIO_GGIO1_SPCSO2) {
+        IedServer_updateAttributeValue(iedServer, IEDMODEL_GenericIO_GGIO1_SPCSO2_stVal, value);
+        IedServer_updateAttributeValue(iedServer, IEDMODEL_GenericIO_GGIO1_SPCSO2_t, timeStamp);
+    }
+
+    if (parameter == IEDMODEL_GenericIO_GGIO1_SPCSO3) {
+        IedServer_updateAttributeValue(iedServer, IEDMODEL_GenericIO_GGIO1_SPCSO3_stVal, value);
+        IedServer_updateAttributeValue(iedServer, IEDMODEL_GenericIO_GGIO1_SPCSO3_t, timeStamp);
+    }
+
+    if (parameter == IEDMODEL_GenericIO_GGIO1_SPCSO4) {
+        IedServer_updateAttributeValue(iedServer, IEDMODEL_GenericIO_GGIO1_SPCSO4_stVal, value);
+        IedServer_updateAttributeValue(iedServer, IEDMODEL_GenericIO_GGIO1_SPCSO4_t, timeStamp);
+    }
+
+    MmsValue_delete(timeStamp);
+}
+
 int main(int argc, char** argv) {
 
-	IedServer iedServer = IedServer_create(&iedModel);
+	iedServer = IedServer_create(&iedModel);
 
 	/* Activate authentication */
-	AcseAuthenticationParameter auth = (AcseAuthenticationParameter) calloc(1, sizeof(struct sAcseAuthenticationParameter));
-	auth->mechanism = AUTH_PASSWORD;
-	auth->value.password.string = "testpw";
-	IsoServer isoServer = IedServer_getIsoServer(iedServer);
-	IsoServer_setAuthenticationParameter(isoServer, auth);
+	IedServer_setAuthenticator(iedServer, clientAuthenticator, NULL);
+
+	/* Set handler for control permission check for each control object */
+	IedServer_setPerformCheckHandler(iedServer, IEDMODEL_GenericIO_GGIO1_SPCSO1,
+	        (ControlPerformCheckHandler) performCheckHandler, NULL);
+	IedServer_setPerformCheckHandler(iedServer, IEDMODEL_GenericIO_GGIO1_SPCSO2,
+	        (ControlPerformCheckHandler) performCheckHandler, NULL);
+	IedServer_setPerformCheckHandler(iedServer, IEDMODEL_GenericIO_GGIO1_SPCSO3,
+	        (ControlPerformCheckHandler) performCheckHandler, NULL);
+	IedServer_setPerformCheckHandler(iedServer, IEDMODEL_GenericIO_GGIO1_SPCSO4,
+	        (ControlPerformCheckHandler) performCheckHandler, NULL);
+
+	/* Set control handler for each control object */
+    IedServer_setControlHandler(iedServer, IEDMODEL_GenericIO_GGIO1_SPCSO1,
+            (ControlHandler) controlHandlerForBinaryOutput, IEDMODEL_GenericIO_GGIO1_SPCSO1);
+    IedServer_setControlHandler(iedServer, IEDMODEL_GenericIO_GGIO1_SPCSO2,
+            (ControlHandler) controlHandlerForBinaryOutput, IEDMODEL_GenericIO_GGIO1_SPCSO2);
+    IedServer_setControlHandler(iedServer, IEDMODEL_GenericIO_GGIO1_SPCSO3,
+            (ControlHandler) controlHandlerForBinaryOutput, IEDMODEL_GenericIO_GGIO1_SPCSO3);
+    IedServer_setControlHandler(iedServer, IEDMODEL_GenericIO_GGIO1_SPCSO4,
+            (ControlHandler) controlHandlerForBinaryOutput, IEDMODEL_GenericIO_GGIO1_SPCSO4);
 
 	/* MMS server will be instructed to start listening to client connections. */
 	IedServer_start(iedServer, 102);
 
 	if (!IedServer_isRunning(iedServer)) {
-		printf("Staring server failed! Exit.\n");
+		printf("Starting server failed! Exit.\n");
 		IedServer_destroy(iedServer);
 		exit(-1);
 	}
@@ -65,9 +146,8 @@ int main(int argc, char** argv) {
 
 	signal(SIGINT, sigint_handler);
 
-	while (running) {
-		Thread_sleep(1);
-	}
+	while (running)
+		Thread_sleep(100);
 
 	/* stop MMS server - close TCP server socket and all client sockets */
 	IedServer_stop(iedServer);

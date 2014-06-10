@@ -51,7 +51,7 @@ getNamedVariableRecursive(MmsVariableSpecification* variable, char* nameId)
 
 		for (i = 0; i < variable->typeSpec.structure.elementCount; i++) {
 
-			if (strlen(variable->typeSpec.structure.elements[i]->name) == (separator - nameId)) {
+			if (strlen(variable->typeSpec.structure.elements[i]->name) == (unsigned) (separator - nameId)) {
 
 				if (strncmp(variable->typeSpec.structure.elements[i]->name, nameId, separator - nameId) == 0) {
 					namedVariable = variable->typeSpec.structure.elements[i];
@@ -197,7 +197,7 @@ MmsDomain_getNamedVariable(MmsDomain* self, char* nameId)
 
 			for (i = 0; i < self->namedVariablesCount; i++) {
 
-				if (strlen(self->namedVariables[i]->name) == (separator - nameId)) {
+				if (strlen(self->namedVariables[i]->name) == (unsigned) (separator - nameId)) {
 
 					if (strncmp(self->namedVariables[i]->name, nameId, separator - nameId) == 0) {
 						namedVariable = self->namedVariables[i];

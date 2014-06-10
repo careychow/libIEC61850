@@ -22,8 +22,6 @@
  */
 
 #include "iec61850_server.h"
-#include "iso_server.h"
-#include "acse.h"
 #include "thread.h"
 #include <signal.h>
 #include <stdlib.h>
@@ -43,7 +41,7 @@ void sigint_handler(int signalId)
 }
 
 void
-observerCallback(DataAttribute* dataAttribute)
+observerCallback(DataAttribute* dataAttribute, ClientConnection connection)
 {
     if (dataAttribute == IEDMODEL_GenericIO_GGIO1_NamPlt_vendor) {
         printf("GGIO.NamPlt.vendor changed to %s\n",

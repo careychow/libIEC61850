@@ -30,17 +30,20 @@ char*
 copyString(char* string);
 
 char*
+copyStringToBuffer(char* string, char* buffer);
+
+char*
 copySubString(char* startPos, char* endPos);
 
 /**
- * Concatenate strings. count indicates the number of strings
+ * \brief Concatenate strings. count indicates the number of strings
  * to concatenate.
  */
 char*
 createString(int count, ...);
 
 /**
- * Concatenate strings in user provided buffer. count indicates the number of strings
+ * \brief Concatenate strings in user provided buffer. count indicates the number of strings
  * to concatenate.
  */
 char*
@@ -60,5 +63,14 @@ StringUtils_digitToInt(char digit);
 
 int
 StringUtils_digitsToInt(char* digits, int count);
+
+int
+StringUtils_createBufferFromHexString(char* hexString, uint8_t* buffer);
+
+/**
+ * \brief test if string starts with prefix
+ */
+bool
+StringUtils_startsWith(char* string, char* prefix);
 
 #endif /* STRING_UTILITIES_H_ */

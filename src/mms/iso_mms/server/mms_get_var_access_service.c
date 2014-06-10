@@ -3,25 +3,27 @@
  *
  *  Copyright 2013 Michael Zillgith
  *
- *	This file is part of libIEC61850.
+ *  This file is part of libIEC61850.
  *
- *	libIEC61850 is free software: you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation, either version 3 of the License, or
- *	(at your option) any later version.
+ *  libIEC61850 is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
  *
- *	libIEC61850 is distributed in the hope that it will be useful,
- *	but WITHOUT ANY WARRANTY; without even the implied warranty of
- *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
+ *  libIEC61850 is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
- *	You should have received a copy of the GNU General Public License
- *	along with libIEC61850.  If not, see <http://www.gnu.org/licenses/>.
+ *  You should have received a copy of the GNU General Public License
+ *  along with libIEC61850.  If not, see <http://www.gnu.org/licenses/>.
  *
- *	See COPYING file for the complete license text.
+ *  See COPYING file for the complete license text.
  */
 
 #include "mms_server_internal.h"
+
+#if (MMS_GET_VARIABLE_ACCESS_ATTRIBUTES == 1)
 
 /**********************************************************************************************
  * MMS GetVariableAccessAttributes Service
@@ -122,9 +124,16 @@ createTypeSpecification (
 			break;
 		case MMS_BINARY_TIME:
 			typeSpec->present = TypeSpecification_PR_binarytime;
+
+			if (namedVariable->typeSpec.binaryTime == 6)
+			    typeSpec->choice.binarytime = 1;
+			else
+			    typeSpec->choice.binarytime = 0;
+
 			break;
 		default:
-			if (DEBUG) printf("MMS-SERVER: Unsupported type %i!\n", namedVariable->type);
+			if (DEBUG_MMS_SERVER) 
+                            printf("MMS-SERVER: Unsupported type %i!\n", namedVariable->type);
 			return -1;
 			break;
 		}
@@ -186,6 +195,9 @@ deleteVariableAccessAttributesResponse(
 		getVarAccessAttr->typeSpecification.choice.array.numberOfElements.buf = NULL;
 		getVarAccessAttr->typeSpecification.choice.array.numberOfElements.size = 0;
 		freeTypeSpecRecursive(getVarAccessAttr->typeSpecification.choice.array.elementType);
+
+		free(getVarAccessAttr->typeSpecification.choice.array.elementType);
+
 		getVarAccessAttr->typeSpecification.choice.array.elementType = NULL;
 	}
 }
@@ -203,14 +215,14 @@ createVariableAccessAttributesResponse(
 	MmsDomain* domain = MmsDevice_getDomain(device, domainId);
 
 	if (domain == NULL) {
-		if (DEBUG) printf("mms_server: domain %s not known\n", domainId);
+		if (DEBUG_MMS_SERVER) printf("mms_server: domain %s not known\n", domainId);
 		return -1;
 	}
 
 	MmsVariableSpecification* namedVariable = MmsDomain_getNamedVariable(domain, nameId);
 
 	if (namedVariable == NULL) {
-		if (DEBUG) printf("mms_server: named variable %s not known\n", nameId);
+		if (DEBUG_MMS_SERVER) printf("mms_server: named variable %s not known\n", nameId);
 		return -1;
 	}
 
@@ -228,9 +240,20 @@ createVariableAccessAttributesResponse(
 
 	createTypeSpecification(namedVariable, &getVarAccessAttr->typeSpecification);
 
-	der_encode(&asn_DEF_MmsPdu, mmsPdu, mmsServer_write_out, (void*) response);
+	asn_enc_rval_t rval =
+	        der_encode(&asn_DEF_MmsPdu, mmsPdu, mmsServer_write_out, (void*) response);
 
-	if (DEBUG) xer_fprint(stdout, &asn_DEF_MmsPdu, mmsPdu);
+	if (rval.encoded == -1) {
+	    response->size = 0;
+
+        if (DEBUG_MMS_SERVER)
+            printf("MMS getVariableAccessAttributes: message to large! send error PDU!\n");
+
+        mmsServer_createConfirmedErrorPdu(invokeId, response,
+                      MMS_ERROR_SERVICE_OTHER);
+
+        return 0;
+	}
 
 	deleteVariableAccessAttributesResponse(getVarAccessAttr);
 
@@ -263,7 +286,7 @@ mmsServer_handleGetVariableAccessAttributesRequest(
 
 				char* domainIdStr = createStringFromBuffer(domainId.buf, domainId.size);
 				char* nameIdStr = createStringFromBuffer(nameId.buf, nameId.size);
-				if (DEBUG) printf("getVariableAccessAttributes domainId: %s nameId: %s\n", domainIdStr, nameIdStr);
+				if (DEBUG_MMS_SERVER) printf("getVariableAccessAttributes domainId: %s nameId: %s\n", domainIdStr, nameIdStr);
 
 				createVariableAccessAttributesResponse(connection, domainIdStr, nameIdStr, invokeId, response);
 
@@ -271,17 +294,17 @@ mmsServer_handleGetVariableAccessAttributesRequest(
 				free(nameIdStr);
 			}
 			else {
-				if (DEBUG) printf("GetVariableAccessAttributesRequest with name other than domainspecific is not supported!\n");
+				if (DEBUG_MMS_SERVER) printf("GetVariableAccessAttributesRequest with name other than domainspecific is not supported!\n");
 				retVal = -1;
 			}
 		}
 		else {
-			if (DEBUG) printf("GetVariableAccessAttributesRequest with address not supported!\n");
+			if (DEBUG_MMS_SERVER) printf("GetVariableAccessAttributesRequest with address not supported!\n");
 			retVal = -1;
 		}
 	}
 	else {
-		if (DEBUG) printf("GetVariableAccessAttributesRequest parsing request failed!\n");
+		if (DEBUG_MMS_SERVER) printf("GetVariableAccessAttributesRequest parsing request failed!\n");
 		retVal = -1;
 	}
 
@@ -289,4 +312,6 @@ mmsServer_handleGetVariableAccessAttributesRequest(
 
 	return retVal;
 }
+
+#endif /* (MMS_GET_VARIABLE_ACCESS_ATTRIBUTES == 1) */
 

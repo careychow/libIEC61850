@@ -56,7 +56,7 @@ public class LogicalNodeType extends SclType {
 		this.lnClass = ParserUtils.parseAttribute(lnNode, "lnClass");
 
 		if (this.lnClass == null)
-			throw new SclParserException("no lnClass attribute");
+			throw new SclParserException(lnNode, "no lnClass attribute");
 	}
 
 	public List<DataObjectDefinition> getDataObjectDefinitions() {

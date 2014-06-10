@@ -26,6 +26,8 @@
 #include <linux/if_packet.h>
 #include <linux/if_ether.h>
 #include <linux/if_arp.h>
+#include <arpa/inet.h>
+#include <unistd.h>
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -49,11 +51,26 @@ getInterfaceIndex(int sock, char* deviceName)
     strncpy(ifr.ifr_name, deviceName, IFNAMSIZ);
 
     if (ioctl(sock, SIOCGIFINDEX, &ifr) == -1) {
-        perror("SIOCGIFINDEX");
+        perror("ETHERNET_LINUX: Failed to get interface index -> exit");
         exit(1);
     }
 
-    return ifr.ifr_ifindex;
+    int interfaceIndex = ifr.ifr_ifindex;
+
+    if (ioctl (sock, SIOCGIFFLAGS, &ifr) == -1)
+    {
+        perror ("ETHERNET_LINUX: Problem getting device flags -> exit");
+        exit (1);
+    }
+
+    ifr.ifr_flags |= IFF_PROMISC;
+    if (ioctl (sock, SIOCSIFFLAGS, &ifr) == -1)
+    {
+        perror ("ETHERNET_LINUX: Setting device to promiscuous mode failed -> exit");
+        exit (1);
+    }
+
+    return interfaceIndex;
 }
 
 
@@ -90,6 +107,7 @@ Ethernet_createSocket(char* interfaceId, uint8_t* destAddress)
 
     if (ethernetSocket->rawSocket == -1) {
         printf("Error creating raw socket!\n");
+        free(ethernetSocket);
         return NULL;
     }
 
@@ -125,12 +143,13 @@ int
 Ethernet_receivePacket(EthernetSocket self, uint8_t* buffer, int bufferSize)
 {
     if (self->isBind == false) {
-        bind(self->rawSocket, (struct sockaddr*) &self->socketAddress, sizeof(self->socketAddress));
-        //TODO check return value
-        self->isBind = true;
+        if (bind(self->rawSocket, (struct sockaddr*) &self->socketAddress, sizeof(self->socketAddress)) == 0)
+            self->isBind = true;
+        else
+            return 0;
     }
 
-    int bytesReceived = recvfrom(self->rawSocket, buffer, bufferSize, MSG_DONTWAIT, 0, 0);
+    return recvfrom(self->rawSocket, buffer, bufferSize, MSG_DONTWAIT, 0, 0);
 }
 
 void

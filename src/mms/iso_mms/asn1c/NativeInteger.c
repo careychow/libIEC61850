@@ -23,12 +23,12 @@ asn_TYPE_descriptor_t asn_DEF_NativeInteger = {
 	"INTEGER",			/* The ASN.1 type is still INTEGER */
 	"INTEGER",
 	NativeInteger_free,
-	NativeInteger_print,
+	NULL,
 	asn_generic_no_constraint,
 	NativeInteger_decode_ber,
 	NativeInteger_encode_der,
-	NativeInteger_decode_xer,
-	NativeInteger_encode_xer,
+	NULL,
+	NULL,
 	NativeInteger_decode_uper,	/* Unaligned PER decoder */
 	NativeInteger_encode_uper,	/* Unaligned PER encoder */
 	0, /* Use generic outmost tag fetcher */
@@ -160,67 +160,7 @@ NativeInteger_encode_der(asn_TYPE_descriptor_t *sd, void *ptr,
 	return erval;
 }
 
-/*
- * Decode the chunk of XML text encoding INTEGER.
- */
-asn_dec_rval_t
-NativeInteger_decode_xer(asn_codec_ctx_t *opt_codec_ctx,
-	asn_TYPE_descriptor_t *td, void **sptr, const char *opt_mname,
-		const void *buf_ptr, size_t size) {
-	asn_dec_rval_t rval;
-	INTEGER_t st;
-	void *st_ptr = (void *)&st;
-	long *native = (long *)*sptr;
 
-	if(!native) {
-		native = (long *)(*sptr = CALLOC(1, sizeof(*native)));
-		if(!native) _ASN_DECODE_FAILED;
-	}
-
-	memset(&st, 0, sizeof(st));
-	rval = INTEGER_decode_xer(opt_codec_ctx, td, &st_ptr, 
-		opt_mname, buf_ptr, size);
-	if(rval.code == RC_OK) {
-		long l;
-		if(asn_INTEGER2long(&st, &l)) {
-			rval.code = RC_FAIL;
-			rval.consumed = 0;
-		} else {
-			*native = l;
-		}
-	} else {
-		/*
-		 * Cannot restart from the middle;
-		 * there is no place to save state in the native type.
-		 * Request a continuation from the very beginning.
-		 */
-		rval.consumed = 0;
-	}
-	ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_INTEGER, &st);
-	return rval;
-}
-
-
-asn_enc_rval_t
-NativeInteger_encode_xer(asn_TYPE_descriptor_t *td, void *sptr,
-	int ilevel, enum xer_encoder_flags_e flags,
-		asn_app_consume_bytes_f *cb, void *app_key) {
-	char scratch[32];	/* Enough for 64-bit int */
-	asn_enc_rval_t er;
-	const long *native = (const long *)sptr;
-
-	(void)ilevel;
-	(void)flags;
-
-	if(!native) _ASN_ENCODE_FAILED;
-
-	er.encoded = snprintf(scratch, sizeof(scratch), "%ld", *native);
-	if(er.encoded <= 0 || (size_t)er.encoded >= sizeof(scratch)
-		|| cb(scratch, er.encoded, app_key) < 0)
-		_ASN_ENCODE_FAILED;
-
-	_ASN_ENCODED_OK(er);
-}
 
 asn_dec_rval_t
 NativeInteger_decode_uper(asn_codec_ctx_t *opt_codec_ctx,
@@ -276,27 +216,6 @@ NativeInteger_encode_uper(asn_TYPE_descriptor_t *td,
 	return er;
 }
 
-/*
- * INTEGER specific human-readable output.
- */
-int
-NativeInteger_print(asn_TYPE_descriptor_t *td, const void *sptr, int ilevel,
-	asn_app_consume_bytes_f *cb, void *app_key) {
-	const long *native = (const long *)sptr;
-	char scratch[32];	/* Enough for 64-bit int */
-	int ret;
-
-	(void)td;	/* Unused argument */
-	(void)ilevel;	/* Unused argument */
-
-	if(native) {
-		ret = snprintf(scratch, sizeof(scratch), "%ld", *native);
-		assert(ret > 0 && (size_t)ret < sizeof(scratch));
-		return (cb(scratch, ret, app_key) < 0) ? -1 : 0;
-	} else {
-		return (cb("<absent>", 8, app_key) < 0) ? -1 : 0;
-	}
-}
 
 void
 NativeInteger_free(asn_TYPE_descriptor_t *td, void *ptr, int contents_only) {

@@ -24,11 +24,11 @@
 #ifndef ASN1_BER_PRIMITIVE_VALUE_H_
 #define ASN1_BER_PRIMITIVE_VALUE_H_
 
-#include "libiec61850_platform_includes.h"
+#include "libiec61850_common_api.h"
 
-typedef struct {
-	int size;
-	int maxSize;
+typedef struct ATTRIBUTE_PACKED {
+	uint8_t size;
+	uint8_t maxSize;
 	uint8_t* octets;
 } Asn1PrimitiveValue;
 

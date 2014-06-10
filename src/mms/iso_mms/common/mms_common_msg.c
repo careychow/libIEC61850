@@ -26,15 +26,7 @@
 #include "platform_endian.h"
 #include "stack_config.h"
 #include "string_utilities.h"
-
-void
-memcpyReverseByteOrder(uint8_t* dst, uint8_t* src, int size)
-{
-    int i = 0;
-    for (i = 0; i < size; i++) {
-        dst[i] = src[size - i - 1];
-    }
-}
+#include "mms_value_internal.h"
 
 void
 mmsMsg_createFloatData(MmsValue* value, int* size, uint8_t** buf)
@@ -43,7 +35,7 @@ mmsMsg_createFloatData(MmsValue* value, int* size, uint8_t** buf)
         *size = 9;
         *buf = (uint8_t*) malloc(9);
         (*buf)[0] = 11;
-#ifdef ORDER_LITTLE_ENDIAN
+#if (ORDER_LITTLE_ENDIAN == 1)
         memcpyReverseByteOrder((*buf) + 1, value->value.floatingPoint.buf, 8);
 #else
         memcpy((*buf) + 1, value->value.floatingPoint.buf, 8);
@@ -52,7 +44,7 @@ mmsMsg_createFloatData(MmsValue* value, int* size, uint8_t** buf)
         *size = 5;
         *buf = (uint8_t*) malloc(5);
         (*buf)[0] = 8;
-#ifdef ORDER_LITTLE_ENDIAN
+#if (ORDER_LITTLE_ENDIAN == 1)
         memcpyReverseByteOrder((*buf) + 1, value->value.floatingPoint.buf, 4);
 #else
         memcpy((*buf) + 1, value->value.floatingPoint.buf, 4);
@@ -141,8 +133,8 @@ mmsMsg_createBasicDataElement(MmsValue* value)
     case MMS_UNSIGNED:
         dataElement->present = Data_PR_unsigned;
 
-        dataElement->choice.Unsigned.size = value->value.unsignedInteger->size;
-        dataElement->choice.Unsigned.buf = value->value.unsignedInteger->octets;
+        dataElement->choice.Unsigned.size = value->value.integer->size;
+        dataElement->choice.Unsigned.buf = value->value.integer->octets;
 
         break;
 
@@ -168,9 +160,9 @@ mmsMsg_createBasicDataElement(MmsValue* value)
 
     case MMS_STRING:
         dataElement->present = Data_PR_mMSString;
-        if (value->value.mmsString != NULL ) {
-            dataElement->choice.mMSString.buf = (uint8_t*) value->value.mmsString;
-            dataElement->choice.mMSString.size = strlen(value->value.mmsString);
+        if (value->value.visibleString != NULL ) {
+            dataElement->choice.mMSString.buf = (uint8_t*) value->value.visibleString;
+            dataElement->choice.mMSString.size = strlen(value->value.visibleString);
         } else
             dataElement->choice.mMSString.size = 0;
         break;
@@ -252,11 +244,11 @@ mmsMsg_parseDataElement(Data_t* dataElement)
 
         	int strSize = dataElement->choice.mMSString.size;
 
-        	value->value.mmsString = (char*) malloc(strSize + 1);
+        	value->value.visibleString = (char*) malloc(strSize + 1);
 
-        	memcpy(value->value.mmsString, dataElement->choice.mMSString.buf, strSize);
+        	memcpy(value->value.visibleString, dataElement->choice.mMSString.buf, strSize);
 
-        	value->value.mmsString[strSize] = 0;
+        	value->value.visibleString[strSize] = 0;
 
         }
         else if (dataElement->present == Data_PR_bitstring) {
@@ -286,7 +278,7 @@ mmsMsg_parseDataElement(Data_t* dataElement)
                 uint8_t* floatBuf = (dataElement->choice.floatingpoint.buf + 1);
 
                 value->value.floatingPoint.buf = (uint8_t*) malloc(4);
-#ifdef ORDER_LITTLE_ENDIAN
+#if (ORDER_LITTLE_ENDIAN == 1)
                 memcpyReverseByteOrder(value->value.floatingPoint.buf, floatBuf, 4);
 #else
                 memcpy(value->value.floatingPoint.buf, floatBuf, 4);
@@ -300,7 +292,7 @@ mmsMsg_parseDataElement(Data_t* dataElement)
                 uint8_t* floatBuf = (dataElement->choice.floatingpoint.buf + 1);
 
                 value->value.floatingPoint.buf = (uint8_t*) malloc(8);
-#ifdef ORDER_LITTLE_ENDIAN
+#if (ORDER_LITTLE_ENDIAN == 1)
                 memcpyReverseByteOrder(value->value.floatingPoint.buf, floatBuf, 8);
 #else
                 memcpy(value->value.floatingPoint.buf, floatBuf, 8);
@@ -317,6 +309,7 @@ mmsMsg_parseDataElement(Data_t* dataElement)
             value->type = MMS_OCTET_STRING;
             int size = dataElement->choice.octetstring.size;
             value->value.octetString.size = size;
+            value->value.octetString.maxSize = size;
             value->value.octetString.buf = (uint8_t*) malloc(size);
             memcpy(value->value.octetString.buf, dataElement->choice.octetstring.buf, size);
         }
@@ -459,12 +452,12 @@ mmsMsg_addResultToResultList(AccessResult_t* accessResult, MmsValue* value)
 
         case MMS_STRING:
             accessResult->present = AccessResult_PR_mMSString;
-            if (value->value.mmsString == NULL ) {
+            if (value->value.visibleString == NULL ) {
                 accessResult->choice.mMSString.size = 0;
             }
             else {
-                accessResult->choice.mMSString.buf = (uint8_t*) value->value.mmsString;
-                accessResult->choice.mMSString.size = strlen(value->value.mmsString);
+                accessResult->choice.mMSString.buf = (uint8_t*) value->value.visibleString;
+                accessResult->choice.mMSString.size = strlen(value->value.visibleString);
             }
             break;
 
@@ -612,3 +605,19 @@ mmsMsg_createStringFromAsnIdentifier(Identifier_t identifier)
     return str;
 }
 
+
+void
+mmsMsg_copyAsn1IdentifierToStringBuffer(Identifier_t identifier, char* buffer, int bufSize)
+{
+    if (identifier.size < bufSize) {
+        memcpy(buffer, identifier.buf, identifier.size);
+        buffer[identifier.size] = 0;
+    }
+    else {
+
+        if (DEBUG_MMS_SERVER || DEBUG_MMS_CLIENT)
+            printf("MMS_COMMON: mms_common_msg.c: ASN1 identifier to long!\n");
+
+        buffer[0] = 0;
+    }
+}

@@ -24,10 +24,9 @@
 #ifndef MMS_TYPES_H_
 #define MMS_TYPES_H_
 
-#include "libiec61850_platform_includes.h"
-#include "ber_integer.h"
+#include "libiec61850_common_api.h"
 
-typedef enum {
+typedef enum ATTRIBUTE_PACKED {
     MMS_VALUE_NO_RESPONSE,
 	MMS_VALUE_OK,
 	MMS_VALUE_ACCESS_DENIED,
@@ -36,70 +35,12 @@ typedef enum {
 	MMS_VALUE_OBJECT_ACCESS_UNSUPPORTED
 } MmsValueIndication;
 
-typedef enum {
-    DATA_ACCESS_ERROR_NO_RESPONSE = -2, /* for server internal purposes only! */
-    DATA_ACCESS_ERROR_SUCCESS = -1,
-    DATA_ACCESS_ERROR_OBJECT_INVALIDATED = 0,
-    DATA_ACCESS_ERROR_HARDWARE_FAULT = 1,
-    DATA_ACCESS_ERROR_TEMPORARILY_UNAVAILABLE = 2,
-    DATA_ACCESS_ERROR_OBJECT_ACCESS_DENIED = 3,
-    DATA_ACCESS_ERROR_OBJECT_UNDEFINED = 4,
-    DATA_ACCESS_ERROR_INVALID_ADDRESS = 5,
-    DATA_ACCESS_ERROR_TYPE_UNSUPPORTED = 6,
-    DATA_ACCESS_ERROR_TYPE_INCONSISTENT = 7,
-    DATA_ACCESS_ERROR_OBJECT_ATTRIBUTE_INCONSISTENT = 8,
-    DATA_ACCESS_ERROR_OBJECT_ACCESS_UNSUPPORTED = 9,
-    DATA_ACCESS_ERROR_OBJECT_NONE_EXISTENT = 10,
-    DATA_ACCESS_ERROR_OBJECT_VALUE_INVALID = 11
-} MmsDataAccessError;
-
-/**
- * MmsValue - complex value type for MMS Client API
- */
-typedef struct sMmsValue MmsValue;
-
-struct sMmsValue {
-	MmsType type;
-	int deleteValue;
-	union uMmsValue {
-        MmsDataAccessError dataAccessError;
-		struct {
-			int size;
-			MmsValue** components;
-		} structure;
-		bool boolean;
-		Asn1PrimitiveValue* integer;
-		Asn1PrimitiveValue* unsignedInteger;
-		struct {
-			uint8_t exponentWidth;
-			uint8_t formatWidth;
-			uint8_t* buf;
-		} floatingPoint;
-		struct {
-			uint16_t size;
-			uint16_t maxSize;
-			uint8_t* buf;
-		} octetString;
-		struct {
-			int size;     /* Number of bits */
-			uint8_t* buf;
-		} bitString;
-		char* mmsString;
-		char* visibleString;
-		uint8_t utcTime[8];
-		struct {
-			uint8_t size;
-			uint8_t buf[6];
-		} binaryTime;
-	} value;
-};
-
 /**
  * Type definition for MMS Named Variables
  */
 typedef struct sMmsVariableSpecification MmsVariableSpecification;
 
-struct sMmsVariableSpecification {
+struct ATTRIBUTE_PACKED sMmsVariableSpecification {
     MmsType type;
     char* name;
     union uMmsTypeSpecification

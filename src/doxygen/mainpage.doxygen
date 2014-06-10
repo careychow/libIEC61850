@@ -1,4 +1,4 @@
-/*! \mainpage API Reference Manual (version 0.5.3)
+/*! \mainpage API Reference Manual
  *
  * \section intro_sec Introduction
  *
@@ -10,11 +10,8 @@
  * compatible devices or to communicate with IEC 61850 devices.
  * There is also an open-source implementation of IEC 61850 in Java (see http://openmuc.org).
  *
- * The library implements parts of IEC 61850 on top of the MMS mapping. It provides the MMS protocol stack 
- * on top of TCP/IP.
- *
- * The goal of this project is to provide an implementation that can run on memory constrained microcontrollers. 
- * But currently the library only runs on embedded linux systems as well as Desktop PCs running Linux or Windows.
+ * The library implements the most important parts of IEC 61850 on top of the MMS mapping. It provides the MMS protocol stack 
+ * on top of TCP/IP as well as GOOSE for real-time data transfer inside of substations.
  *
  * The API of libIEC61850 can be divided into a client and a server part. Both parts also
  * share common elements. For both client and server there exist two different APIs. There is a

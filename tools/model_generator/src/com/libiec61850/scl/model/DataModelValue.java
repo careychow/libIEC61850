@@ -73,11 +73,21 @@ public class DataModelValue {
         	this.value = value;
         	break;
             
+        case VISIBLE_STRING_32:
+        case VISIBLE_STRING_64:
+        case VISIBLE_STRING_65:
+        case VISIBLE_STRING_129:
         case VISIBLE_STRING_255:
             this.value = (Object) value;
             break;
+        case CHECK:
+            System.out.println("Warning: Initialization of CHECK is unsupported!\n");
+        case CODEDENUM:
+            this.value = null;
+            System.out.println("Warning: Initialization of CODEDENUM is unsupported!\n");
+            break;
         default:
-            throw new IllegalValueException("Unsupported type " + type.toString());
+            throw new IllegalValueException("Unsupported type " + type.toString() + " value: " + value);
         }
     }
     

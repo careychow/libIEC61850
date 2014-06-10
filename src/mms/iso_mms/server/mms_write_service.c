@@ -24,6 +24,11 @@
 #include "mms_server_internal.h"
 #include "mms_common_internal.h"
 #include "mms_types.h"
+
+#if (MMS_WRITE_SERVICE == 1)
+
+#define CONFIG_MMS_WRITE_SERVICE_MAX_NUMBER_OF_WRITE_ITEMS 100
+
 /**********************************************************************************************
  * MMS Write Service
  *********************************************************************************************/
@@ -58,12 +63,7 @@ mmsServer_createMmsWriteResponse(MmsServerConnection* connection,
 	    }
 	}
 
-	asn_enc_rval_t rval;
-
-	rval = der_encode(&asn_DEF_MmsPdu, mmsPdu,
-				mmsServer_write_out, (void*) response);
-
-	if (DEBUG) xer_fprint(stdout, &asn_DEF_MmsPdu, mmsPdu);
+	der_encode(&asn_DEF_MmsPdu, mmsPdu, mmsServer_write_out, (void*) response);
 
 	asn_DEF_MmsPdu.free_struct(&asn_DEF_MmsPdu, mmsPdu, 0);
 
@@ -78,12 +78,12 @@ MmsServerConnection_sendWriteResponse(MmsServerConnection* self, uint32_t invoke
 
     mmsServer_createMmsWriteResponse(self, invokeId, response, 1, &indication);
 
-    IsoConnection_sendMessage(self->isoConnection, response);
+    IsoConnection_sendMessage(self->isoConnection, response, false);
 
     ByteBuffer_destroy(response);
 }
 
-int /* MmsServiceError */
+void
 mmsServer_handleWriteRequest(
 		MmsServerConnection* connection,
 		uint8_t* buffer, int bufPos, int maxBufPos,
@@ -96,21 +96,33 @@ mmsServer_handleWriteRequest(
 
 	asn_dec_rval_t rval; /* Decoder return value  */
 
-	rval = ber_decode(NULL, &asn_DEF_MmsPdu, (void**) &mmsPdu, buffer, MMS_MAXIMUM_PDU_SIZE);
+	rval = ber_decode(NULL, &asn_DEF_MmsPdu, (void**) &mmsPdu, buffer, CONFIG_MMS_MAXIMUM_PDU_SIZE);
+
+	if (rval.code != RC_OK) {
+	    mmsServer_writeMmsRejectPdu(&invokeId, MMS_ERROR_REJECT_INVALID_PDU, response);
+	    return;
+	}
 
 	writeRequest = &(mmsPdu->choice.confirmedRequestPdu.confirmedServiceRequest.choice.write);
 
 	int numberOfWriteItems = writeRequest->variableAccessSpecification.choice.listOfVariable.list.count;
 
-	if (numberOfWriteItems < 1)
-		return -1; // TODO send reject PDU
+	if (numberOfWriteItems < 1) {
+        mmsServer_writeMmsRejectPdu(&invokeId, MMS_ERROR_REJECT_REQUEST_INVALID_ARGUMENT, response);
+        return;
+	}
 
-    if (writeRequest->listOfData.list.count != numberOfWriteItems)
-        // TODO send reject PDU
-        return -1;
+	if (numberOfWriteItems > CONFIG_MMS_WRITE_SERVICE_MAX_NUMBER_OF_WRITE_ITEMS) {
+	    mmsServer_writeMmsRejectPdu(&invokeId, MMS_ERROR_REJECT_OTHER, response);
+	    return;
+	}
 
-	MmsDataAccessError* accessResults =
-			(MmsDataAccessError*) alloca(numberOfWriteItems * sizeof(MmsDataAccessError));
+    if (writeRequest->listOfData.list.count != numberOfWriteItems) {
+        mmsServer_writeMmsRejectPdu(&invokeId, MMS_ERROR_REJECT_REQUEST_INVALID_ARGUMENT, response);
+        return;
+    }
+
+    MmsDataAccessError accessResults[CONFIG_MMS_WRITE_SERVICE_MAX_NUMBER_OF_WRITE_ITEMS * sizeof(MmsDataAccessError)];
 
 	bool sendResponse = true;
 
@@ -123,15 +135,11 @@ mmsServer_handleWriteRequest(
         if (varSpec->variableSpecification.present != VariableSpecification_PR_name) {
             accessResults[i] = DATA_ACCESS_ERROR_OBJECT_ACCESS_UNSUPPORTED;
             continue;
-            //mmsServer_createMmsWriteResponse(connection, invokeId, response, MMS_VALUE_ACCESS_DENIED);
-            //return 0;
         }
 
         if (varSpec->variableSpecification.choice.name.present != ObjectName_PR_domainspecific) {
             accessResults[i] = DATA_ACCESS_ERROR_OBJECT_ACCESS_UNSUPPORTED;
             continue;
-            //mmsServer_createMmsWriteResponse(connection, invokeId, response, MMS_VALUE_ACCESS_DENIED);
-            //return 0;
         }
 
         Identifier_t domainId = varSpec->variableSpecification.choice.name.choice.domainspecific.domainId;
@@ -146,8 +154,6 @@ mmsServer_handleWriteRequest(
         if (domain == NULL) {
             accessResults[i] = DATA_ACCESS_ERROR_OBJECT_NONE_EXISTENT;
             continue;
-            //mmsServer_createMmsWriteResponse(connection, invokeId, response, MMS_VALUE_ACCESS_DENIED);
-            //return 0;
         }
 
         Identifier_t nameId = varSpec->variableSpecification.choice.name.choice.domainspecific.itemId;
@@ -159,7 +165,6 @@ mmsServer_handleWriteRequest(
             free(nameIdStr);
             accessResults[i] = DATA_ACCESS_ERROR_OBJECT_NONE_EXISTENT;
             continue;
-            //goto return_access_denied;
         }
 
         AlternateAccess_t* alternateAccess = varSpec->alternateAccess;
@@ -169,14 +174,12 @@ mmsServer_handleWriteRequest(
                 free(nameIdStr);
                 accessResults[i] = DATA_ACCESS_ERROR_OBJECT_ATTRIBUTE_INCONSISTENT;
                 continue;
-               // goto return_access_denied;
             }
 
             if (!mmsServer_isIndexAccess(alternateAccess)) {
                 free(nameIdStr);
                 accessResults[i] = DATA_ACCESS_ERROR_OBJECT_ACCESS_UNSUPPORTED;
                 continue;
-                //goto return_access_denied;
             }
         }
 
@@ -198,7 +201,6 @@ mmsServer_handleWriteRequest(
                 MmsValue_delete(value);
                 accessResults[i] = DATA_ACCESS_ERROR_OBJECT_ATTRIBUTE_INCONSISTENT;
                 continue;
-                //goto return_access_denied;
             }
 
             int index = mmsServer_getLowIndex(alternateAccess);
@@ -210,7 +212,6 @@ mmsServer_handleWriteRequest(
                 MmsValue_delete(value);
                 accessResults[i] = DATA_ACCESS_ERROR_OBJECT_ATTRIBUTE_INCONSISTENT;
                 continue;
-                //goto return_access_denied;
             }
 
             if (MmsValue_update(elementValue, value) == false) {
@@ -218,7 +219,6 @@ mmsServer_handleWriteRequest(
                 MmsValue_delete(value);
                 accessResults[i] = DATA_ACCESS_ERROR_TYPE_INCONSISTENT;
                 continue;
-                //goto return_access_denied;
             }
 
             free(nameIdStr);
@@ -228,18 +228,13 @@ mmsServer_handleWriteRequest(
 
         }
 
-        MmsServer_lockModel(connection->server);
-
         MmsDataAccessError valueIndication =
                 mmsServer_setValue(connection->server, domain, nameIdStr, value, connection);
-
-        MmsServer_unlockModel(connection->server);
 
         if (valueIndication == DATA_ACCESS_ERROR_NO_RESPONSE)
             sendResponse = false;
 
         accessResults[i] = valueIndication;
-            //mmsServer_createMmsWriteResponse(connection, invokeId, response, valueIndication);
 
         MmsValue_delete(value);
 
@@ -251,7 +246,6 @@ mmsServer_handleWriteRequest(
 	}
 
 	asn_DEF_MmsPdu.free_struct(&asn_DEF_MmsPdu, mmsPdu, 0);
-	return 0;
 }
 
-
+#endif /* (MMS_WRITE_SERVICE == 1) */

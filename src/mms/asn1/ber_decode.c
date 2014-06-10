@@ -92,7 +92,7 @@ BerDecoder_decodeFloat(uint8_t* buffer, int bufPos)
 
     bufPos += 1; /* skip exponentWidth field */
 
-#ifdef ORDER_LITTLE_ENDIAN
+#if (ORDER_LITTLE_ENDIAN == 1)
     for (i = 3; i >= 0; i--) {
         valueBuf[i] = buffer[bufPos++];
     }
@@ -115,7 +115,7 @@ BerDecoder_decodeDouble(uint8_t* buffer, int bufPos)
 
     bufPos += 1; /* skip exponentWidth field */
 
-#ifdef ORDER_LITTLE_ENDIAN
+#if (ORDER_LITTLE_ENDIAN == 1)
     for (i = 7; i >= 0; i--) {
         valueBuf[i] = buffer[bufPos++];
     }

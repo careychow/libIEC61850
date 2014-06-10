@@ -44,7 +44,7 @@ public class Server {
 		List<Node> ldNodes = ParserUtils.getChildNodesWithTag(serverNode, "LDevice");
 		
 		if (ldNodes.size() == 0)
-			throw new SclParserException("No logical devices defined for AccessPoint");
+			throw new SclParserException(serverNode, "No logical devices defined for AccessPoint");
 		
 		logicalDevices = new LinkedList<LogicalDevice>();
 		

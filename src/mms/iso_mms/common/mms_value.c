@@ -29,14 +29,21 @@
 #include "string_utilities.h"
 #include "platform_endian.h"
 
-void
-memcpyReverseByteOrder(uint8_t* dst, uint8_t* src, int size);
+#include "mms_common_internal.h"
+
+#include "mms_value_internal.h"
 
 static inline int
 bitStringByteSize(MmsValue* value)
 {
 	int bitSize = value->value.bitString.size;
 	return (bitSize / 8) + ((bitSize % 8) > 0);
+}
+
+int
+MmsValue_getBitStringByteSize(MmsValue* self)
+{
+   return bitStringByteSize(self);
 }
 
 static void
@@ -73,7 +80,7 @@ MmsValue_newUnsignedFromBerInteger(Asn1PrimitiveValue* berInteger)
 	MmsValue* self = (MmsValue*) calloc(1, sizeof(MmsValue));
 	self->type = MMS_UNSIGNED;
 
-	self->value.unsignedInteger = berInteger;
+	self->value.integer = berInteger;
 
 	return self;
 }
@@ -109,10 +116,8 @@ MmsValue_equals(MmsValue* self, MmsValue* otherValue)
                 return true;
             break;
         case MMS_INTEGER:
-            return Asn1PrimitivaValue_compare(self->value.integer, otherValue->value.integer);
-            break;
         case MMS_UNSIGNED:
-            return Asn1PrimitivaValue_compare(self->value.unsignedInteger, otherValue->value.unsignedInteger);
+            return Asn1PrimitivaValue_compare(self->value.integer, otherValue->value.integer);
             break;
         case MMS_UTC_TIME:
             if (memcmp(self->value.utcTime, otherValue->value.utcTime, 8) == 0)
@@ -143,6 +148,7 @@ MmsValue_equals(MmsValue* self, MmsValue* otherValue)
             break;
 
         case MMS_VISIBLE_STRING:
+        case MMS_STRING:
             if (self->value.visibleString != NULL) {
                 if (otherValue->value.visibleString != NULL) {
                     if (strcmp(self->value.visibleString, otherValue->value.visibleString) == 0)
@@ -155,20 +161,49 @@ MmsValue_equals(MmsValue* self, MmsValue* otherValue)
             }
             break;
 
-        case MMS_STRING:
-            if (self->value.mmsString != NULL) {
-                if (otherValue->value.mmsString != NULL) {
-                    if (strcmp(self->value.mmsString, otherValue->value.mmsString) == 0)
-                        return true;
-                }
-            }
-            else {
-                if (otherValue->value.mmsString == NULL)
-                    return true;
-            }
+
+
+        case MMS_DATA_ACCESS_ERROR:
+            if (self->value.dataAccessError == otherValue->value.dataAccessError)
+                return true;
+            break;
+
+        default:
             break;
         }
         return false;
+
+    }
+    else
+        return false;
+}
+
+bool
+MmsValue_equalTypes(MmsValue* self, MmsValue* otherValue)
+{
+    if (self->type == otherValue->type) {
+        switch (self->type) {
+        case MMS_ARRAY:
+        case MMS_STRUCTURE:
+            if (self->value.structure.size == otherValue->value.structure.size) {
+                int componentCount = self->value.structure.size;
+
+                int i;
+                for (i = 0; i < componentCount; i++) {
+                    if (!MmsValue_equalTypes(self->value.structure.components[i],
+                            otherValue->value.structure.components[i]))
+                        return false;
+                }
+
+                return true;
+            }
+            else
+                return false;
+            break;
+
+        default:
+            return true;
+        }
     }
     else
         return false;
@@ -195,14 +230,8 @@ MmsValue_update(MmsValue* self, MmsValue* update)
 			else return false;
 			break;
 		case MMS_INTEGER:
-			if (BerInteger_setFromBerInteger(self->value.integer, update->value.integer))
-				return true;
-			else
-				return false;
-			break;
 		case MMS_UNSIGNED:
-			if (BerInteger_setFromBerInteger(self->value.unsignedInteger,
-					update->value.unsignedInteger))
+			if (BerInteger_setFromBerInteger(self->value.integer, update->value.integer))
 				return true;
 			else
 				return false;
@@ -228,7 +257,7 @@ MmsValue_update(MmsValue* self, MmsValue* update)
 			MmsValue_setVisibleString(self, update->value.visibleString);
 			break;
 		case MMS_STRING:
-			MmsValue_setMmsString(self, update->value.mmsString);
+			MmsValue_setMmsString(self, update->value.visibleString);
 			break;
 		case MMS_BINARY_TIME:
 			self->value.binaryTime.size = update->value.binaryTime.size;
@@ -324,7 +353,6 @@ MmsValue_getBitStringSize(MmsValue* self)
 int
 MmsValue_getNumberOfSetBits(MmsValue* self)
 {
-    int size = MmsValue_getBitStringSize(self);
     int setBitsCount = 0;
 
     int byteSize = getBitStringByteSize(self);
@@ -378,12 +406,42 @@ MmsValue_getBitStringBit(MmsValue* self, int bitPos)
 	else return false; /* out of range bits are always zero */
 }
 
+uint32_t
+MmsValue_getBitStringAsInteger(MmsValue* self)
+{
+    uint32_t value = 0;
+
+    int bitPos;
+
+    for (bitPos = 0; bitPos < self->value.bitString.size; bitPos++) {
+        if (MmsValue_getBitStringBit(self, bitPos)) {
+            value += (1 << bitPos);
+        }
+    }
+
+    return value;
+}
+
+void
+MmsValue_setBitStringFromInteger(MmsValue* self, uint32_t intValue)
+{
+    int bitPos;
+
+    for (bitPos = 0; bitPos < self->value.bitString.size; bitPos++) {
+        if ((intValue & 1) == 1)
+            MmsValue_setBitStringBit(self, bitPos, true);
+        else
+            MmsValue_setBitStringBit(self, bitPos, false);
+
+        intValue = intValue >> 1;
+    }
+}
 
 
 MmsValue*
 MmsValue_newFloat(float variable)
 {
-	MmsValue* value = (MmsValue*) calloc(1, sizeof(MmsValue));;
+	MmsValue* value = (MmsValue*) malloc(sizeof(MmsValue));;
 
 	value->type = MMS_FLOAT;
 	value->value.floatingPoint.formatWidth = 32;
@@ -437,6 +495,17 @@ MmsValue_newDouble(double variable)
 }
 
 MmsValue*
+MmsValue_netIntegerFromInt8(int8_t integer)
+{
+    MmsValue* value = (MmsValue*) calloc(1, sizeof(MmsValue));;
+
+    value->type = MMS_INTEGER;
+    value->value.integer = BerInteger_createFromInt32((int32_t) integer);
+
+    return value;
+}
+
+MmsValue*
 MmsValue_newIntegerFromInt16(int16_t integer)
 {
 	MmsValue* value = (MmsValue*) calloc(1, sizeof(MmsValue));;
@@ -454,9 +523,29 @@ MmsValue_setInt32(MmsValue* value, int32_t integer)
 		if (Asn1PrimitiveValue_getMaxSize(value->value.integer) >= 4) {
 			BerInteger_setInt32(value->value.integer, integer);
 		}
-		//TODO signal error ???
 	}
 }
+
+void
+MmsValue_setInt64(MmsValue* value, int64_t integer)
+{
+    if (value->type == MMS_INTEGER) {
+        if (Asn1PrimitiveValue_getMaxSize(value->value.integer) >= 8) {
+            BerInteger_setInt64(value->value.integer, integer);
+        }
+    }
+}
+
+void
+MmsValue_setUint32(MmsValue* value, uint32_t integer)
+{
+    if (value->type == MMS_UNSIGNED) {
+        if (Asn1PrimitiveValue_getMaxSize(value->value.integer) >= 4) {
+            BerInteger_setUint32(value->value.integer, integer);
+        }
+    }
+}
+
 
 void
 MmsValue_setUint16(MmsValue* value, uint16_t integer)
@@ -466,8 +555,8 @@ MmsValue_setUint16(MmsValue* value, uint16_t integer)
             BerInteger_setUint16(value->value.integer, integer);
         }
     }
-
 }
+
 
 void
 MmsValue_setUint8(MmsValue* value, uint8_t integer)
@@ -500,7 +589,7 @@ MmsValue_setUtcTime(MmsValue* value, uint32_t timeval)
 	uint8_t* timeArray = (uint8_t*) &timeval;
 	uint8_t* valueArray = value->value.utcTime;
 
-#ifdef ORDER_LITTLE_ENDIAN
+#if (ORDER_LITTLE_ENDIAN == 1)
 		memcpyReverseByteOrder(valueArray, timeArray, 4);
 #else
 		memcpy(valueArray, timeArray, 4);
@@ -518,7 +607,7 @@ MmsValue_setUtcTimeMs(MmsValue* self, uint64_t timeval)
     uint8_t* timeArray = (uint8_t*) &timeval32;
 	uint8_t* valueArray = self->value.utcTime;
 
-#ifdef ORDER_LITTLE_ENDIAN
+#if (ORDER_LITTLE_ENDIAN == 1)
 		memcpyReverseByteOrder(valueArray, timeArray, 4);
 #else
 		memcpy(valueArray, timeArray, 4);
@@ -539,6 +628,18 @@ MmsValue_setUtcTimeMs(MmsValue* self, uint64_t timeval)
 }
 
 void
+MmsValue_setUtcTimeQuality(MmsValue* self, uint8_t timeQuality)
+{
+    self->value.utcTime[7] = timeQuality;
+}
+
+uint8_t
+MmsValue_getUtcTimeQuality(MmsValue* self)
+{
+    return self->value.utcTime[7];
+}
+
+void
 MmsValue_setUtcTimeByBuffer(MmsValue* self, uint8_t* buffer)
 {
     uint8_t* valueArray = self->value.utcTime;
@@ -555,7 +656,7 @@ MmsValue_getUtcTimeInMs(MmsValue* self)
     uint32_t timeval32;
     uint8_t* valueArray = self->value.utcTime;
 
-#ifdef ORDER_LITTLE_ENDIAN
+#if (ORDER_LITTLE_ENDIAN == 1)
     memcpyReverseByteOrder((uint8_t*) &timeval32, valueArray, 4);
 #else
     memcpy((uint8_t*) &timeval32, valueArray, 4);
@@ -571,7 +672,7 @@ MmsValue_getUtcTimeInMs(MmsValue* self)
 
     uint64_t msVal = (timeval32 * 1000LL) + remainder;
 
-    return (uint64_t) msVal;
+    return msVal;
 }
 
 
@@ -593,7 +694,7 @@ MmsValue_newUnsignedFromUint32(uint32_t integer)
 	MmsValue* value = (MmsValue*) calloc(1, sizeof(MmsValue));;
 
 	value->type = MMS_UNSIGNED;
-	value->value.unsignedInteger = BerInteger_createFromUint32(integer);
+	value->value.integer = BerInteger_createFromUint32(integer);
 
 	return value;
 }
@@ -617,10 +718,8 @@ MmsValue_toInt32(MmsValue* value)
 {
 	int32_t integerValue = 0;
 
-	if (value->type == MMS_INTEGER)
+	if ((value->type == MMS_INTEGER) || (value->type == MMS_UNSIGNED))
 		BerInteger_toInt32(value->value.integer, &integerValue);
-	else if (value->type == MMS_UNSIGNED)
-		BerInteger_toInt32(value->value.unsignedInteger, &integerValue);
 
 	return integerValue;
 }
@@ -630,10 +729,8 @@ MmsValue_toUint32(MmsValue* value)
 {
 	uint32_t integerValue = 0;
 
-	if (value->type == MMS_INTEGER)
-		BerInteger_toUint32(value->value.integer, &integerValue);
-	else if (value->type == MMS_UNSIGNED)
-		BerInteger_toUint32(value->value.unsignedInteger, &integerValue);
+	if ((value->type == MMS_INTEGER) || (value->type == MMS_UNSIGNED))
+	    BerInteger_toUint32(value->value.integer, &integerValue);
 
 	return integerValue;
 }
@@ -646,10 +743,8 @@ MmsValue_toInt64(MmsValue* value)
 {
 	int64_t integerValue = 0;
 
-	if (value->type == MMS_INTEGER)
+	if ((value->type == MMS_INTEGER) || (value->type == MMS_UNSIGNED))
 			BerInteger_toInt64(value->value.integer, &integerValue);
-	else if (value->type == MMS_UNSIGNED)
-			BerInteger_toInt64(value->value.unsignedInteger, &integerValue);
 
 	return integerValue;
 }
@@ -702,22 +797,120 @@ MmsValue_toUnixTimestamp(MmsValue* value)
 	uint32_t timestamp;
 	uint8_t* timeArray = (uint8_t*) &timestamp;
 
-if (ORDER_LITTLE_ENDIAN) {
+#if (ORDER_LITTLE_ENDIAN == 1)
 	timeArray[0] = value->value.utcTime[3];
 	timeArray[1] = value->value.utcTime[2];
 	timeArray[2] = value->value.utcTime[1];
 	timeArray[3] = value->value.utcTime[0];
-}
-else {
+#else
     timeArray[0] = value->value.utcTime[0];
     timeArray[1] = value->value.utcTime[1];
     timeArray[2] = value->value.utcTime[2];
     timeArray[3] = value->value.utcTime[3];
-}
+#endif
 
 	return timestamp;
 }
 
+int
+MmsValue_getSizeInMemory(MmsValue* self)
+{
+    int memorySize = sizeof(MmsValue);
+
+    switch(self->type) {
+    case MMS_ARRAY:
+    case MMS_STRUCTURE:
+        {
+            int i;
+            for (i = 0; i < self->value.structure.size; i++)
+            memorySize += MmsValue_getSizeInMemory(self->value.structure.components[i]);
+        }
+        break;
+    case MMS_BIT_STRING:
+        memorySize += bitStringByteSize(self);
+        break;
+    case MMS_INTEGER:
+    case MMS_UNSIGNED:
+        memorySize += sizeof(Asn1PrimitiveValue);
+        memorySize += self->value.integer->maxSize;
+        break;
+    case MMS_FLOAT:
+        memorySize += (self->value.floatingPoint.formatWidth / 8);
+        break;
+    case MMS_OCTET_STRING:
+        memorySize += self->value.octetString.maxSize;
+        break;
+    case MMS_STRING:
+    case MMS_VISIBLE_STRING:
+        memorySize += strlen(self->value.visibleString);
+        break;
+    default:
+        break;
+    }
+
+    return memorySize;
+}
+
+uint8_t*
+MmsValue_cloneToBuffer(MmsValue* self, uint8_t* destinationAddress)
+{
+    MmsValue* newValue = (MmsValue*) destinationAddress;
+
+    memcpy(destinationAddress, self, sizeof(MmsValue));
+    destinationAddress += sizeof(MmsValue);
+
+    switch (self->type) {
+    case MMS_ARRAY:
+    case MMS_STRUCTURE:
+        {
+            int i;
+            for (i = 0; i < self->value.structure.size; i++)
+                destinationAddress = MmsValue_cloneToBuffer(self->value.structure.components[i], destinationAddress);
+        }
+        break;
+
+    case MMS_BIT_STRING:
+        memcpy(destinationAddress, self->value.bitString.buf, bitStringByteSize(self));
+        newValue->value.bitString.buf = destinationAddress;
+        destinationAddress += bitStringByteSize(self);
+        break;
+    case MMS_INTEGER:
+    case MMS_UNSIGNED:
+        {
+            Asn1PrimitiveValue* newAsn1Value = (Asn1PrimitiveValue*) destinationAddress;
+            memcpy(destinationAddress, self->value.integer, sizeof(Asn1PrimitiveValue));
+            destinationAddress += sizeof(Asn1PrimitiveValue);
+            newAsn1Value->octets = destinationAddress;
+            memcpy(destinationAddress, self->value.integer->octets, self->value.integer->maxSize);
+            destinationAddress += self->value.integer->maxSize;
+        }
+        break;
+    case MMS_FLOAT:
+        {
+            int floatSizeInBytes = (self->value.floatingPoint.formatWidth / 8);
+
+            newValue->value.floatingPoint.buf = destinationAddress;
+            memcpy(destinationAddress, self->value.floatingPoint.buf, floatSizeInBytes);
+            destinationAddress += floatSizeInBytes;
+        }
+        break;
+    case MMS_OCTET_STRING:
+        newValue->value.octetString.buf = destinationAddress;
+        memcpy(destinationAddress, self->value.octetString.buf, self->value.octetString.maxSize);
+        destinationAddress += self->value.octetString.maxSize;
+        break;
+    case MMS_STRING:
+    case MMS_VISIBLE_STRING:
+        newValue->value.visibleString = (char*) destinationAddress;
+        strcpy((char*) destinationAddress, self->value.visibleString);
+        destinationAddress += (strlen(self->value.visibleString) + 1);
+        break;
+    default:
+        break;
+    }
+
+    return destinationAddress;
+}
 
 // create a deep clone
 MmsValue*
@@ -745,10 +938,8 @@ MmsValue_clone(MmsValue* value)
 		break;
 
 	case MMS_INTEGER:
-		newValue->value.integer = Asn1PrimitiveValue_clone(value->value.integer);
-		break;
 	case MMS_UNSIGNED:
-		newValue->value.unsignedInteger = Asn1PrimitiveValue_clone(value->value.unsignedInteger);
+		newValue->value.integer = Asn1PrimitiveValue_clone(value->value.integer);
 		break;
 	case MMS_FLOAT:
 		newValue->value.floatingPoint.formatWidth = value->value.floatingPoint.formatWidth;
@@ -773,11 +964,6 @@ MmsValue_clone(MmsValue* value)
 		newValue->value.octetString.buf = (uint8_t*) malloc(value->value.octetString.maxSize);
 		memcpy(newValue->value.octetString.buf, value->value.octetString.buf, size);
 		break;
-	case MMS_VISIBLE_STRING:
-		size = strlen(value->value.visibleString) + 1;
-		newValue->value.visibleString = (char*) malloc(size);
-		strcpy(newValue->value.visibleString, value->value.visibleString);
-		break;
 	case MMS_UTC_TIME:
 		memcpy(newValue->value.utcTime, value->value.utcTime, 8);
 		break;
@@ -785,10 +971,16 @@ MmsValue_clone(MmsValue* value)
 	    newValue->value.binaryTime.size = value->value.binaryTime.size;
 	    memcpy(newValue->value.binaryTime.buf, value->value.binaryTime.buf, 6);
 	    break;
+    case MMS_VISIBLE_STRING:
 	case MMS_STRING:
-	    size = strlen(value->value.mmsString) + 1;
-        newValue->value.mmsString = (char*) malloc(size);
-        strcpy(newValue->value.mmsString, value->value.mmsString);
+	    size = strlen(value->value.visibleString) + 1;
+        newValue->value.visibleString = (char*) malloc(size);
+        strcpy(newValue->value.visibleString, value->value.visibleString);
+	    break;
+	case MMS_DATA_ACCESS_ERROR:
+	    newValue->value.dataAccessError = value->value.dataAccessError;
+	    break;
+	default:
 	    break;
 	}
 
@@ -802,14 +994,19 @@ MmsValue_getArraySize(MmsValue* value)
 }
 
 void
+MmsValue_deleteIfNotNull(MmsValue* value)
+{
+    if (value != NULL)
+        MmsValue_delete(value);
+}
+
+void
 MmsValue_delete(MmsValue* value)
 {
     switch (value->type) {
     case MMS_INTEGER:
-        Asn1PrimitiveValue_destroy(value->value.integer);
-        break;
     case MMS_UNSIGNED:
-        Asn1PrimitiveValue_destroy(value->value.unsignedInteger);
+        Asn1PrimitiveValue_destroy(value->value.integer);
         break;
     case MMS_FLOAT:
         free(value->value.floatingPoint.buf);
@@ -821,12 +1018,9 @@ MmsValue_delete(MmsValue* value)
         free(value->value.octetString.buf);
         break;
     case MMS_VISIBLE_STRING:
+    case MMS_STRING:
         if (value->value.visibleString != NULL)
             free(value->value.visibleString);
-        break;
-    case MMS_STRING:
-        if (value->value.mmsString != NULL)
-            free(value->value.mmsString);
         break;
     case MMS_ARRAY:
     case MMS_STRUCTURE:
@@ -841,9 +1035,57 @@ MmsValue_delete(MmsValue* value)
         }
         free(value->value.structure.components);
         break;
+    default:
+        break;
     }
 
 	free(value);
+}
+
+/* delete only when deleteValue field set */
+void
+MmsValue_deleteConditional(MmsValue* value)
+{
+    if (value->deleteValue  == 1) {
+
+        switch (value->type) {
+        case MMS_INTEGER:
+        case MMS_UNSIGNED:
+            Asn1PrimitiveValue_destroy(value->value.integer);
+            break;
+        case MMS_FLOAT:
+            free(value->value.floatingPoint.buf);
+            break;
+        case MMS_BIT_STRING:
+            free(value->value.bitString.buf);
+            break;
+        case MMS_OCTET_STRING:
+            free(value->value.octetString.buf);
+            break;
+        case MMS_VISIBLE_STRING:
+        case MMS_STRING:
+            if (value->value.visibleString != NULL)
+                free(value->value.visibleString);
+            break;
+        case MMS_ARRAY:
+        case MMS_STRUCTURE:
+            {
+                int componentCount = value->value.structure.size;
+                int i;
+
+                for (i = 0; i < componentCount; i++) {
+                    if (value->value.structure.components[i] != NULL)
+                        MmsValue_deleteConditional(value->value.structure.components[i]);
+                }
+            }
+            free(value->value.structure.components);
+            break;
+        default:
+            break;
+        }
+
+        free(value);
+    }
 }
 
 MmsValue*
@@ -867,9 +1109,9 @@ MmsValue_newUnsigned(int size /*integer size in bits*/)
 	value->type = MMS_UNSIGNED;
 
 	if (size <= 32)
-		value->value.unsignedInteger = BerInteger_createInt32();
+		value->value.integer = BerInteger_createInt32();
 	else
-		value->value.unsignedInteger = BerInteger_createInt64();
+		value->value.integer = BerInteger_createInt64();
 
 	return value;
 }
@@ -908,6 +1150,24 @@ MmsValue_setOctetString(MmsValue* self, uint8_t* buf, int size)
     }
 }
 
+uint16_t
+MmsValue_getOctetStringSize(MmsValue* self)
+{
+    return self->value.octetString.size;
+}
+
+uint16_t
+MmsValue_getOctetStringMaxSize(MmsValue* self)
+{
+    return self->value.octetString.maxSize;
+}
+
+uint8_t*
+MmsValue_getOctetStringBuffer(MmsValue* self)
+{
+    return self->value.octetString.buf;
+}
+
 MmsValue*
 MmsValue_newStructure(MmsVariableSpecification* typeSpec)
 {
@@ -930,7 +1190,7 @@ MmsValue_newStructure(MmsVariableSpecification* typeSpec)
 MmsValue*
 MmsValue_newDefaultValue(MmsVariableSpecification* typeSpec)
 {
-	MmsValue* value;
+	MmsValue* value = NULL;
 
 	switch (typeSpec->type) {
 	case MMS_INTEGER:
@@ -994,9 +1254,12 @@ MmsValue_newDefaultValue(MmsVariableSpecification* typeSpec)
 		else
 			value = MmsValue_newBinaryTime(false);
 		break;
+	default:
+	    break;
 	}
 
-	value->deleteValue = 0;
+	if (value != NULL)
+	    value->deleteValue = 0;
 
 	return value;
 }
@@ -1046,31 +1309,30 @@ MmsValue_setBinaryTime(MmsValue* value, uint64_t timestamp)
         uint16_t daysDiff = mmsTime / (86400000LL);
         uint8_t* daysDiffBuf = (uint8_t*) &daysDiff;
 
-        if (ORDER_LITTLE_ENDIAN) {
+#if (ORDER_LITTLE_ENDIAN == 1)
             binaryTimeBuf[4] = daysDiffBuf[1];
             binaryTimeBuf[5] = daysDiffBuf[0];
-        }
-        else {
+#else
             binaryTimeBuf[4] = daysDiffBuf[0];
             binaryTimeBuf[5] = daysDiffBuf[1];
-        }
+#endif
+
     }
 
     uint32_t msSinceMidnight = mmsTime % (86400000LL);
     uint8_t* msSinceMidnightBuf = (uint8_t*) &msSinceMidnight;
 
-    if (ORDER_LITTLE_ENDIAN) {
+#if (ORDER_LITTLE_ENDIAN == 1)
         binaryTimeBuf[0] = msSinceMidnightBuf[3];
         binaryTimeBuf[1] = msSinceMidnightBuf[2];
         binaryTimeBuf[2] = msSinceMidnightBuf[1];
         binaryTimeBuf[3] = msSinceMidnightBuf[0];
-    }
-    else {
+#else
         binaryTimeBuf[0] = msSinceMidnightBuf[0];
         binaryTimeBuf[1] = msSinceMidnightBuf[1];
         binaryTimeBuf[2] = msSinceMidnightBuf[2];
         binaryTimeBuf[3] = msSinceMidnightBuf[3];
-    }
+#endif
 }
 
 uint64_t
@@ -1117,9 +1379,9 @@ static inline void
 setMmsStringValue(MmsValue* value, char* string)
 {
 	if (string != NULL)
-		value->value.mmsString = copyString(string);
+		value->value.visibleString = copyString(string);
 	else
-		value->value.mmsString = NULL;
+		value->value.visibleString = NULL;
 }
 
 MmsValue*
@@ -1137,8 +1399,8 @@ void
 MmsValue_setMmsString(MmsValue* value, char* string)
 {
 	if (value->type == MMS_STRING) {
-		if (value->value.mmsString != NULL)
-			free(value->value.mmsString);
+		if (value->value.visibleString != NULL)
+			free(value->value.visibleString);
 
 		setMmsStringValue(value, string);
 	}
@@ -1169,10 +1431,8 @@ MmsValue_setVisibleString(MmsValue* value, char* string)
 char*
 MmsValue_toString(MmsValue* value)
 {
-	if (value->type == MMS_VISIBLE_STRING)
+	if ((value->type == MMS_VISIBLE_STRING) || (value->type == MMS_STRING))
 		return value->value.visibleString;
-	else if (value->type == MMS_STRING)
-	    return value->value.mmsString;
 
 	return NULL;
 }
@@ -1186,7 +1446,7 @@ MmsValue_newUtcTime(uint32_t timeval)
 	uint8_t* timeArray = (uint8_t*) &timeval;
 	uint8_t* valueArray = value->value.utcTime;
 
-#ifdef ORDER_LITTLE_ENDIAN
+#if (ORDER_LITTLE_ENDIAN == 1)
 	valueArray[0] = timeArray[3];
 	valueArray[1] = timeArray[2];
 	valueArray[2] = timeArray[1];
@@ -1287,6 +1547,20 @@ MmsValue_setDeletable(MmsValue* value)
 	value->deleteValue = 1;
 }
 
+void
+MmsValue_setDeletableRecursive(MmsValue* value)
+{
+    if ((MmsValue_getType(value) == MMS_ARRAY) || (MmsValue_getType(value) == MMS_STRUCTURE)) {
+        int i;
+        int elementCount = MmsValue_getArraySize(value);
+
+        for (i = 0; i < elementCount; i++)
+            MmsValue_setDeletableRecursive(MmsValue_getElement(value, i));
+    }
+
+    MmsValue_setDeletable(value);
+}
+
 int
 MmsValue_isDeletable(MmsValue* value)
 {
@@ -1304,3 +1578,45 @@ MmsValue_getSubElement(MmsValue* self, MmsVariableSpecification* varSpec, char* 
 {
     return MmsVariableSpecification_getChildValue(varSpec, self, mmsPath);
 }
+
+char*
+MmsValue_getTypeString(MmsValue* self)
+{
+    switch (MmsValue_getType(self)) {
+    case MMS_ARRAY:
+        return "array";
+    case MMS_BCD:
+        return "bcd";
+    case MMS_BINARY_TIME:
+        return "binary-time";
+    case MMS_BIT_STRING:
+        return "bit-string";
+    case MMS_BOOLEAN:
+        return "boolean";
+    case MMS_DATA_ACCESS_ERROR:
+        return "access-error";
+    case MMS_FLOAT:
+        return "float";
+    case MMS_GENERALIZED_TIME:
+        return "generalized-time";
+    case MMS_INTEGER:
+        return "integer";
+    case MMS_OBJ_ID:
+        return "oid";
+    case MMS_STRING:
+        return "mms-string";
+    case MMS_STRUCTURE:
+        return "structure";
+    case MMS_OCTET_STRING:
+        return "octet-string";
+    case MMS_UNSIGNED:
+        return "unsigned";
+    case MMS_UTC_TIME:
+        return "utc-time";
+    case MMS_VISIBLE_STRING:
+        return "visible-string";
+    default:
+        return "unknown(error)";
+    }
+}
+

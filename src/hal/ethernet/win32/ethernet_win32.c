@@ -34,7 +34,9 @@
 #include <winsock2.h>
 #include <iphlpapi.h>
 
+#ifndef __GNUC__
 #pragma comment (lib, "IPHLPAPI.lib")
+#endif
 
 #include "ethernet.h"
 
@@ -48,6 +50,8 @@ struct sEthernetSocket {
 };
 
 #ifdef __GNUC__ /* detect MINGW */
+
+#ifndef __MINGW64_VERSION_MAJOR
 
 #define MAX_ADAPTER_ADDRESS_LENGTH      8
 
@@ -75,11 +79,12 @@ typedef struct _IP_ADAPTER_ADDRESSES {
 	DWORD IfType;
 } IP_ADAPTER_ADDRESSES, *PIP_ADAPTER_ADDRESSES;
 
+
 typedef ULONG (WINAPI* pgetadaptersaddresses)(ULONG family, ULONG flags, PVOID reserved, PIP_ADAPTER_ADDRESSES AdapterAddresses,
 		PULONG SizePointer);
 
-
 static pgetadaptersaddresses GetAdaptersAddresses;
+
 
 static bool dllLoaded = false;
 
@@ -101,13 +106,14 @@ loadDLLs()
 			printf("Error loading GetAdaptersAddresses from iphlpapi.dll (%d)\n", GetLastError());
 }
 
+#endif /* __MINGW64_VERSION_MAJOR */
+
 #endif /* __GNUC__ */
 
 
 static char*
 getInterfaceName(int interfaceIndex)
 {
-    pcap_t *fp;
     char errbuf[PCAP_ERRBUF_SIZE];
     char* interfaceName = NULL;
 
@@ -175,14 +181,14 @@ getAdapterMacAddress(char* pcapAdapterName, uint8_t* macAddress)
 
 				printf("Adapter %s: ", pAddress->AdapterName);
 
-				for (i = 0; i < addressLength; i++) {
+				for (i = 0; i < (int) addressLength; i++) {
 					printf("%02x ", pAddress->PhysicalAddress[i]);
 				}
 
 				if (strstr(pcapAdapterName, pAddress->AdapterName) != 0) {
 					printf(" requested found!");
 
-					for (i = 0; i < addressLength; i++) {
+					for (i = 0; i < (int) addressLength; i++) {
 						macAddress[i] = pAddress->PhysicalAddress[i];
 					}
 				}
@@ -206,10 +212,12 @@ void
 Ethernet_getInterfaceMACAddress(char* interfaceId, uint8_t* addr)
 {
 #ifdef __GNUC__
+#ifndef __MINGW64_VERSION_MAJOR
     if (!dllLoaded) {
     	loadDLLs();
     	dllLoaded = true;
     }
+#endif
 #endif
 
     char* endPtr;
@@ -267,7 +275,7 @@ Ethernet_sendPacket(EthernetSocket ethSocket, uint8_t* buffer, int packetSize)
 void
 Ethernet_setProtocolFilter(EthernetSocket ethSocket, uint16_t etherType)
 {
-	char* filterString = (char*) alloca(100);
+	char filterString[100];
 
 	sprintf(filterString, "(ether proto 0x%04x) or (vlan and ether proto 0x%04x)", etherType, etherType);
 

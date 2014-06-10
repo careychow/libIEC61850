@@ -3,27 +3,28 @@
  *
  *  Copyright 2013 Michael Zillgith
  *
- *	This file is part of libIEC61850.
+ *  This file is part of libIEC61850.
  *
- *	libIEC61850 is free software: you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation, either version 3 of the License, or
- *	(at your option) any later version.
+ *  libIEC61850 is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
  *
- *	libIEC61850 is distributed in the hope that it will be useful,
- *	but WITHOUT ANY WARRANTY; without even the implied warranty of
- *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
+ *  libIEC61850 is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
- *	You should have received a copy of the GNU General Public License
- *	along with libIEC61850.  If not, see <http://www.gnu.org/licenses/>.
+ *  You should have received a copy of the GNU General Public License
+ *  along with libIEC61850.  If not, see <http://www.gnu.org/licenses/>.
  *
- *	See COPYING file for the complete license text.
+ *  See COPYING file for the complete license text.
  */
 
 #include "mms_value.h"
 #include "MmsPdu.h"
 #include "mms_access_result.h"
+#include "conversions.h"
 
 MmsValue*
 mmsMsg_parseDataElement(Data_t* dataElement);
@@ -45,6 +46,9 @@ mmsMsg_createAccessResultsList(MmsPdu_t* mmsPdu, int resultsCount);
 
 char*
 mmsMsg_createStringFromAsnIdentifier(Identifier_t identifier);
+
+void
+mmsMsg_copyAsn1IdentifierToStringBuffer(Identifier_t identifier, char* buffer, int bufSize);
 
 void
 mmsMsg_deleteAccessResultList(AccessResult_t** accessResult, int variableCount);

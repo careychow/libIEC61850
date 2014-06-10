@@ -43,7 +43,7 @@ public class DataSet {
 		this.desc = ParserUtils.parseAttribute(dataSet, "desc");
 		
 		if (this.name == null)
-			throw new SclParserException("Dataset misses required attribute \"name\"");
+			throw new SclParserException(dataSet, "Dataset misses required attribute \"name\"");
 		
 		fcda = new LinkedList<FunctionalConstraintData>();
 		

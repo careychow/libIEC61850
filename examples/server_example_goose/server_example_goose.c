@@ -4,24 +4,6 @@
  *  This example demonstrates how to use GOOSE publishing, Reporting and the
  *  control model.
  *
- *  Copyright 2013 Michael Zillgith
- *
- *  This file is part of libIEC61850.
- *
- *  libIEC61850 is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  libIEC61850 is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with libIEC61850.  If not, see <http://www.gnu.org/licenses/>.
- *
- *  See COPYING file for the complete license text.
  */
 
 #include "iec61850_server.h"
@@ -44,15 +26,8 @@ void sigint_handler(int signalId)
 }
 
 void
-controlHandler(void* parameter, MmsValue* value)
+controlHandlerForBinaryOutput(void* parameter, MmsValue* value)
 {
-    printf("received control command %i %i: ", value->type, value->value.boolean);
-
-    if (value->value.boolean)
-        printf("on\n");
-    else
-        printf("off\n");
-
     if (parameter == IEDMODEL_GenericIO_GGIO1_SPCSO1)
         IedServer_updateAttributeValue(iedServer, IEDMODEL_GenericIO_GGIO1_SPCSO1_stVal, value);
 
@@ -73,16 +48,16 @@ int main(int argc, char** argv) {
 	/* MMS server will be instructed to start listening to client connections. */
 	IedServer_start(iedServer, 102);
 
-	IedServer_setControlHandler(iedServer, IEDMODEL_GenericIO_GGIO1_SPCSO1, (ControlHandler) controlHandler,
+	IedServer_setControlHandler(iedServer, IEDMODEL_GenericIO_GGIO1_SPCSO1, (ControlHandler) controlHandlerForBinaryOutput,
 	        IEDMODEL_GenericIO_GGIO1_SPCSO1);
 
-	IedServer_setControlHandler(iedServer, IEDMODEL_GenericIO_GGIO1_SPCSO2, (ControlHandler) controlHandler,
+	IedServer_setControlHandler(iedServer, IEDMODEL_GenericIO_GGIO1_SPCSO2, (ControlHandler) controlHandlerForBinaryOutput,
 	            IEDMODEL_GenericIO_GGIO1_SPCSO2);
 
-	IedServer_setControlHandler(iedServer, IEDMODEL_GenericIO_GGIO1_SPCSO3, (ControlHandler) controlHandler,
+	IedServer_setControlHandler(iedServer, IEDMODEL_GenericIO_GGIO1_SPCSO3, (ControlHandler) controlHandlerForBinaryOutput,
 	            IEDMODEL_GenericIO_GGIO1_SPCSO3);
 
-	IedServer_setControlHandler(iedServer, IEDMODEL_GenericIO_GGIO1_SPCSO4, (ControlHandler) controlHandler,
+	IedServer_setControlHandler(iedServer, IEDMODEL_GenericIO_GGIO1_SPCSO4, (ControlHandler) controlHandlerForBinaryOutput,
 	            IEDMODEL_GenericIO_GGIO1_SPCSO4);
 
 	if (!IedServer_isRunning(iedServer)) {

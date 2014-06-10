@@ -1,7 +1,7 @@
 /*
  * static_model.h
  *
- * automatically generated from simpleIO_direct_control_goose.scd
+ * automatically generated from simpleIO_direct_control_goose.icd
  */
 
 #ifndef STATIC_MODEL_H_

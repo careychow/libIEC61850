@@ -37,7 +37,7 @@ public class Communication {
         List<Node> subnetworks = ParserUtils.getChildNodesWithTag(comSection, "SubNetwork");
         
         if (subnetworks.size() == 0)
-            throw new SclParserException("no subnetworks defined");
+            throw new SclParserException(comSection, "no subnetworks defined");
         
         subNetworks = new LinkedList<SubNetwork>();
         

@@ -27,7 +27,7 @@
 typedef struct sMmsGooseControlBlock* MmsGooseControlBlock;
 
 MmsGooseControlBlock
-MmsGooseControlBlock_create();
+MmsGooseControlBlock_create(void);
 
 void
 MmsGooseControlBlock_destroy(MmsGooseControlBlock self);

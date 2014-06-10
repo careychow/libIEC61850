@@ -36,7 +36,7 @@ public class SclType {
 		this.description = ParserUtils.parseAttribute(xmlNode, "desc");
 		
 		if (this.id == null) 
-			throw new SclParserException("id is missing!");
+			throw new SclParserException(xmlNode, "id is missing!");
 	}
 	
 	public SclType(String id, String description) {

@@ -59,10 +59,10 @@ ByteBuffer_append(ByteBuffer* self, uint8_t* data, int dataSize)
 	if (self->size + dataSize <= self->maxSize) {
 		memcpy(self->buffer + self->size, data, dataSize);
 		self->size += dataSize;
-		return 1;
+		return dataSize;
 	}
 	else
-		return 0;
+		return -1;
 }
 
 int
@@ -103,4 +103,19 @@ ByteBuffer_setSize(ByteBuffer* self, int size)
 		self->size = size;
 
 	return self->size;
+}
+
+void
+ByteBuffer_print(ByteBuffer* self, char* message)
+{
+    printf("\n%s (size = %i):\n",  message, self->size);
+
+    int i;
+    for (i = 0; i < self->size; i++) {
+        printf("%02x ", self->buffer[i]);
+        if (((i + 1) % 16) == 0) printf("\n");
+        else if (((i + 1) % 8) == 0) printf("| ");
+
+    }
+    printf("\n");
 }

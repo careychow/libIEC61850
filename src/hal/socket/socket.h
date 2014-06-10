@@ -5,20 +5,20 @@
  *
  *	This file is part of libIEC61850.
  *
- *	libIEC61850 is free software: you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation, either version 3 of the License, or
- *	(at your option) any later version.
+ *  libIEC61850 is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
  *
- *	libIEC61850 is distributed in the hope that it will be useful,
- *	but WITHOUT ANY WARRANTY; without even the implied warranty of
- *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
+ *  libIEC61850 is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
- *	You should have received a copy of the GNU General Public License
- *	along with libIEC61850.  If not, see <http://www.gnu.org/licenses/>.
+ *  You should have received a copy of the GNU General Public License
+ *  along with libIEC61850.  If not, see <http://www.gnu.org/licenses/>.
  *
- *	See COPYING file for the complete license text.
+ *  See COPYING file for the complete license text.
  */
 
 #ifndef SOCKET_H_
@@ -27,10 +27,18 @@
 #include <stdint.h>
 
 /*! \addtogroup hal Hardware/OS abstraction layer
-   *  Thread and Socket abstraction layer. This functions have to be implemented to
-   *  port libIEC61850 to a new hardware/OS platform.
+   *
    *  @{
    */
+
+/**
+ * @defgroup HAL_SOCKET Interface to the TCP/IP stack (abstract socket layer)
+ *
+ *  Thread and Socket abstraction layer. This functions have to be implemented to
+ *  port libIEC61850 to a new hardware/OS platform.
+ *
+ * @{
+ */
 
 /** Opaque reference for a server socket instance */
 typedef struct sServerSocket* ServerSocket;
@@ -51,35 +59,37 @@ TcpServerSocket_create(char* address, int port);
 
 
 void
-ServerSocket_listen(ServerSocket socket);
+ServerSocket_listen(ServerSocket self);
 
 Socket
-ServerSocket_accept(ServerSocket socket);
+ServerSocket_accept(ServerSocket self);
 
 void
-ServerSocket_setBacklog(ServerSocket socket, int backlog);
+ServerSocket_setBacklog(ServerSocket self, int backlog);
 
 void
-ServerSocket_destroy(ServerSocket socket);
+ServerSocket_destroy(ServerSocket self);
 
 Socket
-TcpSocket_create();
+TcpSocket_create(void);
 
 
 int
-Socket_connect(Socket socket, char* address, int port);
+Socket_connect(Socket self, char* address, int port);
 
 int
-Socket_read(Socket socket, uint8_t* buf, int size);
+Socket_read(Socket self, uint8_t* buf, int size);
 
 int
-Socket_write(Socket socket, uint8_t* buf, int size);
+Socket_write(Socket self, uint8_t* buf, int size);
 
 char*
-Socket_getPeerAddress(Socket socket);
+Socket_getPeerAddress(Socket self);
 
 void
-Socket_destroy(Socket socket);
+Socket_destroy(Socket self);
+
+/*! @} */
 
 /*! @} */
 

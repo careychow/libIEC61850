@@ -6,27 +6,33 @@ set (lib_common_SRCS
 ./common/linked_list.c
 ./common/byte_buffer.c
 ./common/string_utilities.c
+./common/buffer_chain.c
+./common/conversions.c
+./common/simple_allocator.c
 ./hal/hal.c
-./hal/byte_stream.c
+./common/byte_stream.c
 ./mms/iso_server/iso_connection.c
 ./mms/iso_server/iso_server.c
 ./mms/iso_acse/acse.c
 ./mms/iso_mms/common/mms_type_spec.c
-./mms/iso_mms/common/mms_device.c
 ./mms/iso_mms/common/mms_value.c
 ./mms/iso_mms/common/mms_common_msg.c
 ./mms/iso_mms/client/mms_client_initiate.c
 ./mms/iso_mms/client/mms_client_write.c
 ./mms/iso_mms/client/mms_client_identify.c
+./mms/iso_mms/client/mms_client_status.c
 ./mms/iso_mms/client/mms_client_named_variable_list.c
 ./mms/iso_mms/client/mms_client_connection.c
+./mms/iso_mms/client/mms_client_files.c
 ./mms/iso_mms/client/mms_client_get_namelist.c
-./mms/iso_mms/client/mms_var_list.c
 ./mms/iso_mms/client/mms_client_get_var_access.c
 ./mms/iso_mms/client/mms_client_common.c
 ./mms/iso_mms/client/mms_client_read.c
 ./mms/iso_mms/server/mms_read_service.c
-./mms/iso_mms/server/mms_conclude_service.c
+./mms/iso_mms/server/mms_file_service.c
+./mms/iso_mms/server/mms_association_service.c
+./mms/iso_mms/server/mms_identify_service.c
+./mms/iso_mms/server/mms_status_service.c
 ./mms/iso_mms/server/mms_named_variable_list_service.c
 ./mms/iso_mms/server/mms_value_cache.c
 ./mms/iso_mms/server/mms_get_namelist_service.c
@@ -35,6 +41,7 @@ set (lib_common_SRCS
 ./mms/iso_mms/server/mms_server_common.c
 ./mms/iso_mms/server/mms_named_variable_list.c
 ./mms/iso_mms/server/mms_domain.c
+./mms/iso_mms/server/mms_device.c
 ./mms/iso_mms/server/mms_information_report.c
 ./mms/iso_mms/server/mms_server_connection.c
 ./mms/iso_mms/server/mms_write_service.c
@@ -46,12 +53,19 @@ set (lib_common_SRCS
 ./mms/asn1/ber_encoder.c
 ./mms/asn1/ber_integer.c
 ./mms/iso_client/impl/iso_client_connection.c
+./mms/iso_common/iso_connection_parameters.c
 ./mms/iso_session/iso_session.c
 ./iedclient/impl/client_control.c
+./iedclient/impl/client_report_control.c
+./iedclient/impl/client_report.c
 ./iedclient/impl/ied_connection.c
 ./iedcommon/iec61850_common.c
-./iedserver/ied_server.c
+./iedserver/impl/ied_server.c
+./iedserver/impl/client_connection.c
 ./iedserver/model/model.c
+./iedserver/model/dynamic_model.c
+./iedserver/model/cdc.c
+./iedserver/model/config_file_parser.c
 ./iedserver/mms_mapping/control.c
 ./iedserver/mms_mapping/mms_mapping.c
 ./iedserver/mms_mapping/reporting.c
@@ -160,12 +174,14 @@ set (lib_linux_SRCS
 ./hal/socket/linux/socket_linux.c
 ./hal/ethernet/linux/ethernet_linux.c
 ./hal/thread/linux/thread_linux.c
+./hal/filesystem/linux/file_provider_linux.c
 )
 
 set (lib_windows_SRCS
 ./hal/socket/win32/socket_win32.c
 ./hal/ethernet/win32/ethernet_win32.c
 ./hal/thread/win32/thread_win32.c
+./hal/filesystem/win32/file_provider_win32.c
 )
 
 IF(WIN32)
@@ -188,6 +204,8 @@ ELSE()
 add_definitions(-DEXCLUDE_ETHERNET_WINDOWS)
 ENDIF()
 
+set (CMAKE_MODULE_LINKER_FLAGS   "${CMAKE_MODULE_LINKER_FLAGS}\"/DEF:${CMAKE_CURRENT_SOURCE_DIR}/vs/libiec61850.def\"") 
+
 include_directories(
   ../third_party/winpcap/include
 )
@@ -199,12 +217,14 @@ set (library_SRCS
 	${lib_goose_SRCS}
     ${lib_windows_SRCS}
 )
+
 ELSE()
 set (library_SRCS
 	${lib_common_SRCS}
 	${lib_asn1c_SRCS}
     ${lib_windows_SRCS}
 )
+
 ENDIF(WITH_WPCAP)
 
 ELSEIF(UNIX)
@@ -217,13 +237,31 @@ set (library_SRCS
 ENDIF(WIN32)
 
 
-add_library (iec61850-shared SHARED ${library_SRCS})
+include (GenerateExportHeader)
+
+add_library (iec61850-shared SHARED ${library_SRCS} )
+
+set_target_properties(iec61850-shared PROPERTIES
+           OUTPUT_NAME iec61850
+           SOVERSION "${LIB_VERSION_MAJOR}.${LIB_VERSION_MINOR}.${LIB_VERSION_PATCH}"
+)
+
+
+
+
+GENERATE_EXPORT_HEADER(iec61850-shared
+			BASE_NAME iec61850-shared
+			EXPORT_MACRO_NAME iec61850-shared_EXPORT
+			EXPORT_FILE_NAME iec61850-shared_export.h
+			STATIC_DEFINE iec61850-shared_BUILT_AS_STATIC
+)
 
 add_library (iec61850 STATIC ${library_SRCS})
 
 IF(UNIX)
 target_link_libraries (iec61850
     -lpthread
+    -lm
 )
 ENDIF(UNIX)
 
@@ -236,9 +274,24 @@ target_link_libraries(iec61850-shared
    ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/winpcap/lib/wpcap.lib
    ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/winpcap/lib/packet.lib
 )
+
+
+if(MSVC)
+		set_target_properties(iec61850-shared PROPERTIES
+           	LINK_FLAGS "/DEF:\"${CMAKE_CURRENT_SOURCE_DIR}/vs/libiec61850.def\""
+       	)
+endif()
+
+
+ELSE(WITH_WPCAP)
+if(MSVC)
+		set_target_properties(iec61850-shared PROPERTIES
+           	LINK_FLAGS "/DEF:\"${CMAKE_CURRENT_SOURCE_DIR}/vs/libiec61850-wo-goose.def\""
+       	)
+endif()
 ENDIF(WITH_WPCAP)
 
-install (TARGETS iec61850
+install (TARGETS iec61850 iec61850-shared
 	RUNTIME DESTINATION bin
 	ARCHIVE DESTINATION lib
     LIBRARY DESTINATION lib

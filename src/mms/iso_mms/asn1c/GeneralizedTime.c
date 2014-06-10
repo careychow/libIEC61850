@@ -222,7 +222,7 @@ GeneralizedTime_encode_xer(asn_TYPE_descriptor_t *td, void *sptr,
 		asn_app_consume_bytes_f *cb, void *app_key) {
 
 	if(flags & XER_F_CANONICAL) {
-		GeneralizedTime_t *gt;
+		GeneralizedTime_t *gt = NULL; // modified MZ
 		asn_enc_rval_t rv;
 		int fv, fd;		/* fractional parts */
 		struct tm tm;
@@ -322,7 +322,7 @@ asn_GT2time_frac(const GeneralizedTime_t *st, int *frac_value, int *frac_digits,
 	int offset_specified = 0;
 	int fvalue = 0;
 	int fdigits = 0;
-	time_t tloc;
+	time_t tloc = 0;
 
 	if(!st || !st->buf) {
 		errno = EINVAL;

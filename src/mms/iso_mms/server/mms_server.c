@@ -24,27 +24,8 @@
 #include "mms_server.h"
 #include "mms_server_connection.h"
 #include "mms_value_cache.h"
-#include "map.h"
-#include "thread.h"
-
-struct sMmsServer {
-    IsoServer isoServer;
-    MmsDevice* device;
-    ReadVariableHandler readHandler;
-    void* readHandlerParameter;
-    WriteVariableHandler writeHandler;
-    void* writeHandlerParameter;
-    MmsConnectionHandler connectionHandler;
-    void* connectionHandlerParameter;
-    Map openConnections;
-    Map valueCaches;
-    bool isLocked;
-    Semaphore modelMutex;
-
-    char* vendorName;
-    char* modelName;
-    char* revision;
-};
+#include "mms_server_internal.h"
+#include "iso_server_private.h"
 
 static Map
 createValueCachesForDomains(MmsDevice* device)
@@ -63,7 +44,9 @@ createValueCachesForDomains(MmsDevice* device)
 MmsServer
 MmsServer_create(IsoServer isoServer, MmsDevice* device)
 {
-    MmsServer self = (MmsServer) calloc(1, sizeof(struct sMmsServer));
+    MmsServer self = (MmsServer) malloc(sizeof(struct sMmsServer));
+
+    memset(self, 0, sizeof(struct sMmsServer));
 
     self->isoServer = isoServer;
     self->device = device;
@@ -72,42 +55,9 @@ MmsServer_create(IsoServer isoServer, MmsDevice* device)
     self->isLocked = false;
     self->modelMutex = Semaphore_create(1);
 
+    IsoServer_setUserLock(isoServer, self->modelMutex);
+
     return self;
-}
-
-void
-MmsServer_setServerIdentity(MmsServer self, char* vendorName, char* modelName, char* revision)
-{
-    self->vendorName = vendorName;
-    self->modelName = modelName;
-    self->revision = revision;
-}
-
-char*
-MmsServer_getVendorName(MmsServer self)
-{
-    if (self->vendorName != NULL)
-        return self->vendorName;
-    else
-        return CONFIG_DEFAULT_MMS_VENDOR_NAME;
-}
-
-char*
-MmsServer_getModelName(MmsServer self)
-{
-    if (self->modelName != NULL)
-        return self->modelName;
-    else
-        return CONFIG_DEFAULT_MMS_MODEL_NAME;
-}
-
-char*
-MmsServer_getRevision(MmsServer self)
-{
-    if (self->revision != NULL)
-        return self->revision;
-    else
-        return CONFIG_DEFAULT_MMS_REVISION;
 }
 
 void
@@ -141,6 +91,12 @@ MmsServer_installConnectionHandler(MmsServer self, MmsConnectionHandler connecti
 {
     self->connectionHandler = connectionHandler;
     self->connectionHandlerParameter = parameter;
+}
+
+void
+MmsServer_setClientAuthenticator(MmsServer self, AcseAuthenticator authenticator, void* authenticatorParameter)
+{
+    IsoServer_setAuthenticator(self->isoServer, authenticator, authenticatorParameter);
 }
 
 
@@ -248,16 +204,17 @@ isoConnectionIndicationHandler(IsoConnectionIndication indication,
     MmsServer mmsServer = (MmsServer) parameter;
 
     if (indication == ISO_CONNECTION_OPENED) {
-        MmsServerConnection* mmsCon = MmsServerConnection_init(0, mmsServer,
-                connection);
+        MmsServerConnection* mmsCon = MmsServerConnection_init(0, mmsServer, connection);
+
         Map_addEntry(mmsServer->openConnections, connection, mmsCon);
 
         if (mmsServer->connectionHandler != NULL)
             mmsServer->connectionHandler(mmsServer->connectionHandlerParameter,
                     mmsCon, MMS_SERVER_NEW_CONNECTION);
-    } else if (indication == ISO_CONNECTION_CLOSED) {
-        MmsServerConnection* mmsCon = (MmsServerConnection*) Map_removeEntry(
-                mmsServer->openConnections, connection, false);
+    }
+    else if (indication == ISO_CONNECTION_CLOSED) {
+        MmsServerConnection* mmsCon = (MmsServerConnection*)
+                Map_removeEntry(mmsServer->openConnections, connection, false);
 
         if (mmsServer->connectionHandler != NULL)
             mmsServer->connectionHandler(mmsServer->connectionHandlerParameter,

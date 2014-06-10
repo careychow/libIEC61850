@@ -30,6 +30,12 @@
    */
 
 /**
+ * @defgroup HAL_TIME Time related functions
+ *
+ * @{
+ */
+
+/**
  * Get the system time in milliseconds.
  *
  * The time value returned as 64-bit unsigned integer should represent the milliseconds
@@ -37,7 +43,9 @@
  *
  * \return the system time with millisecond resolution.
  */
-uint64_t Hal_getTimeInMs();
+uint64_t Hal_getTimeInMs(void);
+
+/*! @} */
 
 /*! @} */
 

@@ -22,8 +22,6 @@
  */
 
 #include "iec61850_server.h"
-#include "iso_server.h"
-#include "acse.h"
 #include "thread.h"
 #include <signal.h>
 #include <stdlib.h>

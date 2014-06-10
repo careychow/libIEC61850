@@ -35,8 +35,16 @@ struct sMmsMapping {
     LinkedList gseControls;
     LinkedList controlObjects;
     LinkedList observedObjects;
+    LinkedList attributeAccessHandlers;
+
     bool reportThreadRunning;
+    bool reportThreadFinished;
     Thread reportWorkerThread;
+
+    IedServer iedServer;
+
+    IedConnectionIndicationHandler connectionIndicationHandler;
+    void* connectionIndicationHandlerParameter;
 };
 
 #endif /* MMS_MAPPING_INTERNAL_H_ */

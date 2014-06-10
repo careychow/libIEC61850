@@ -32,6 +32,13 @@
    */
 
 /**
+ * @defgroup HAL_ETHERNET Direct access to the ethernet layer (optional - required by GOOSE and Sampled Values)
+ *
+ * @{
+ */
+
+
+/**
  * Opaque handle that represents an Ethernet "socket".
  */
 typedef struct sEthernetSocket* EthernetSocket;
@@ -68,6 +75,8 @@ Ethernet_setProtocolFilter(EthernetSocket ethSocket, uint16_t etherType);
 
 int
 Ethernet_receivePacket(EthernetSocket self, uint8_t* buffer, int bufferSize);
+
+/*! @} */
 
 /*! @} */
 

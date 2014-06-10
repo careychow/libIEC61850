@@ -43,7 +43,7 @@ public class DataObjectType extends SclType {
 		this.cdc = ParserUtils.parseAttribute(xmlNode, "cdc");
 
 		if (this.cdc == null)
-			throw new SclParserException("cdc is missing!");
+			throw new SclParserException(xmlNode, "cdc is missing!");
 
 		NodeList elementNodes = xmlNode.getChildNodes();
 

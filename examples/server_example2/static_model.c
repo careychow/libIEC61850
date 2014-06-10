@@ -303,76 +303,81 @@ extern DataObject    iedModel_Physical_Measurements_LPHD1_Proxy;
 extern DataAttribute iedModel_Physical_Measurements_LPHD1_Proxy_stVal;
 extern DataAttribute iedModel_Physical_Measurements_LPHD1_Proxy_q;
 extern DataAttribute iedModel_Physical_Measurements_LPHD1_Proxy_t;
-static DataSetEntry ds_Inverter_LLN0_dataset1_fcda0 = {
+
+extern DataSet ds_Inverter_LLN0_dataset1;
+
+
+extern DataSetEntry ds_Inverter_LLN0_dataset1_fcda0;
+extern DataSetEntry ds_Inverter_LLN0_dataset1_fcda1;
+extern DataSetEntry ds_Inverter_LLN0_dataset1_fcda2;
+extern DataSetEntry ds_Inverter_LLN0_dataset1_fcda3;
+extern DataSetEntry ds_Inverter_LLN0_dataset1_fcda4;
+
+DataSetEntry ds_Inverter_LLN0_dataset1_fcda0 = {
   "ied1Inverter",
   "LLN0$ST$Mod$q",
   -1,
   NULL,
-  NULL
+  NULL,
+  &ds_Inverter_LLN0_dataset1_fcda1
 };
 
-static DataSetEntry ds_Inverter_LLN0_dataset1_fcda1 = {
+DataSetEntry ds_Inverter_LLN0_dataset1_fcda1 = {
   "ied1Battery",
   "LLN0$ST$Mod$q",
   -1,
   NULL,
-  NULL
+  NULL,
+  &ds_Inverter_LLN0_dataset1_fcda2
 };
 
-static DataSetEntry ds_Inverter_LLN0_dataset1_fcda2 = {
+DataSetEntry ds_Inverter_LLN0_dataset1_fcda2 = {
   "ied1Inverter",
   "MMXU1$ST$Mod$q",
   -1,
   NULL,
-  NULL
+  NULL,
+  &ds_Inverter_LLN0_dataset1_fcda3
 };
 
-static DataSetEntry ds_Inverter_LLN0_dataset1_fcda3 = {
+DataSetEntry ds_Inverter_LLN0_dataset1_fcda3 = {
   "ied1Inverter",
   "MMXU1$CF$Mod$ctlModel",
   -1,
   NULL,
-  NULL
+  NULL,
+  &ds_Inverter_LLN0_dataset1_fcda4
 };
 
-static DataSetEntry ds_Inverter_LLN0_dataset1_fcda4 = {
+DataSetEntry ds_Inverter_LLN0_dataset1_fcda4 = {
   "ied1Inverter",
   "MMXU1$MX$TotW$mag",
   -1,
   NULL,
+  NULL,
   NULL
 };
 
-static DataSetEntry* ds_Inverter_LLN0_dataset1_elements[5] = {
-  &ds_Inverter_LLN0_dataset1_fcda0,
-  &ds_Inverter_LLN0_dataset1_fcda1,
-  &ds_Inverter_LLN0_dataset1_fcda2,
-  &ds_Inverter_LLN0_dataset1_fcda3,
-  &ds_Inverter_LLN0_dataset1_fcda4
-};
-
-static DataSet ds_Inverter_LLN0_dataset1 = {
+DataSet ds_Inverter_LLN0_dataset1 = {
   "ied1Inverter",
   "LLN0$dataset1",
   5,
-  ds_Inverter_LLN0_dataset1_elements
-};
-
-static DataSet* datasets[] = {
-  &ds_Inverter_LLN0_dataset1,
+  &ds_Inverter_LLN0_dataset1_fcda0,
   NULL
 };
 
 LogicalDevice iedModel_Inverter = {
+    LogicalDeviceModelType,
     "ied1Inverter",
-    &iedModel_Battery,
-    &iedModel_Inverter_LLN0
+    (ModelNode*) &iedModel,
+    (ModelNode*) &iedModel_Battery,
+    (ModelNode*) &iedModel_Inverter_LLN0
 };
 
 LogicalNode iedModel_Inverter_LLN0 = {
     LogicalNodeModelType,
     "LLN0",
-    &iedModel_Inverter,
+    (ModelNode*) &iedModel_Inverter,
     (ModelNode*) &iedModel_Inverter_LPHD1,
     (ModelNode*) &iedModel_Inverter_LLN0_Mod,
 };
@@ -383,7 +388,6 @@ DataObject iedModel_Inverter_LLN0_Mod = {
     (ModelNode*) &iedModel_Inverter_LLN0,
     (ModelNode*) &iedModel_Inverter_LLN0_Beh,
     (ModelNode*) &iedModel_Inverter_LLN0_Mod_q,
-    0,
     0
 };
 
@@ -394,11 +398,11 @@ DataAttribute iedModel_Inverter_LLN0_Mod_q = {
     (ModelNode*) &iedModel_Inverter_LLN0_Mod_t,
     NULL,
     0,
-    0,
     ST,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_LLN0_Mod_t = {
     DataAttributeModelType,
@@ -407,11 +411,11 @@ DataAttribute iedModel_Inverter_LLN0_Mod_t = {
     (ModelNode*) &iedModel_Inverter_LLN0_Mod_ctlModel,
     NULL,
     0,
-    0,
     ST,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_LLN0_Mod_ctlModel = {
     DataAttributeModelType,
@@ -420,11 +424,11 @@ DataAttribute iedModel_Inverter_LLN0_Mod_ctlModel = {
     NULL,
     NULL,
     0,
-    0,
     CF,
     ENUMERATED,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Inverter_LLN0_Beh = {
     DataObjectModelType,
@@ -432,7 +436,6 @@ DataObject iedModel_Inverter_LLN0_Beh = {
     (ModelNode*) &iedModel_Inverter_LLN0,
     (ModelNode*) &iedModel_Inverter_LLN0_Health,
     (ModelNode*) &iedModel_Inverter_LLN0_Beh_stVal,
-    0,
     0
 };
 
@@ -443,11 +446,11 @@ DataAttribute iedModel_Inverter_LLN0_Beh_stVal = {
     (ModelNode*) &iedModel_Inverter_LLN0_Beh_q,
     NULL,
     0,
-    0,
     ST,
     INT32,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_LLN0_Beh_q = {
     DataAttributeModelType,
@@ -456,11 +459,11 @@ DataAttribute iedModel_Inverter_LLN0_Beh_q = {
     (ModelNode*) &iedModel_Inverter_LLN0_Beh_t,
     NULL,
     0,
-    0,
     ST,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_LLN0_Beh_t = {
     DataAttributeModelType,
@@ -469,11 +472,11 @@ DataAttribute iedModel_Inverter_LLN0_Beh_t = {
     NULL,
     NULL,
     0,
-    0,
     ST,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Inverter_LLN0_Health = {
     DataObjectModelType,
@@ -481,7 +484,6 @@ DataObject iedModel_Inverter_LLN0_Health = {
     (ModelNode*) &iedModel_Inverter_LLN0,
     (ModelNode*) &iedModel_Inverter_LLN0_NamPlt,
     (ModelNode*) &iedModel_Inverter_LLN0_Health_stVal,
-    0,
     0
 };
 
@@ -492,11 +494,11 @@ DataAttribute iedModel_Inverter_LLN0_Health_stVal = {
     (ModelNode*) &iedModel_Inverter_LLN0_Health_q,
     NULL,
     0,
-    0,
     ST,
     INT32,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_LLN0_Health_q = {
     DataAttributeModelType,
@@ -505,11 +507,11 @@ DataAttribute iedModel_Inverter_LLN0_Health_q = {
     (ModelNode*) &iedModel_Inverter_LLN0_Health_t,
     NULL,
     0,
-    0,
     ST,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_LLN0_Health_t = {
     DataAttributeModelType,
@@ -518,11 +520,11 @@ DataAttribute iedModel_Inverter_LLN0_Health_t = {
     NULL,
     NULL,
     0,
-    0,
     ST,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Inverter_LLN0_NamPlt = {
     DataObjectModelType,
@@ -530,7 +532,6 @@ DataObject iedModel_Inverter_LLN0_NamPlt = {
     (ModelNode*) &iedModel_Inverter_LLN0,
     NULL,
     (ModelNode*) &iedModel_Inverter_LLN0_NamPlt_vendor,
-    0,
     0
 };
 
@@ -541,11 +542,11 @@ DataAttribute iedModel_Inverter_LLN0_NamPlt_vendor = {
     (ModelNode*) &iedModel_Inverter_LLN0_NamPlt_swRev,
     NULL,
     0,
-    0,
     DC,
     VISIBLE_STRING_255,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_LLN0_NamPlt_swRev = {
     DataAttributeModelType,
@@ -554,11 +555,11 @@ DataAttribute iedModel_Inverter_LLN0_NamPlt_swRev = {
     (ModelNode*) &iedModel_Inverter_LLN0_NamPlt_d,
     NULL,
     0,
-    0,
     DC,
     VISIBLE_STRING_255,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_LLN0_NamPlt_d = {
     DataAttributeModelType,
@@ -567,11 +568,11 @@ DataAttribute iedModel_Inverter_LLN0_NamPlt_d = {
     (ModelNode*) &iedModel_Inverter_LLN0_NamPlt_configRev,
     NULL,
     0,
-    0,
     DC,
     VISIBLE_STRING_255,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_LLN0_NamPlt_configRev = {
     DataAttributeModelType,
@@ -580,11 +581,11 @@ DataAttribute iedModel_Inverter_LLN0_NamPlt_configRev = {
     (ModelNode*) &iedModel_Inverter_LLN0_NamPlt_ldNs,
     NULL,
     0,
-    0,
     DC,
     VISIBLE_STRING_255,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_LLN0_NamPlt_ldNs = {
     DataAttributeModelType,
@@ -593,16 +594,16 @@ DataAttribute iedModel_Inverter_LLN0_NamPlt_ldNs = {
     NULL,
     NULL,
     0,
-    0,
     EX,
     VISIBLE_STRING_255,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 LogicalNode iedModel_Inverter_LPHD1 = {
     LogicalNodeModelType,
     "LPHD1",
-    &iedModel_Inverter,
+    (ModelNode*) &iedModel_Inverter,
     (ModelNode*) &iedModel_Inverter_ZINV1,
     (ModelNode*) &iedModel_Inverter_LPHD1_PhyNam,
 };
@@ -613,7 +614,6 @@ DataObject iedModel_Inverter_LPHD1_PhyNam = {
     (ModelNode*) &iedModel_Inverter_LPHD1,
     (ModelNode*) &iedModel_Inverter_LPHD1_PhyHealth,
     (ModelNode*) &iedModel_Inverter_LPHD1_PhyNam_vendor,
-    0,
     0
 };
 
@@ -624,11 +624,11 @@ DataAttribute iedModel_Inverter_LPHD1_PhyNam_vendor = {
     NULL,
     NULL,
     0,
-    0,
     DC,
     VISIBLE_STRING_255,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Inverter_LPHD1_PhyHealth = {
     DataObjectModelType,
@@ -636,7 +636,6 @@ DataObject iedModel_Inverter_LPHD1_PhyHealth = {
     (ModelNode*) &iedModel_Inverter_LPHD1,
     (ModelNode*) &iedModel_Inverter_LPHD1_Proxy,
     (ModelNode*) &iedModel_Inverter_LPHD1_PhyHealth_stVal,
-    0,
     0
 };
 
@@ -647,11 +646,11 @@ DataAttribute iedModel_Inverter_LPHD1_PhyHealth_stVal = {
     (ModelNode*) &iedModel_Inverter_LPHD1_PhyHealth_q,
     NULL,
     0,
-    0,
     ST,
     INT32,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_LPHD1_PhyHealth_q = {
     DataAttributeModelType,
@@ -660,11 +659,11 @@ DataAttribute iedModel_Inverter_LPHD1_PhyHealth_q = {
     (ModelNode*) &iedModel_Inverter_LPHD1_PhyHealth_t,
     NULL,
     0,
-    0,
     ST,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_LPHD1_PhyHealth_t = {
     DataAttributeModelType,
@@ -673,11 +672,11 @@ DataAttribute iedModel_Inverter_LPHD1_PhyHealth_t = {
     NULL,
     NULL,
     0,
-    0,
     ST,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Inverter_LPHD1_Proxy = {
     DataObjectModelType,
@@ -685,7 +684,6 @@ DataObject iedModel_Inverter_LPHD1_Proxy = {
     (ModelNode*) &iedModel_Inverter_LPHD1,
     NULL,
     (ModelNode*) &iedModel_Inverter_LPHD1_Proxy_stVal,
-    0,
     0
 };
 
@@ -696,11 +694,11 @@ DataAttribute iedModel_Inverter_LPHD1_Proxy_stVal = {
     (ModelNode*) &iedModel_Inverter_LPHD1_Proxy_q,
     NULL,
     0,
-    0,
     ST,
     BOOLEAN,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_LPHD1_Proxy_q = {
     DataAttributeModelType,
@@ -709,11 +707,11 @@ DataAttribute iedModel_Inverter_LPHD1_Proxy_q = {
     (ModelNode*) &iedModel_Inverter_LPHD1_Proxy_t,
     NULL,
     0,
-    0,
     ST,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_LPHD1_Proxy_t = {
     DataAttributeModelType,
@@ -722,16 +720,16 @@ DataAttribute iedModel_Inverter_LPHD1_Proxy_t = {
     NULL,
     NULL,
     0,
-    0,
     ST,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 LogicalNode iedModel_Inverter_ZINV1 = {
     LogicalNodeModelType,
     "ZINV1",
-    &iedModel_Inverter,
+    (ModelNode*) &iedModel_Inverter,
     (ModelNode*) &iedModel_Inverter_MMXU1,
     (ModelNode*) &iedModel_Inverter_ZINV1_Mod,
 };
@@ -742,7 +740,6 @@ DataObject iedModel_Inverter_ZINV1_Mod = {
     (ModelNode*) &iedModel_Inverter_ZINV1,
     (ModelNode*) &iedModel_Inverter_ZINV1_Beh,
     (ModelNode*) &iedModel_Inverter_ZINV1_Mod_q,
-    0,
     0
 };
 
@@ -753,11 +750,11 @@ DataAttribute iedModel_Inverter_ZINV1_Mod_q = {
     (ModelNode*) &iedModel_Inverter_ZINV1_Mod_t,
     NULL,
     0,
-    0,
     ST,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_ZINV1_Mod_t = {
     DataAttributeModelType,
@@ -766,11 +763,11 @@ DataAttribute iedModel_Inverter_ZINV1_Mod_t = {
     (ModelNode*) &iedModel_Inverter_ZINV1_Mod_ctlModel,
     NULL,
     0,
-    0,
     ST,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_ZINV1_Mod_ctlModel = {
     DataAttributeModelType,
@@ -779,11 +776,11 @@ DataAttribute iedModel_Inverter_ZINV1_Mod_ctlModel = {
     NULL,
     NULL,
     0,
-    0,
     CF,
     ENUMERATED,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Inverter_ZINV1_Beh = {
     DataObjectModelType,
@@ -791,7 +788,6 @@ DataObject iedModel_Inverter_ZINV1_Beh = {
     (ModelNode*) &iedModel_Inverter_ZINV1,
     (ModelNode*) &iedModel_Inverter_ZINV1_Health,
     (ModelNode*) &iedModel_Inverter_ZINV1_Beh_stVal,
-    0,
     0
 };
 
@@ -802,11 +798,11 @@ DataAttribute iedModel_Inverter_ZINV1_Beh_stVal = {
     (ModelNode*) &iedModel_Inverter_ZINV1_Beh_q,
     NULL,
     0,
-    0,
     ST,
     INT32,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_ZINV1_Beh_q = {
     DataAttributeModelType,
@@ -815,11 +811,11 @@ DataAttribute iedModel_Inverter_ZINV1_Beh_q = {
     (ModelNode*) &iedModel_Inverter_ZINV1_Beh_t,
     NULL,
     0,
-    0,
     ST,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_ZINV1_Beh_t = {
     DataAttributeModelType,
@@ -828,11 +824,11 @@ DataAttribute iedModel_Inverter_ZINV1_Beh_t = {
     NULL,
     NULL,
     0,
-    0,
     ST,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Inverter_ZINV1_Health = {
     DataObjectModelType,
@@ -840,7 +836,6 @@ DataObject iedModel_Inverter_ZINV1_Health = {
     (ModelNode*) &iedModel_Inverter_ZINV1,
     (ModelNode*) &iedModel_Inverter_ZINV1_NamPlt,
     (ModelNode*) &iedModel_Inverter_ZINV1_Health_stVal,
-    0,
     0
 };
 
@@ -851,11 +846,11 @@ DataAttribute iedModel_Inverter_ZINV1_Health_stVal = {
     (ModelNode*) &iedModel_Inverter_ZINV1_Health_q,
     NULL,
     0,
-    0,
     ST,
     INT32,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_ZINV1_Health_q = {
     DataAttributeModelType,
@@ -864,11 +859,11 @@ DataAttribute iedModel_Inverter_ZINV1_Health_q = {
     (ModelNode*) &iedModel_Inverter_ZINV1_Health_t,
     NULL,
     0,
-    0,
     ST,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_ZINV1_Health_t = {
     DataAttributeModelType,
@@ -877,11 +872,11 @@ DataAttribute iedModel_Inverter_ZINV1_Health_t = {
     NULL,
     NULL,
     0,
-    0,
     ST,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Inverter_ZINV1_NamPlt = {
     DataObjectModelType,
@@ -889,7 +884,6 @@ DataObject iedModel_Inverter_ZINV1_NamPlt = {
     (ModelNode*) &iedModel_Inverter_ZINV1,
     (ModelNode*) &iedModel_Inverter_ZINV1_WRtg,
     (ModelNode*) &iedModel_Inverter_ZINV1_NamPlt_vendor,
-    0,
     0
 };
 
@@ -900,11 +894,11 @@ DataAttribute iedModel_Inverter_ZINV1_NamPlt_vendor = {
     (ModelNode*) &iedModel_Inverter_ZINV1_NamPlt_swRev,
     NULL,
     0,
-    0,
     DC,
     VISIBLE_STRING_255,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_ZINV1_NamPlt_swRev = {
     DataAttributeModelType,
@@ -913,11 +907,11 @@ DataAttribute iedModel_Inverter_ZINV1_NamPlt_swRev = {
     (ModelNode*) &iedModel_Inverter_ZINV1_NamPlt_d,
     NULL,
     0,
-    0,
     DC,
     VISIBLE_STRING_255,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_ZINV1_NamPlt_d = {
     DataAttributeModelType,
@@ -926,11 +920,11 @@ DataAttribute iedModel_Inverter_ZINV1_NamPlt_d = {
     NULL,
     NULL,
     0,
-    0,
     DC,
     VISIBLE_STRING_255,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Inverter_ZINV1_WRtg = {
     DataObjectModelType,
@@ -938,7 +932,6 @@ DataObject iedModel_Inverter_ZINV1_WRtg = {
     (ModelNode*) &iedModel_Inverter_ZINV1,
     (ModelNode*) &iedModel_Inverter_ZINV1_VarRtg,
     (ModelNode*) &iedModel_Inverter_ZINV1_WRtg_setMag,
-    0,
     0
 };
 
@@ -949,11 +942,11 @@ DataAttribute iedModel_Inverter_ZINV1_WRtg_setMag = {
     (ModelNode*) &iedModel_Inverter_ZINV1_WRtg_units,
     (ModelNode*) &iedModel_Inverter_ZINV1_WRtg_setMag_f,
     0,
-    0,
     SP,
     CONSTRUCTED,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_ZINV1_WRtg_setMag_f = {
     DataAttributeModelType,
@@ -962,11 +955,11 @@ DataAttribute iedModel_Inverter_ZINV1_WRtg_setMag_f = {
     NULL,
     NULL,
     0,
-    0,
     SP,
     FLOAT32,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_ZINV1_WRtg_units = {
     DataAttributeModelType,
@@ -975,11 +968,11 @@ DataAttribute iedModel_Inverter_ZINV1_WRtg_units = {
     NULL,
     (ModelNode*) &iedModel_Inverter_ZINV1_WRtg_units_SIUnit,
     0,
-    0,
     CF,
     CONSTRUCTED,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_ZINV1_WRtg_units_SIUnit = {
     DataAttributeModelType,
@@ -988,11 +981,11 @@ DataAttribute iedModel_Inverter_ZINV1_WRtg_units_SIUnit = {
     NULL,
     NULL,
     0,
-    0,
     CF,
     ENUMERATED,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Inverter_ZINV1_VarRtg = {
     DataObjectModelType,
@@ -1000,7 +993,6 @@ DataObject iedModel_Inverter_ZINV1_VarRtg = {
     (ModelNode*) &iedModel_Inverter_ZINV1,
     (ModelNode*) &iedModel_Inverter_ZINV1_ACTyp,
     (ModelNode*) &iedModel_Inverter_ZINV1_VarRtg_setMag,
-    0,
     0
 };
 
@@ -1011,11 +1003,11 @@ DataAttribute iedModel_Inverter_ZINV1_VarRtg_setMag = {
     (ModelNode*) &iedModel_Inverter_ZINV1_VarRtg_units,
     (ModelNode*) &iedModel_Inverter_ZINV1_VarRtg_setMag_f,
     0,
-    0,
     SP,
     CONSTRUCTED,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_ZINV1_VarRtg_setMag_f = {
     DataAttributeModelType,
@@ -1024,11 +1016,11 @@ DataAttribute iedModel_Inverter_ZINV1_VarRtg_setMag_f = {
     NULL,
     NULL,
     0,
-    0,
     SP,
     FLOAT32,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_ZINV1_VarRtg_units = {
     DataAttributeModelType,
@@ -1037,11 +1029,11 @@ DataAttribute iedModel_Inverter_ZINV1_VarRtg_units = {
     NULL,
     (ModelNode*) &iedModel_Inverter_ZINV1_VarRtg_units_SIUnit,
     0,
-    0,
     CF,
     CONSTRUCTED,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_ZINV1_VarRtg_units_SIUnit = {
     DataAttributeModelType,
@@ -1050,11 +1042,11 @@ DataAttribute iedModel_Inverter_ZINV1_VarRtg_units_SIUnit = {
     NULL,
     NULL,
     0,
-    0,
     CF,
     ENUMERATED,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Inverter_ZINV1_ACTyp = {
     DataObjectModelType,
@@ -1062,7 +1054,6 @@ DataObject iedModel_Inverter_ZINV1_ACTyp = {
     (ModelNode*) &iedModel_Inverter_ZINV1,
     (ModelNode*) &iedModel_Inverter_ZINV1_OutWSet,
     (ModelNode*) &iedModel_Inverter_ZINV1_ACTyp_setVal,
-    0,
     0
 };
 
@@ -1073,11 +1064,11 @@ DataAttribute iedModel_Inverter_ZINV1_ACTyp_setVal = {
     NULL,
     NULL,
     0,
-    0,
     SP,
     INT32,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Inverter_ZINV1_OutWSet = {
     DataObjectModelType,
@@ -1085,7 +1076,6 @@ DataObject iedModel_Inverter_ZINV1_OutWSet = {
     (ModelNode*) &iedModel_Inverter_ZINV1,
     (ModelNode*) &iedModel_Inverter_ZINV1_OutVarSet,
     (ModelNode*) &iedModel_Inverter_ZINV1_OutWSet_setMag,
-    0,
     0
 };
 
@@ -1096,11 +1086,11 @@ DataAttribute iedModel_Inverter_ZINV1_OutWSet_setMag = {
     (ModelNode*) &iedModel_Inverter_ZINV1_OutWSet_units,
     (ModelNode*) &iedModel_Inverter_ZINV1_OutWSet_setMag_f,
     0,
-    0,
     SP,
     CONSTRUCTED,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_ZINV1_OutWSet_setMag_f = {
     DataAttributeModelType,
@@ -1109,11 +1099,11 @@ DataAttribute iedModel_Inverter_ZINV1_OutWSet_setMag_f = {
     NULL,
     NULL,
     0,
-    0,
     SP,
     FLOAT32,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_ZINV1_OutWSet_units = {
     DataAttributeModelType,
@@ -1122,11 +1112,11 @@ DataAttribute iedModel_Inverter_ZINV1_OutWSet_units = {
     NULL,
     (ModelNode*) &iedModel_Inverter_ZINV1_OutWSet_units_SIUnit,
     0,
-    0,
     CF,
     CONSTRUCTED,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_ZINV1_OutWSet_units_SIUnit = {
     DataAttributeModelType,
@@ -1135,11 +1125,11 @@ DataAttribute iedModel_Inverter_ZINV1_OutWSet_units_SIUnit = {
     NULL,
     NULL,
     0,
-    0,
     CF,
     ENUMERATED,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Inverter_ZINV1_OutVarSet = {
     DataObjectModelType,
@@ -1147,7 +1137,6 @@ DataObject iedModel_Inverter_ZINV1_OutVarSet = {
     (ModelNode*) &iedModel_Inverter_ZINV1,
     NULL,
     (ModelNode*) &iedModel_Inverter_ZINV1_OutVarSet_setMag,
-    0,
     0
 };
 
@@ -1158,11 +1147,11 @@ DataAttribute iedModel_Inverter_ZINV1_OutVarSet_setMag = {
     (ModelNode*) &iedModel_Inverter_ZINV1_OutVarSet_units,
     (ModelNode*) &iedModel_Inverter_ZINV1_OutVarSet_setMag_f,
     0,
-    0,
     SP,
     CONSTRUCTED,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_ZINV1_OutVarSet_setMag_f = {
     DataAttributeModelType,
@@ -1171,11 +1160,11 @@ DataAttribute iedModel_Inverter_ZINV1_OutVarSet_setMag_f = {
     NULL,
     NULL,
     0,
-    0,
     SP,
     FLOAT32,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_ZINV1_OutVarSet_units = {
     DataAttributeModelType,
@@ -1184,11 +1173,11 @@ DataAttribute iedModel_Inverter_ZINV1_OutVarSet_units = {
     NULL,
     (ModelNode*) &iedModel_Inverter_ZINV1_OutVarSet_units_SIUnit,
     0,
-    0,
     CF,
     CONSTRUCTED,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_ZINV1_OutVarSet_units_SIUnit = {
     DataAttributeModelType,
@@ -1197,16 +1186,16 @@ DataAttribute iedModel_Inverter_ZINV1_OutVarSet_units_SIUnit = {
     NULL,
     NULL,
     0,
-    0,
     CF,
     ENUMERATED,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 LogicalNode iedModel_Inverter_MMXU1 = {
     LogicalNodeModelType,
     "MMXU1",
-    &iedModel_Inverter,
+    (ModelNode*) &iedModel_Inverter,
     NULL,
     (ModelNode*) &iedModel_Inverter_MMXU1_Mod,
 };
@@ -1217,7 +1206,6 @@ DataObject iedModel_Inverter_MMXU1_Mod = {
     (ModelNode*) &iedModel_Inverter_MMXU1,
     (ModelNode*) &iedModel_Inverter_MMXU1_Beh,
     (ModelNode*) &iedModel_Inverter_MMXU1_Mod_q,
-    0,
     0
 };
 
@@ -1228,11 +1216,11 @@ DataAttribute iedModel_Inverter_MMXU1_Mod_q = {
     (ModelNode*) &iedModel_Inverter_MMXU1_Mod_t,
     NULL,
     0,
-    0,
     ST,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_Mod_t = {
     DataAttributeModelType,
@@ -1241,11 +1229,11 @@ DataAttribute iedModel_Inverter_MMXU1_Mod_t = {
     (ModelNode*) &iedModel_Inverter_MMXU1_Mod_ctlModel,
     NULL,
     0,
-    0,
     ST,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_Mod_ctlModel = {
     DataAttributeModelType,
@@ -1254,11 +1242,11 @@ DataAttribute iedModel_Inverter_MMXU1_Mod_ctlModel = {
     NULL,
     NULL,
     0,
-    0,
     CF,
     ENUMERATED,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Inverter_MMXU1_Beh = {
     DataObjectModelType,
@@ -1266,7 +1254,6 @@ DataObject iedModel_Inverter_MMXU1_Beh = {
     (ModelNode*) &iedModel_Inverter_MMXU1,
     (ModelNode*) &iedModel_Inverter_MMXU1_Health,
     (ModelNode*) &iedModel_Inverter_MMXU1_Beh_stVal,
-    0,
     0
 };
 
@@ -1277,11 +1264,11 @@ DataAttribute iedModel_Inverter_MMXU1_Beh_stVal = {
     (ModelNode*) &iedModel_Inverter_MMXU1_Beh_q,
     NULL,
     0,
-    0,
     ST,
     INT32,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_Beh_q = {
     DataAttributeModelType,
@@ -1290,11 +1277,11 @@ DataAttribute iedModel_Inverter_MMXU1_Beh_q = {
     (ModelNode*) &iedModel_Inverter_MMXU1_Beh_t,
     NULL,
     0,
-    0,
     ST,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_Beh_t = {
     DataAttributeModelType,
@@ -1303,11 +1290,11 @@ DataAttribute iedModel_Inverter_MMXU1_Beh_t = {
     NULL,
     NULL,
     0,
-    0,
     ST,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Inverter_MMXU1_Health = {
     DataObjectModelType,
@@ -1315,7 +1302,6 @@ DataObject iedModel_Inverter_MMXU1_Health = {
     (ModelNode*) &iedModel_Inverter_MMXU1,
     (ModelNode*) &iedModel_Inverter_MMXU1_NamPlt,
     (ModelNode*) &iedModel_Inverter_MMXU1_Health_stVal,
-    0,
     0
 };
 
@@ -1326,11 +1312,11 @@ DataAttribute iedModel_Inverter_MMXU1_Health_stVal = {
     (ModelNode*) &iedModel_Inverter_MMXU1_Health_q,
     NULL,
     0,
-    0,
     ST,
     INT32,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_Health_q = {
     DataAttributeModelType,
@@ -1339,11 +1325,11 @@ DataAttribute iedModel_Inverter_MMXU1_Health_q = {
     (ModelNode*) &iedModel_Inverter_MMXU1_Health_t,
     NULL,
     0,
-    0,
     ST,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_Health_t = {
     DataAttributeModelType,
@@ -1352,11 +1338,11 @@ DataAttribute iedModel_Inverter_MMXU1_Health_t = {
     NULL,
     NULL,
     0,
-    0,
     ST,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Inverter_MMXU1_NamPlt = {
     DataObjectModelType,
@@ -1364,7 +1350,6 @@ DataObject iedModel_Inverter_MMXU1_NamPlt = {
     (ModelNode*) &iedModel_Inverter_MMXU1,
     (ModelNode*) &iedModel_Inverter_MMXU1_TotW,
     (ModelNode*) &iedModel_Inverter_MMXU1_NamPlt_vendor,
-    0,
     0
 };
 
@@ -1375,11 +1360,11 @@ DataAttribute iedModel_Inverter_MMXU1_NamPlt_vendor = {
     (ModelNode*) &iedModel_Inverter_MMXU1_NamPlt_swRev,
     NULL,
     0,
-    0,
     DC,
     VISIBLE_STRING_255,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_NamPlt_swRev = {
     DataAttributeModelType,
@@ -1388,11 +1373,11 @@ DataAttribute iedModel_Inverter_MMXU1_NamPlt_swRev = {
     (ModelNode*) &iedModel_Inverter_MMXU1_NamPlt_d,
     NULL,
     0,
-    0,
     DC,
     VISIBLE_STRING_255,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_NamPlt_d = {
     DataAttributeModelType,
@@ -1401,11 +1386,11 @@ DataAttribute iedModel_Inverter_MMXU1_NamPlt_d = {
     NULL,
     NULL,
     0,
-    0,
     DC,
     VISIBLE_STRING_255,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Inverter_MMXU1_TotW = {
     DataObjectModelType,
@@ -1413,7 +1398,6 @@ DataObject iedModel_Inverter_MMXU1_TotW = {
     (ModelNode*) &iedModel_Inverter_MMXU1,
     (ModelNode*) &iedModel_Inverter_MMXU1_TotVAr,
     (ModelNode*) &iedModel_Inverter_MMXU1_TotW_mag,
-    0,
     0
 };
 
@@ -1424,11 +1408,11 @@ DataAttribute iedModel_Inverter_MMXU1_TotW_mag = {
     (ModelNode*) &iedModel_Inverter_MMXU1_TotW_q,
     (ModelNode*) &iedModel_Inverter_MMXU1_TotW_mag_f,
     0,
-    0,
     MX,
     CONSTRUCTED,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_TotW_mag_f = {
     DataAttributeModelType,
@@ -1437,11 +1421,11 @@ DataAttribute iedModel_Inverter_MMXU1_TotW_mag_f = {
     NULL,
     NULL,
     0,
-    0,
     MX,
     FLOAT32,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_TotW_q = {
     DataAttributeModelType,
@@ -1450,11 +1434,11 @@ DataAttribute iedModel_Inverter_MMXU1_TotW_q = {
     (ModelNode*) &iedModel_Inverter_MMXU1_TotW_t,
     NULL,
     0,
-    0,
     MX,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_TotW_t = {
     DataAttributeModelType,
@@ -1463,11 +1447,11 @@ DataAttribute iedModel_Inverter_MMXU1_TotW_t = {
     NULL,
     NULL,
     0,
-    0,
     MX,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Inverter_MMXU1_TotVAr = {
     DataObjectModelType,
@@ -1475,7 +1459,6 @@ DataObject iedModel_Inverter_MMXU1_TotVAr = {
     (ModelNode*) &iedModel_Inverter_MMXU1,
     (ModelNode*) &iedModel_Inverter_MMXU1_TotVA,
     (ModelNode*) &iedModel_Inverter_MMXU1_TotVAr_mag,
-    0,
     0
 };
 
@@ -1486,11 +1469,11 @@ DataAttribute iedModel_Inverter_MMXU1_TotVAr_mag = {
     (ModelNode*) &iedModel_Inverter_MMXU1_TotVAr_q,
     (ModelNode*) &iedModel_Inverter_MMXU1_TotVAr_mag_f,
     0,
-    0,
     MX,
     CONSTRUCTED,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_TotVAr_mag_f = {
     DataAttributeModelType,
@@ -1499,11 +1482,11 @@ DataAttribute iedModel_Inverter_MMXU1_TotVAr_mag_f = {
     NULL,
     NULL,
     0,
-    0,
     MX,
     FLOAT32,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_TotVAr_q = {
     DataAttributeModelType,
@@ -1512,11 +1495,11 @@ DataAttribute iedModel_Inverter_MMXU1_TotVAr_q = {
     (ModelNode*) &iedModel_Inverter_MMXU1_TotVAr_t,
     NULL,
     0,
-    0,
     MX,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_TotVAr_t = {
     DataAttributeModelType,
@@ -1525,11 +1508,11 @@ DataAttribute iedModel_Inverter_MMXU1_TotVAr_t = {
     NULL,
     NULL,
     0,
-    0,
     MX,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Inverter_MMXU1_TotVA = {
     DataObjectModelType,
@@ -1537,7 +1520,6 @@ DataObject iedModel_Inverter_MMXU1_TotVA = {
     (ModelNode*) &iedModel_Inverter_MMXU1,
     (ModelNode*) &iedModel_Inverter_MMXU1_Hz,
     (ModelNode*) &iedModel_Inverter_MMXU1_TotVA_mag,
-    0,
     0
 };
 
@@ -1548,11 +1530,11 @@ DataAttribute iedModel_Inverter_MMXU1_TotVA_mag = {
     (ModelNode*) &iedModel_Inverter_MMXU1_TotVA_q,
     (ModelNode*) &iedModel_Inverter_MMXU1_TotVA_mag_f,
     0,
-    0,
     MX,
     CONSTRUCTED,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_TotVA_mag_f = {
     DataAttributeModelType,
@@ -1561,11 +1543,11 @@ DataAttribute iedModel_Inverter_MMXU1_TotVA_mag_f = {
     NULL,
     NULL,
     0,
-    0,
     MX,
     FLOAT32,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_TotVA_q = {
     DataAttributeModelType,
@@ -1574,11 +1556,11 @@ DataAttribute iedModel_Inverter_MMXU1_TotVA_q = {
     (ModelNode*) &iedModel_Inverter_MMXU1_TotVA_t,
     NULL,
     0,
-    0,
     MX,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_TotVA_t = {
     DataAttributeModelType,
@@ -1587,11 +1569,11 @@ DataAttribute iedModel_Inverter_MMXU1_TotVA_t = {
     NULL,
     NULL,
     0,
-    0,
     MX,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Inverter_MMXU1_Hz = {
     DataObjectModelType,
@@ -1599,7 +1581,6 @@ DataObject iedModel_Inverter_MMXU1_Hz = {
     (ModelNode*) &iedModel_Inverter_MMXU1,
     (ModelNode*) &iedModel_Inverter_MMXU1_PhV,
     (ModelNode*) &iedModel_Inverter_MMXU1_Hz_mag,
-    0,
     0
 };
 
@@ -1610,11 +1591,11 @@ DataAttribute iedModel_Inverter_MMXU1_Hz_mag = {
     (ModelNode*) &iedModel_Inverter_MMXU1_Hz_q,
     (ModelNode*) &iedModel_Inverter_MMXU1_Hz_mag_f,
     0,
-    0,
     MX,
     CONSTRUCTED,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_Hz_mag_f = {
     DataAttributeModelType,
@@ -1623,11 +1604,11 @@ DataAttribute iedModel_Inverter_MMXU1_Hz_mag_f = {
     NULL,
     NULL,
     0,
-    0,
     MX,
     FLOAT32,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_Hz_q = {
     DataAttributeModelType,
@@ -1636,11 +1617,11 @@ DataAttribute iedModel_Inverter_MMXU1_Hz_q = {
     (ModelNode*) &iedModel_Inverter_MMXU1_Hz_t,
     NULL,
     0,
-    0,
     MX,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_Hz_t = {
     DataAttributeModelType,
@@ -1649,11 +1630,11 @@ DataAttribute iedModel_Inverter_MMXU1_Hz_t = {
     NULL,
     NULL,
     0,
-    0,
     MX,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Inverter_MMXU1_PhV = {
     DataObjectModelType,
@@ -1661,7 +1642,6 @@ DataObject iedModel_Inverter_MMXU1_PhV = {
     (ModelNode*) &iedModel_Inverter_MMXU1,
     (ModelNode*) &iedModel_Inverter_MMXU1_A,
     (ModelNode*) &iedModel_Inverter_MMXU1_PhV_phsA,
-    0,
     0
 };
 
@@ -1671,7 +1651,6 @@ DataObject iedModel_Inverter_MMXU1_PhV_phsA = {
     (ModelNode*) &iedModel_Inverter_MMXU1_PhV,
     (ModelNode*) &iedModel_Inverter_MMXU1_PhV_phsB,
     (ModelNode*) &iedModel_Inverter_MMXU1_PhV_phsA_cVal,
-    0,
     0
 };
 
@@ -1682,11 +1661,11 @@ DataAttribute iedModel_Inverter_MMXU1_PhV_phsA_cVal = {
     (ModelNode*) &iedModel_Inverter_MMXU1_PhV_phsA_q,
     (ModelNode*) &iedModel_Inverter_MMXU1_PhV_phsA_cVal_mag,
     0,
-    0,
     MX,
     CONSTRUCTED,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_PhV_phsA_cVal_mag = {
     DataAttributeModelType,
@@ -1695,11 +1674,11 @@ DataAttribute iedModel_Inverter_MMXU1_PhV_phsA_cVal_mag = {
     NULL,
     (ModelNode*) &iedModel_Inverter_MMXU1_PhV_phsA_cVal_mag_f,
     0,
-    0,
     MX,
     CONSTRUCTED,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_PhV_phsA_cVal_mag_f = {
     DataAttributeModelType,
@@ -1708,11 +1687,11 @@ DataAttribute iedModel_Inverter_MMXU1_PhV_phsA_cVal_mag_f = {
     NULL,
     NULL,
     0,
-    0,
     MX,
     FLOAT32,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_PhV_phsA_q = {
     DataAttributeModelType,
@@ -1721,11 +1700,11 @@ DataAttribute iedModel_Inverter_MMXU1_PhV_phsA_q = {
     (ModelNode*) &iedModel_Inverter_MMXU1_PhV_phsA_t,
     NULL,
     0,
-    0,
     MX,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_PhV_phsA_t = {
     DataAttributeModelType,
@@ -1734,11 +1713,11 @@ DataAttribute iedModel_Inverter_MMXU1_PhV_phsA_t = {
     NULL,
     NULL,
     0,
-    0,
     MX,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Inverter_MMXU1_PhV_phsB = {
     DataObjectModelType,
@@ -1746,7 +1725,6 @@ DataObject iedModel_Inverter_MMXU1_PhV_phsB = {
     (ModelNode*) &iedModel_Inverter_MMXU1_PhV,
     (ModelNode*) &iedModel_Inverter_MMXU1_PhV_phsC,
     (ModelNode*) &iedModel_Inverter_MMXU1_PhV_phsB_cVal,
-    0,
     0
 };
 
@@ -1757,11 +1735,11 @@ DataAttribute iedModel_Inverter_MMXU1_PhV_phsB_cVal = {
     (ModelNode*) &iedModel_Inverter_MMXU1_PhV_phsB_q,
     (ModelNode*) &iedModel_Inverter_MMXU1_PhV_phsB_cVal_mag,
     0,
-    0,
     MX,
     CONSTRUCTED,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_PhV_phsB_cVal_mag = {
     DataAttributeModelType,
@@ -1770,11 +1748,11 @@ DataAttribute iedModel_Inverter_MMXU1_PhV_phsB_cVal_mag = {
     NULL,
     (ModelNode*) &iedModel_Inverter_MMXU1_PhV_phsB_cVal_mag_f,
     0,
-    0,
     MX,
     CONSTRUCTED,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_PhV_phsB_cVal_mag_f = {
     DataAttributeModelType,
@@ -1783,11 +1761,11 @@ DataAttribute iedModel_Inverter_MMXU1_PhV_phsB_cVal_mag_f = {
     NULL,
     NULL,
     0,
-    0,
     MX,
     FLOAT32,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_PhV_phsB_q = {
     DataAttributeModelType,
@@ -1796,11 +1774,11 @@ DataAttribute iedModel_Inverter_MMXU1_PhV_phsB_q = {
     (ModelNode*) &iedModel_Inverter_MMXU1_PhV_phsB_t,
     NULL,
     0,
-    0,
     MX,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_PhV_phsB_t = {
     DataAttributeModelType,
@@ -1809,11 +1787,11 @@ DataAttribute iedModel_Inverter_MMXU1_PhV_phsB_t = {
     NULL,
     NULL,
     0,
-    0,
     MX,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Inverter_MMXU1_PhV_phsC = {
     DataObjectModelType,
@@ -1821,7 +1799,6 @@ DataObject iedModel_Inverter_MMXU1_PhV_phsC = {
     (ModelNode*) &iedModel_Inverter_MMXU1_PhV,
     (ModelNode*) &iedModel_Inverter_MMXU1_PhV_neut,
     (ModelNode*) &iedModel_Inverter_MMXU1_PhV_phsC_cVal,
-    0,
     0
 };
 
@@ -1832,11 +1809,11 @@ DataAttribute iedModel_Inverter_MMXU1_PhV_phsC_cVal = {
     (ModelNode*) &iedModel_Inverter_MMXU1_PhV_phsC_q,
     (ModelNode*) &iedModel_Inverter_MMXU1_PhV_phsC_cVal_mag,
     0,
-    0,
     MX,
     CONSTRUCTED,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_PhV_phsC_cVal_mag = {
     DataAttributeModelType,
@@ -1845,11 +1822,11 @@ DataAttribute iedModel_Inverter_MMXU1_PhV_phsC_cVal_mag = {
     NULL,
     (ModelNode*) &iedModel_Inverter_MMXU1_PhV_phsC_cVal_mag_f,
     0,
-    0,
     MX,
     CONSTRUCTED,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_PhV_phsC_cVal_mag_f = {
     DataAttributeModelType,
@@ -1858,11 +1835,11 @@ DataAttribute iedModel_Inverter_MMXU1_PhV_phsC_cVal_mag_f = {
     NULL,
     NULL,
     0,
-    0,
     MX,
     FLOAT32,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_PhV_phsC_q = {
     DataAttributeModelType,
@@ -1871,11 +1848,11 @@ DataAttribute iedModel_Inverter_MMXU1_PhV_phsC_q = {
     (ModelNode*) &iedModel_Inverter_MMXU1_PhV_phsC_t,
     NULL,
     0,
-    0,
     MX,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_PhV_phsC_t = {
     DataAttributeModelType,
@@ -1884,11 +1861,11 @@ DataAttribute iedModel_Inverter_MMXU1_PhV_phsC_t = {
     NULL,
     NULL,
     0,
-    0,
     MX,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Inverter_MMXU1_PhV_neut = {
     DataObjectModelType,
@@ -1896,7 +1873,6 @@ DataObject iedModel_Inverter_MMXU1_PhV_neut = {
     (ModelNode*) &iedModel_Inverter_MMXU1_PhV,
     NULL,
     (ModelNode*) &iedModel_Inverter_MMXU1_PhV_neut_cVal,
-    0,
     0
 };
 
@@ -1907,11 +1883,11 @@ DataAttribute iedModel_Inverter_MMXU1_PhV_neut_cVal = {
     (ModelNode*) &iedModel_Inverter_MMXU1_PhV_neut_q,
     (ModelNode*) &iedModel_Inverter_MMXU1_PhV_neut_cVal_mag,
     0,
-    0,
     MX,
     CONSTRUCTED,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_PhV_neut_cVal_mag = {
     DataAttributeModelType,
@@ -1920,11 +1896,11 @@ DataAttribute iedModel_Inverter_MMXU1_PhV_neut_cVal_mag = {
     NULL,
     (ModelNode*) &iedModel_Inverter_MMXU1_PhV_neut_cVal_mag_f,
     0,
-    0,
     MX,
     CONSTRUCTED,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_PhV_neut_cVal_mag_f = {
     DataAttributeModelType,
@@ -1933,11 +1909,11 @@ DataAttribute iedModel_Inverter_MMXU1_PhV_neut_cVal_mag_f = {
     NULL,
     NULL,
     0,
-    0,
     MX,
     FLOAT32,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_PhV_neut_q = {
     DataAttributeModelType,
@@ -1946,11 +1922,11 @@ DataAttribute iedModel_Inverter_MMXU1_PhV_neut_q = {
     (ModelNode*) &iedModel_Inverter_MMXU1_PhV_neut_t,
     NULL,
     0,
-    0,
     MX,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_PhV_neut_t = {
     DataAttributeModelType,
@@ -1959,11 +1935,11 @@ DataAttribute iedModel_Inverter_MMXU1_PhV_neut_t = {
     NULL,
     NULL,
     0,
-    0,
     MX,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Inverter_MMXU1_A = {
     DataObjectModelType,
@@ -1971,7 +1947,6 @@ DataObject iedModel_Inverter_MMXU1_A = {
     (ModelNode*) &iedModel_Inverter_MMXU1,
     (ModelNode*) &iedModel_Inverter_MMXU1_W,
     (ModelNode*) &iedModel_Inverter_MMXU1_A_phsA,
-    0,
     0
 };
 
@@ -1981,7 +1956,6 @@ DataObject iedModel_Inverter_MMXU1_A_phsA = {
     (ModelNode*) &iedModel_Inverter_MMXU1_A,
     (ModelNode*) &iedModel_Inverter_MMXU1_A_phsB,
     (ModelNode*) &iedModel_Inverter_MMXU1_A_phsA_cVal,
-    0,
     0
 };
 
@@ -1992,11 +1966,11 @@ DataAttribute iedModel_Inverter_MMXU1_A_phsA_cVal = {
     (ModelNode*) &iedModel_Inverter_MMXU1_A_phsA_q,
     (ModelNode*) &iedModel_Inverter_MMXU1_A_phsA_cVal_mag,
     0,
-    0,
     MX,
     CONSTRUCTED,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_A_phsA_cVal_mag = {
     DataAttributeModelType,
@@ -2005,11 +1979,11 @@ DataAttribute iedModel_Inverter_MMXU1_A_phsA_cVal_mag = {
     NULL,
     (ModelNode*) &iedModel_Inverter_MMXU1_A_phsA_cVal_mag_f,
     0,
-    0,
     MX,
     CONSTRUCTED,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_A_phsA_cVal_mag_f = {
     DataAttributeModelType,
@@ -2018,11 +1992,11 @@ DataAttribute iedModel_Inverter_MMXU1_A_phsA_cVal_mag_f = {
     NULL,
     NULL,
     0,
-    0,
     MX,
     FLOAT32,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_A_phsA_q = {
     DataAttributeModelType,
@@ -2031,11 +2005,11 @@ DataAttribute iedModel_Inverter_MMXU1_A_phsA_q = {
     (ModelNode*) &iedModel_Inverter_MMXU1_A_phsA_t,
     NULL,
     0,
-    0,
     MX,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_A_phsA_t = {
     DataAttributeModelType,
@@ -2044,11 +2018,11 @@ DataAttribute iedModel_Inverter_MMXU1_A_phsA_t = {
     NULL,
     NULL,
     0,
-    0,
     MX,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Inverter_MMXU1_A_phsB = {
     DataObjectModelType,
@@ -2056,7 +2030,6 @@ DataObject iedModel_Inverter_MMXU1_A_phsB = {
     (ModelNode*) &iedModel_Inverter_MMXU1_A,
     (ModelNode*) &iedModel_Inverter_MMXU1_A_phsC,
     (ModelNode*) &iedModel_Inverter_MMXU1_A_phsB_cVal,
-    0,
     0
 };
 
@@ -2067,11 +2040,11 @@ DataAttribute iedModel_Inverter_MMXU1_A_phsB_cVal = {
     (ModelNode*) &iedModel_Inverter_MMXU1_A_phsB_q,
     (ModelNode*) &iedModel_Inverter_MMXU1_A_phsB_cVal_mag,
     0,
-    0,
     MX,
     CONSTRUCTED,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_A_phsB_cVal_mag = {
     DataAttributeModelType,
@@ -2080,11 +2053,11 @@ DataAttribute iedModel_Inverter_MMXU1_A_phsB_cVal_mag = {
     NULL,
     (ModelNode*) &iedModel_Inverter_MMXU1_A_phsB_cVal_mag_f,
     0,
-    0,
     MX,
     CONSTRUCTED,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_A_phsB_cVal_mag_f = {
     DataAttributeModelType,
@@ -2093,11 +2066,11 @@ DataAttribute iedModel_Inverter_MMXU1_A_phsB_cVal_mag_f = {
     NULL,
     NULL,
     0,
-    0,
     MX,
     FLOAT32,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_A_phsB_q = {
     DataAttributeModelType,
@@ -2106,11 +2079,11 @@ DataAttribute iedModel_Inverter_MMXU1_A_phsB_q = {
     (ModelNode*) &iedModel_Inverter_MMXU1_A_phsB_t,
     NULL,
     0,
-    0,
     MX,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_A_phsB_t = {
     DataAttributeModelType,
@@ -2119,11 +2092,11 @@ DataAttribute iedModel_Inverter_MMXU1_A_phsB_t = {
     NULL,
     NULL,
     0,
-    0,
     MX,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Inverter_MMXU1_A_phsC = {
     DataObjectModelType,
@@ -2131,7 +2104,6 @@ DataObject iedModel_Inverter_MMXU1_A_phsC = {
     (ModelNode*) &iedModel_Inverter_MMXU1_A,
     (ModelNode*) &iedModel_Inverter_MMXU1_A_neut,
     (ModelNode*) &iedModel_Inverter_MMXU1_A_phsC_cVal,
-    0,
     0
 };
 
@@ -2142,11 +2114,11 @@ DataAttribute iedModel_Inverter_MMXU1_A_phsC_cVal = {
     (ModelNode*) &iedModel_Inverter_MMXU1_A_phsC_q,
     (ModelNode*) &iedModel_Inverter_MMXU1_A_phsC_cVal_mag,
     0,
-    0,
     MX,
     CONSTRUCTED,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_A_phsC_cVal_mag = {
     DataAttributeModelType,
@@ -2155,11 +2127,11 @@ DataAttribute iedModel_Inverter_MMXU1_A_phsC_cVal_mag = {
     NULL,
     (ModelNode*) &iedModel_Inverter_MMXU1_A_phsC_cVal_mag_f,
     0,
-    0,
     MX,
     CONSTRUCTED,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_A_phsC_cVal_mag_f = {
     DataAttributeModelType,
@@ -2168,11 +2140,11 @@ DataAttribute iedModel_Inverter_MMXU1_A_phsC_cVal_mag_f = {
     NULL,
     NULL,
     0,
-    0,
     MX,
     FLOAT32,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_A_phsC_q = {
     DataAttributeModelType,
@@ -2181,11 +2153,11 @@ DataAttribute iedModel_Inverter_MMXU1_A_phsC_q = {
     (ModelNode*) &iedModel_Inverter_MMXU1_A_phsC_t,
     NULL,
     0,
-    0,
     MX,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_A_phsC_t = {
     DataAttributeModelType,
@@ -2194,11 +2166,11 @@ DataAttribute iedModel_Inverter_MMXU1_A_phsC_t = {
     NULL,
     NULL,
     0,
-    0,
     MX,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Inverter_MMXU1_A_neut = {
     DataObjectModelType,
@@ -2206,7 +2178,6 @@ DataObject iedModel_Inverter_MMXU1_A_neut = {
     (ModelNode*) &iedModel_Inverter_MMXU1_A,
     NULL,
     (ModelNode*) &iedModel_Inverter_MMXU1_A_neut_cVal,
-    0,
     0
 };
 
@@ -2217,11 +2188,11 @@ DataAttribute iedModel_Inverter_MMXU1_A_neut_cVal = {
     (ModelNode*) &iedModel_Inverter_MMXU1_A_neut_q,
     (ModelNode*) &iedModel_Inverter_MMXU1_A_neut_cVal_mag,
     0,
-    0,
     MX,
     CONSTRUCTED,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_A_neut_cVal_mag = {
     DataAttributeModelType,
@@ -2230,11 +2201,11 @@ DataAttribute iedModel_Inverter_MMXU1_A_neut_cVal_mag = {
     NULL,
     (ModelNode*) &iedModel_Inverter_MMXU1_A_neut_cVal_mag_f,
     0,
-    0,
     MX,
     CONSTRUCTED,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_A_neut_cVal_mag_f = {
     DataAttributeModelType,
@@ -2243,11 +2214,11 @@ DataAttribute iedModel_Inverter_MMXU1_A_neut_cVal_mag_f = {
     NULL,
     NULL,
     0,
-    0,
     MX,
     FLOAT32,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_A_neut_q = {
     DataAttributeModelType,
@@ -2256,11 +2227,11 @@ DataAttribute iedModel_Inverter_MMXU1_A_neut_q = {
     (ModelNode*) &iedModel_Inverter_MMXU1_A_neut_t,
     NULL,
     0,
-    0,
     MX,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_A_neut_t = {
     DataAttributeModelType,
@@ -2269,11 +2240,11 @@ DataAttribute iedModel_Inverter_MMXU1_A_neut_t = {
     NULL,
     NULL,
     0,
-    0,
     MX,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Inverter_MMXU1_W = {
     DataObjectModelType,
@@ -2281,7 +2252,6 @@ DataObject iedModel_Inverter_MMXU1_W = {
     (ModelNode*) &iedModel_Inverter_MMXU1,
     NULL,
     (ModelNode*) &iedModel_Inverter_MMXU1_W_phsA,
-    0,
     0
 };
 
@@ -2291,7 +2261,6 @@ DataObject iedModel_Inverter_MMXU1_W_phsA = {
     (ModelNode*) &iedModel_Inverter_MMXU1_W,
     (ModelNode*) &iedModel_Inverter_MMXU1_W_phsB,
     (ModelNode*) &iedModel_Inverter_MMXU1_W_phsA_cVal,
-    0,
     0
 };
 
@@ -2302,11 +2271,11 @@ DataAttribute iedModel_Inverter_MMXU1_W_phsA_cVal = {
     (ModelNode*) &iedModel_Inverter_MMXU1_W_phsA_q,
     (ModelNode*) &iedModel_Inverter_MMXU1_W_phsA_cVal_mag,
     0,
-    0,
     MX,
     CONSTRUCTED,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_W_phsA_cVal_mag = {
     DataAttributeModelType,
@@ -2315,11 +2284,11 @@ DataAttribute iedModel_Inverter_MMXU1_W_phsA_cVal_mag = {
     NULL,
     (ModelNode*) &iedModel_Inverter_MMXU1_W_phsA_cVal_mag_f,
     0,
-    0,
     MX,
     CONSTRUCTED,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_W_phsA_cVal_mag_f = {
     DataAttributeModelType,
@@ -2328,11 +2297,11 @@ DataAttribute iedModel_Inverter_MMXU1_W_phsA_cVal_mag_f = {
     NULL,
     NULL,
     0,
-    0,
     MX,
     FLOAT32,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_W_phsA_q = {
     DataAttributeModelType,
@@ -2341,11 +2310,11 @@ DataAttribute iedModel_Inverter_MMXU1_W_phsA_q = {
     (ModelNode*) &iedModel_Inverter_MMXU1_W_phsA_t,
     NULL,
     0,
-    0,
     MX,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_W_phsA_t = {
     DataAttributeModelType,
@@ -2354,11 +2323,11 @@ DataAttribute iedModel_Inverter_MMXU1_W_phsA_t = {
     NULL,
     NULL,
     0,
-    0,
     MX,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Inverter_MMXU1_W_phsB = {
     DataObjectModelType,
@@ -2366,7 +2335,6 @@ DataObject iedModel_Inverter_MMXU1_W_phsB = {
     (ModelNode*) &iedModel_Inverter_MMXU1_W,
     (ModelNode*) &iedModel_Inverter_MMXU1_W_phsC,
     (ModelNode*) &iedModel_Inverter_MMXU1_W_phsB_cVal,
-    0,
     0
 };
 
@@ -2377,11 +2345,11 @@ DataAttribute iedModel_Inverter_MMXU1_W_phsB_cVal = {
     (ModelNode*) &iedModel_Inverter_MMXU1_W_phsB_q,
     (ModelNode*) &iedModel_Inverter_MMXU1_W_phsB_cVal_mag,
     0,
-    0,
     MX,
     CONSTRUCTED,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_W_phsB_cVal_mag = {
     DataAttributeModelType,
@@ -2390,11 +2358,11 @@ DataAttribute iedModel_Inverter_MMXU1_W_phsB_cVal_mag = {
     NULL,
     (ModelNode*) &iedModel_Inverter_MMXU1_W_phsB_cVal_mag_f,
     0,
-    0,
     MX,
     CONSTRUCTED,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_W_phsB_cVal_mag_f = {
     DataAttributeModelType,
@@ -2403,11 +2371,11 @@ DataAttribute iedModel_Inverter_MMXU1_W_phsB_cVal_mag_f = {
     NULL,
     NULL,
     0,
-    0,
     MX,
     FLOAT32,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_W_phsB_q = {
     DataAttributeModelType,
@@ -2416,11 +2384,11 @@ DataAttribute iedModel_Inverter_MMXU1_W_phsB_q = {
     (ModelNode*) &iedModel_Inverter_MMXU1_W_phsB_t,
     NULL,
     0,
-    0,
     MX,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_W_phsB_t = {
     DataAttributeModelType,
@@ -2429,11 +2397,11 @@ DataAttribute iedModel_Inverter_MMXU1_W_phsB_t = {
     NULL,
     NULL,
     0,
-    0,
     MX,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Inverter_MMXU1_W_phsC = {
     DataObjectModelType,
@@ -2441,7 +2409,6 @@ DataObject iedModel_Inverter_MMXU1_W_phsC = {
     (ModelNode*) &iedModel_Inverter_MMXU1_W,
     NULL,
     (ModelNode*) &iedModel_Inverter_MMXU1_W_phsC_cVal,
-    0,
     0
 };
 
@@ -2452,11 +2419,11 @@ DataAttribute iedModel_Inverter_MMXU1_W_phsC_cVal = {
     (ModelNode*) &iedModel_Inverter_MMXU1_W_phsC_q,
     (ModelNode*) &iedModel_Inverter_MMXU1_W_phsC_cVal_mag,
     0,
-    0,
     MX,
     CONSTRUCTED,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_W_phsC_cVal_mag = {
     DataAttributeModelType,
@@ -2465,11 +2432,11 @@ DataAttribute iedModel_Inverter_MMXU1_W_phsC_cVal_mag = {
     NULL,
     (ModelNode*) &iedModel_Inverter_MMXU1_W_phsC_cVal_mag_f,
     0,
-    0,
     MX,
     CONSTRUCTED,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_W_phsC_cVal_mag_f = {
     DataAttributeModelType,
@@ -2478,11 +2445,11 @@ DataAttribute iedModel_Inverter_MMXU1_W_phsC_cVal_mag_f = {
     NULL,
     NULL,
     0,
-    0,
     MX,
     FLOAT32,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_W_phsC_q = {
     DataAttributeModelType,
@@ -2491,11 +2458,11 @@ DataAttribute iedModel_Inverter_MMXU1_W_phsC_q = {
     (ModelNode*) &iedModel_Inverter_MMXU1_W_phsC_t,
     NULL,
     0,
-    0,
     MX,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Inverter_MMXU1_W_phsC_t = {
     DataAttributeModelType,
@@ -2504,23 +2471,25 @@ DataAttribute iedModel_Inverter_MMXU1_W_phsC_t = {
     NULL,
     NULL,
     0,
-    0,
     MX,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 
 LogicalDevice iedModel_Battery = {
+    LogicalDeviceModelType,
     "ied1Battery",
-    &iedModel_Physical_Measurements,
-    &iedModel_Battery_LLN0
+    (ModelNode*) &iedModel,
+    (ModelNode*) &iedModel_Physical_Measurements,
+    (ModelNode*) &iedModel_Battery_LLN0
 };
 
 LogicalNode iedModel_Battery_LLN0 = {
     LogicalNodeModelType,
     "LLN0",
-    &iedModel_Battery,
+    (ModelNode*) &iedModel_Battery,
     (ModelNode*) &iedModel_Battery_LPHD1,
     (ModelNode*) &iedModel_Battery_LLN0_Mod,
 };
@@ -2531,7 +2500,6 @@ DataObject iedModel_Battery_LLN0_Mod = {
     (ModelNode*) &iedModel_Battery_LLN0,
     (ModelNode*) &iedModel_Battery_LLN0_Beh,
     (ModelNode*) &iedModel_Battery_LLN0_Mod_q,
-    0,
     0
 };
 
@@ -2542,11 +2510,11 @@ DataAttribute iedModel_Battery_LLN0_Mod_q = {
     (ModelNode*) &iedModel_Battery_LLN0_Mod_t,
     NULL,
     0,
-    0,
     ST,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_LLN0_Mod_t = {
     DataAttributeModelType,
@@ -2555,11 +2523,11 @@ DataAttribute iedModel_Battery_LLN0_Mod_t = {
     (ModelNode*) &iedModel_Battery_LLN0_Mod_ctlModel,
     NULL,
     0,
-    0,
     ST,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_LLN0_Mod_ctlModel = {
     DataAttributeModelType,
@@ -2568,11 +2536,11 @@ DataAttribute iedModel_Battery_LLN0_Mod_ctlModel = {
     NULL,
     NULL,
     0,
-    0,
     CF,
     ENUMERATED,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Battery_LLN0_Beh = {
     DataObjectModelType,
@@ -2580,7 +2548,6 @@ DataObject iedModel_Battery_LLN0_Beh = {
     (ModelNode*) &iedModel_Battery_LLN0,
     (ModelNode*) &iedModel_Battery_LLN0_Health,
     (ModelNode*) &iedModel_Battery_LLN0_Beh_stVal,
-    0,
     0
 };
 
@@ -2591,11 +2558,11 @@ DataAttribute iedModel_Battery_LLN0_Beh_stVal = {
     (ModelNode*) &iedModel_Battery_LLN0_Beh_q,
     NULL,
     0,
-    0,
     ST,
     INT32,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_LLN0_Beh_q = {
     DataAttributeModelType,
@@ -2604,11 +2571,11 @@ DataAttribute iedModel_Battery_LLN0_Beh_q = {
     (ModelNode*) &iedModel_Battery_LLN0_Beh_t,
     NULL,
     0,
-    0,
     ST,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_LLN0_Beh_t = {
     DataAttributeModelType,
@@ -2617,11 +2584,11 @@ DataAttribute iedModel_Battery_LLN0_Beh_t = {
     NULL,
     NULL,
     0,
-    0,
     ST,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Battery_LLN0_Health = {
     DataObjectModelType,
@@ -2629,7 +2596,6 @@ DataObject iedModel_Battery_LLN0_Health = {
     (ModelNode*) &iedModel_Battery_LLN0,
     (ModelNode*) &iedModel_Battery_LLN0_NamPlt,
     (ModelNode*) &iedModel_Battery_LLN0_Health_stVal,
-    0,
     0
 };
 
@@ -2640,11 +2606,11 @@ DataAttribute iedModel_Battery_LLN0_Health_stVal = {
     (ModelNode*) &iedModel_Battery_LLN0_Health_q,
     NULL,
     0,
-    0,
     ST,
     INT32,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_LLN0_Health_q = {
     DataAttributeModelType,
@@ -2653,11 +2619,11 @@ DataAttribute iedModel_Battery_LLN0_Health_q = {
     (ModelNode*) &iedModel_Battery_LLN0_Health_t,
     NULL,
     0,
-    0,
     ST,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_LLN0_Health_t = {
     DataAttributeModelType,
@@ -2666,11 +2632,11 @@ DataAttribute iedModel_Battery_LLN0_Health_t = {
     NULL,
     NULL,
     0,
-    0,
     ST,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Battery_LLN0_NamPlt = {
     DataObjectModelType,
@@ -2678,7 +2644,6 @@ DataObject iedModel_Battery_LLN0_NamPlt = {
     (ModelNode*) &iedModel_Battery_LLN0,
     NULL,
     (ModelNode*) &iedModel_Battery_LLN0_NamPlt_vendor,
-    0,
     0
 };
 
@@ -2689,11 +2654,11 @@ DataAttribute iedModel_Battery_LLN0_NamPlt_vendor = {
     (ModelNode*) &iedModel_Battery_LLN0_NamPlt_swRev,
     NULL,
     0,
-    0,
     DC,
     VISIBLE_STRING_255,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_LLN0_NamPlt_swRev = {
     DataAttributeModelType,
@@ -2702,11 +2667,11 @@ DataAttribute iedModel_Battery_LLN0_NamPlt_swRev = {
     (ModelNode*) &iedModel_Battery_LLN0_NamPlt_d,
     NULL,
     0,
-    0,
     DC,
     VISIBLE_STRING_255,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_LLN0_NamPlt_d = {
     DataAttributeModelType,
@@ -2715,11 +2680,11 @@ DataAttribute iedModel_Battery_LLN0_NamPlt_d = {
     (ModelNode*) &iedModel_Battery_LLN0_NamPlt_configRev,
     NULL,
     0,
-    0,
     DC,
     VISIBLE_STRING_255,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_LLN0_NamPlt_configRev = {
     DataAttributeModelType,
@@ -2728,11 +2693,11 @@ DataAttribute iedModel_Battery_LLN0_NamPlt_configRev = {
     (ModelNode*) &iedModel_Battery_LLN0_NamPlt_ldNs,
     NULL,
     0,
-    0,
     DC,
     VISIBLE_STRING_255,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_LLN0_NamPlt_ldNs = {
     DataAttributeModelType,
@@ -2741,16 +2706,16 @@ DataAttribute iedModel_Battery_LLN0_NamPlt_ldNs = {
     NULL,
     NULL,
     0,
-    0,
     EX,
     VISIBLE_STRING_255,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 LogicalNode iedModel_Battery_LPHD1 = {
     LogicalNodeModelType,
     "LPHD1",
-    &iedModel_Battery,
+    (ModelNode*) &iedModel_Battery,
     (ModelNode*) &iedModel_Battery_ZBAT1,
     (ModelNode*) &iedModel_Battery_LPHD1_PhyNam,
 };
@@ -2761,7 +2726,6 @@ DataObject iedModel_Battery_LPHD1_PhyNam = {
     (ModelNode*) &iedModel_Battery_LPHD1,
     (ModelNode*) &iedModel_Battery_LPHD1_PhyHealth,
     (ModelNode*) &iedModel_Battery_LPHD1_PhyNam_vendor,
-    0,
     0
 };
 
@@ -2772,11 +2736,11 @@ DataAttribute iedModel_Battery_LPHD1_PhyNam_vendor = {
     NULL,
     NULL,
     0,
-    0,
     DC,
     VISIBLE_STRING_255,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Battery_LPHD1_PhyHealth = {
     DataObjectModelType,
@@ -2784,7 +2748,6 @@ DataObject iedModel_Battery_LPHD1_PhyHealth = {
     (ModelNode*) &iedModel_Battery_LPHD1,
     (ModelNode*) &iedModel_Battery_LPHD1_Proxy,
     (ModelNode*) &iedModel_Battery_LPHD1_PhyHealth_stVal,
-    0,
     0
 };
 
@@ -2795,11 +2758,11 @@ DataAttribute iedModel_Battery_LPHD1_PhyHealth_stVal = {
     (ModelNode*) &iedModel_Battery_LPHD1_PhyHealth_q,
     NULL,
     0,
-    0,
     ST,
     INT32,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_LPHD1_PhyHealth_q = {
     DataAttributeModelType,
@@ -2808,11 +2771,11 @@ DataAttribute iedModel_Battery_LPHD1_PhyHealth_q = {
     (ModelNode*) &iedModel_Battery_LPHD1_PhyHealth_t,
     NULL,
     0,
-    0,
     ST,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_LPHD1_PhyHealth_t = {
     DataAttributeModelType,
@@ -2821,11 +2784,11 @@ DataAttribute iedModel_Battery_LPHD1_PhyHealth_t = {
     NULL,
     NULL,
     0,
-    0,
     ST,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Battery_LPHD1_Proxy = {
     DataObjectModelType,
@@ -2833,7 +2796,6 @@ DataObject iedModel_Battery_LPHD1_Proxy = {
     (ModelNode*) &iedModel_Battery_LPHD1,
     NULL,
     (ModelNode*) &iedModel_Battery_LPHD1_Proxy_stVal,
-    0,
     0
 };
 
@@ -2844,11 +2806,11 @@ DataAttribute iedModel_Battery_LPHD1_Proxy_stVal = {
     (ModelNode*) &iedModel_Battery_LPHD1_Proxy_q,
     NULL,
     0,
-    0,
     ST,
     BOOLEAN,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_LPHD1_Proxy_q = {
     DataAttributeModelType,
@@ -2857,11 +2819,11 @@ DataAttribute iedModel_Battery_LPHD1_Proxy_q = {
     (ModelNode*) &iedModel_Battery_LPHD1_Proxy_t,
     NULL,
     0,
-    0,
     ST,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_LPHD1_Proxy_t = {
     DataAttributeModelType,
@@ -2870,16 +2832,16 @@ DataAttribute iedModel_Battery_LPHD1_Proxy_t = {
     NULL,
     NULL,
     0,
-    0,
     ST,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 LogicalNode iedModel_Battery_ZBAT1 = {
     LogicalNodeModelType,
     "ZBAT1",
-    &iedModel_Battery,
+    (ModelNode*) &iedModel_Battery,
     (ModelNode*) &iedModel_Battery_ZBTC1,
     (ModelNode*) &iedModel_Battery_ZBAT1_Mod,
 };
@@ -2890,7 +2852,6 @@ DataObject iedModel_Battery_ZBAT1_Mod = {
     (ModelNode*) &iedModel_Battery_ZBAT1,
     (ModelNode*) &iedModel_Battery_ZBAT1_Beh,
     (ModelNode*) &iedModel_Battery_ZBAT1_Mod_q,
-    0,
     0
 };
 
@@ -2901,11 +2862,11 @@ DataAttribute iedModel_Battery_ZBAT1_Mod_q = {
     (ModelNode*) &iedModel_Battery_ZBAT1_Mod_t,
     NULL,
     0,
-    0,
     ST,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_ZBAT1_Mod_t = {
     DataAttributeModelType,
@@ -2914,11 +2875,11 @@ DataAttribute iedModel_Battery_ZBAT1_Mod_t = {
     (ModelNode*) &iedModel_Battery_ZBAT1_Mod_ctlModel,
     NULL,
     0,
-    0,
     ST,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_ZBAT1_Mod_ctlModel = {
     DataAttributeModelType,
@@ -2927,11 +2888,11 @@ DataAttribute iedModel_Battery_ZBAT1_Mod_ctlModel = {
     NULL,
     NULL,
     0,
-    0,
     CF,
     ENUMERATED,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Battery_ZBAT1_Beh = {
     DataObjectModelType,
@@ -2939,7 +2900,6 @@ DataObject iedModel_Battery_ZBAT1_Beh = {
     (ModelNode*) &iedModel_Battery_ZBAT1,
     (ModelNode*) &iedModel_Battery_ZBAT1_Health,
     (ModelNode*) &iedModel_Battery_ZBAT1_Beh_stVal,
-    0,
     0
 };
 
@@ -2950,11 +2910,11 @@ DataAttribute iedModel_Battery_ZBAT1_Beh_stVal = {
     (ModelNode*) &iedModel_Battery_ZBAT1_Beh_q,
     NULL,
     0,
-    0,
     ST,
     INT32,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_ZBAT1_Beh_q = {
     DataAttributeModelType,
@@ -2963,11 +2923,11 @@ DataAttribute iedModel_Battery_ZBAT1_Beh_q = {
     (ModelNode*) &iedModel_Battery_ZBAT1_Beh_t,
     NULL,
     0,
-    0,
     ST,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_ZBAT1_Beh_t = {
     DataAttributeModelType,
@@ -2976,11 +2936,11 @@ DataAttribute iedModel_Battery_ZBAT1_Beh_t = {
     NULL,
     NULL,
     0,
-    0,
     ST,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Battery_ZBAT1_Health = {
     DataObjectModelType,
@@ -2988,7 +2948,6 @@ DataObject iedModel_Battery_ZBAT1_Health = {
     (ModelNode*) &iedModel_Battery_ZBAT1,
     (ModelNode*) &iedModel_Battery_ZBAT1_NamPlt,
     (ModelNode*) &iedModel_Battery_ZBAT1_Health_stVal,
-    0,
     0
 };
 
@@ -2999,11 +2958,11 @@ DataAttribute iedModel_Battery_ZBAT1_Health_stVal = {
     (ModelNode*) &iedModel_Battery_ZBAT1_Health_q,
     NULL,
     0,
-    0,
     ST,
     INT32,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_ZBAT1_Health_q = {
     DataAttributeModelType,
@@ -3012,11 +2971,11 @@ DataAttribute iedModel_Battery_ZBAT1_Health_q = {
     (ModelNode*) &iedModel_Battery_ZBAT1_Health_t,
     NULL,
     0,
-    0,
     ST,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_ZBAT1_Health_t = {
     DataAttributeModelType,
@@ -3025,11 +2984,11 @@ DataAttribute iedModel_Battery_ZBAT1_Health_t = {
     NULL,
     NULL,
     0,
-    0,
     ST,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Battery_ZBAT1_NamPlt = {
     DataObjectModelType,
@@ -3037,7 +2996,6 @@ DataObject iedModel_Battery_ZBAT1_NamPlt = {
     (ModelNode*) &iedModel_Battery_ZBAT1,
     (ModelNode*) &iedModel_Battery_ZBAT1_Vol,
     (ModelNode*) &iedModel_Battery_ZBAT1_NamPlt_vendor,
-    0,
     0
 };
 
@@ -3048,11 +3006,11 @@ DataAttribute iedModel_Battery_ZBAT1_NamPlt_vendor = {
     (ModelNode*) &iedModel_Battery_ZBAT1_NamPlt_swRev,
     NULL,
     0,
-    0,
     DC,
     VISIBLE_STRING_255,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_ZBAT1_NamPlt_swRev = {
     DataAttributeModelType,
@@ -3061,11 +3019,11 @@ DataAttribute iedModel_Battery_ZBAT1_NamPlt_swRev = {
     (ModelNode*) &iedModel_Battery_ZBAT1_NamPlt_d,
     NULL,
     0,
-    0,
     DC,
     VISIBLE_STRING_255,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_ZBAT1_NamPlt_d = {
     DataAttributeModelType,
@@ -3074,11 +3032,11 @@ DataAttribute iedModel_Battery_ZBAT1_NamPlt_d = {
     NULL,
     NULL,
     0,
-    0,
     DC,
     VISIBLE_STRING_255,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Battery_ZBAT1_Vol = {
     DataObjectModelType,
@@ -3086,7 +3044,6 @@ DataObject iedModel_Battery_ZBAT1_Vol = {
     (ModelNode*) &iedModel_Battery_ZBAT1,
     (ModelNode*) &iedModel_Battery_ZBAT1_Amp,
     (ModelNode*) &iedModel_Battery_ZBAT1_Vol_mag,
-    0,
     0
 };
 
@@ -3097,11 +3054,11 @@ DataAttribute iedModel_Battery_ZBAT1_Vol_mag = {
     (ModelNode*) &iedModel_Battery_ZBAT1_Vol_q,
     (ModelNode*) &iedModel_Battery_ZBAT1_Vol_mag_f,
     0,
-    0,
     MX,
     CONSTRUCTED,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_ZBAT1_Vol_mag_f = {
     DataAttributeModelType,
@@ -3110,11 +3067,11 @@ DataAttribute iedModel_Battery_ZBAT1_Vol_mag_f = {
     NULL,
     NULL,
     0,
-    0,
     MX,
     FLOAT32,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_ZBAT1_Vol_q = {
     DataAttributeModelType,
@@ -3123,11 +3080,11 @@ DataAttribute iedModel_Battery_ZBAT1_Vol_q = {
     (ModelNode*) &iedModel_Battery_ZBAT1_Vol_t,
     NULL,
     0,
-    0,
     MX,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_ZBAT1_Vol_t = {
     DataAttributeModelType,
@@ -3136,11 +3093,11 @@ DataAttribute iedModel_Battery_ZBAT1_Vol_t = {
     NULL,
     NULL,
     0,
-    0,
     MX,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Battery_ZBAT1_Amp = {
     DataObjectModelType,
@@ -3148,7 +3105,6 @@ DataObject iedModel_Battery_ZBAT1_Amp = {
     (ModelNode*) &iedModel_Battery_ZBAT1,
     NULL,
     (ModelNode*) &iedModel_Battery_ZBAT1_Amp_mag,
-    0,
     0
 };
 
@@ -3159,11 +3115,11 @@ DataAttribute iedModel_Battery_ZBAT1_Amp_mag = {
     (ModelNode*) &iedModel_Battery_ZBAT1_Amp_q,
     (ModelNode*) &iedModel_Battery_ZBAT1_Amp_mag_f,
     0,
-    0,
     MX,
     CONSTRUCTED,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_ZBAT1_Amp_mag_f = {
     DataAttributeModelType,
@@ -3172,11 +3128,11 @@ DataAttribute iedModel_Battery_ZBAT1_Amp_mag_f = {
     NULL,
     NULL,
     0,
-    0,
     MX,
     FLOAT32,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_ZBAT1_Amp_q = {
     DataAttributeModelType,
@@ -3185,11 +3141,11 @@ DataAttribute iedModel_Battery_ZBAT1_Amp_q = {
     (ModelNode*) &iedModel_Battery_ZBAT1_Amp_t,
     NULL,
     0,
-    0,
     MX,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_ZBAT1_Amp_t = {
     DataAttributeModelType,
@@ -3198,16 +3154,16 @@ DataAttribute iedModel_Battery_ZBAT1_Amp_t = {
     NULL,
     NULL,
     0,
-    0,
     MX,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 LogicalNode iedModel_Battery_ZBTC1 = {
     LogicalNodeModelType,
     "ZBTC1",
-    &iedModel_Battery,
+    (ModelNode*) &iedModel_Battery,
     NULL,
     (ModelNode*) &iedModel_Battery_ZBTC1_Mod,
 };
@@ -3218,7 +3174,6 @@ DataObject iedModel_Battery_ZBTC1_Mod = {
     (ModelNode*) &iedModel_Battery_ZBTC1,
     (ModelNode*) &iedModel_Battery_ZBTC1_Beh,
     (ModelNode*) &iedModel_Battery_ZBTC1_Mod_q,
-    0,
     0
 };
 
@@ -3229,11 +3184,11 @@ DataAttribute iedModel_Battery_ZBTC1_Mod_q = {
     (ModelNode*) &iedModel_Battery_ZBTC1_Mod_t,
     NULL,
     0,
-    0,
     ST,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_ZBTC1_Mod_t = {
     DataAttributeModelType,
@@ -3242,11 +3197,11 @@ DataAttribute iedModel_Battery_ZBTC1_Mod_t = {
     (ModelNode*) &iedModel_Battery_ZBTC1_Mod_ctlModel,
     NULL,
     0,
-    0,
     ST,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_ZBTC1_Mod_ctlModel = {
     DataAttributeModelType,
@@ -3255,11 +3210,11 @@ DataAttribute iedModel_Battery_ZBTC1_Mod_ctlModel = {
     NULL,
     NULL,
     0,
-    0,
     CF,
     ENUMERATED,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Battery_ZBTC1_Beh = {
     DataObjectModelType,
@@ -3267,7 +3222,6 @@ DataObject iedModel_Battery_ZBTC1_Beh = {
     (ModelNode*) &iedModel_Battery_ZBTC1,
     (ModelNode*) &iedModel_Battery_ZBTC1_Health,
     (ModelNode*) &iedModel_Battery_ZBTC1_Beh_stVal,
-    0,
     0
 };
 
@@ -3278,11 +3232,11 @@ DataAttribute iedModel_Battery_ZBTC1_Beh_stVal = {
     (ModelNode*) &iedModel_Battery_ZBTC1_Beh_q,
     NULL,
     0,
-    0,
     ST,
     INT32,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_ZBTC1_Beh_q = {
     DataAttributeModelType,
@@ -3291,11 +3245,11 @@ DataAttribute iedModel_Battery_ZBTC1_Beh_q = {
     (ModelNode*) &iedModel_Battery_ZBTC1_Beh_t,
     NULL,
     0,
-    0,
     ST,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_ZBTC1_Beh_t = {
     DataAttributeModelType,
@@ -3304,11 +3258,11 @@ DataAttribute iedModel_Battery_ZBTC1_Beh_t = {
     NULL,
     NULL,
     0,
-    0,
     ST,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Battery_ZBTC1_Health = {
     DataObjectModelType,
@@ -3316,7 +3270,6 @@ DataObject iedModel_Battery_ZBTC1_Health = {
     (ModelNode*) &iedModel_Battery_ZBTC1,
     (ModelNode*) &iedModel_Battery_ZBTC1_NamPlt,
     (ModelNode*) &iedModel_Battery_ZBTC1_Health_stVal,
-    0,
     0
 };
 
@@ -3327,11 +3280,11 @@ DataAttribute iedModel_Battery_ZBTC1_Health_stVal = {
     (ModelNode*) &iedModel_Battery_ZBTC1_Health_q,
     NULL,
     0,
-    0,
     ST,
     INT32,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_ZBTC1_Health_q = {
     DataAttributeModelType,
@@ -3340,11 +3293,11 @@ DataAttribute iedModel_Battery_ZBTC1_Health_q = {
     (ModelNode*) &iedModel_Battery_ZBTC1_Health_t,
     NULL,
     0,
-    0,
     ST,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_ZBTC1_Health_t = {
     DataAttributeModelType,
@@ -3353,11 +3306,11 @@ DataAttribute iedModel_Battery_ZBTC1_Health_t = {
     NULL,
     NULL,
     0,
-    0,
     ST,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Battery_ZBTC1_NamPlt = {
     DataObjectModelType,
@@ -3365,7 +3318,6 @@ DataObject iedModel_Battery_ZBTC1_NamPlt = {
     (ModelNode*) &iedModel_Battery_ZBTC1,
     (ModelNode*) &iedModel_Battery_ZBTC1_BatChaSt,
     (ModelNode*) &iedModel_Battery_ZBTC1_NamPlt_vendor,
-    0,
     0
 };
 
@@ -3376,11 +3328,11 @@ DataAttribute iedModel_Battery_ZBTC1_NamPlt_vendor = {
     (ModelNode*) &iedModel_Battery_ZBTC1_NamPlt_swRev,
     NULL,
     0,
-    0,
     DC,
     VISIBLE_STRING_255,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_ZBTC1_NamPlt_swRev = {
     DataAttributeModelType,
@@ -3389,11 +3341,11 @@ DataAttribute iedModel_Battery_ZBTC1_NamPlt_swRev = {
     (ModelNode*) &iedModel_Battery_ZBTC1_NamPlt_d,
     NULL,
     0,
-    0,
     DC,
     VISIBLE_STRING_255,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_ZBTC1_NamPlt_d = {
     DataAttributeModelType,
@@ -3402,11 +3354,11 @@ DataAttribute iedModel_Battery_ZBTC1_NamPlt_d = {
     NULL,
     NULL,
     0,
-    0,
     DC,
     VISIBLE_STRING_255,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Battery_ZBTC1_BatChaSt = {
     DataObjectModelType,
@@ -3414,7 +3366,6 @@ DataObject iedModel_Battery_ZBTC1_BatChaSt = {
     (ModelNode*) &iedModel_Battery_ZBTC1,
     (ModelNode*) &iedModel_Battery_ZBTC1_BatChaPwr,
     NULL,
-    0,
     0
 };
 
@@ -3424,7 +3375,6 @@ DataObject iedModel_Battery_ZBTC1_BatChaPwr = {
     (ModelNode*) &iedModel_Battery_ZBTC1,
     (ModelNode*) &iedModel_Battery_ZBTC1_BatChaMod,
     NULL,
-    0,
     0
 };
 
@@ -3434,7 +3384,6 @@ DataObject iedModel_Battery_ZBTC1_BatChaMod = {
     (ModelNode*) &iedModel_Battery_ZBTC1,
     (ModelNode*) &iedModel_Battery_ZBTC1_ChaV,
     NULL,
-    0,
     0
 };
 
@@ -3444,7 +3393,6 @@ DataObject iedModel_Battery_ZBTC1_ChaV = {
     (ModelNode*) &iedModel_Battery_ZBTC1,
     (ModelNode*) &iedModel_Battery_ZBTC1_ChaA,
     (ModelNode*) &iedModel_Battery_ZBTC1_ChaV_mag,
-    0,
     0
 };
 
@@ -3455,11 +3403,11 @@ DataAttribute iedModel_Battery_ZBTC1_ChaV_mag = {
     (ModelNode*) &iedModel_Battery_ZBTC1_ChaV_q,
     (ModelNode*) &iedModel_Battery_ZBTC1_ChaV_mag_f,
     0,
-    0,
     MX,
     CONSTRUCTED,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_ZBTC1_ChaV_mag_f = {
     DataAttributeModelType,
@@ -3468,11 +3416,11 @@ DataAttribute iedModel_Battery_ZBTC1_ChaV_mag_f = {
     NULL,
     NULL,
     0,
-    0,
     MX,
     FLOAT32,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_ZBTC1_ChaV_q = {
     DataAttributeModelType,
@@ -3481,11 +3429,11 @@ DataAttribute iedModel_Battery_ZBTC1_ChaV_q = {
     (ModelNode*) &iedModel_Battery_ZBTC1_ChaV_t,
     NULL,
     0,
-    0,
     MX,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_ZBTC1_ChaV_t = {
     DataAttributeModelType,
@@ -3494,11 +3442,11 @@ DataAttribute iedModel_Battery_ZBTC1_ChaV_t = {
     NULL,
     NULL,
     0,
-    0,
     MX,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Battery_ZBTC1_ChaA = {
     DataObjectModelType,
@@ -3506,7 +3454,6 @@ DataObject iedModel_Battery_ZBTC1_ChaA = {
     (ModelNode*) &iedModel_Battery_ZBTC1,
     NULL,
     (ModelNode*) &iedModel_Battery_ZBTC1_ChaA_mag,
-    0,
     0
 };
 
@@ -3517,11 +3464,11 @@ DataAttribute iedModel_Battery_ZBTC1_ChaA_mag = {
     (ModelNode*) &iedModel_Battery_ZBTC1_ChaA_q,
     (ModelNode*) &iedModel_Battery_ZBTC1_ChaA_mag_f,
     0,
-    0,
     MX,
     CONSTRUCTED,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_ZBTC1_ChaA_mag_f = {
     DataAttributeModelType,
@@ -3530,11 +3477,11 @@ DataAttribute iedModel_Battery_ZBTC1_ChaA_mag_f = {
     NULL,
     NULL,
     0,
-    0,
     MX,
     FLOAT32,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_ZBTC1_ChaA_q = {
     DataAttributeModelType,
@@ -3543,11 +3490,11 @@ DataAttribute iedModel_Battery_ZBTC1_ChaA_q = {
     (ModelNode*) &iedModel_Battery_ZBTC1_ChaA_t,
     NULL,
     0,
-    0,
     MX,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Battery_ZBTC1_ChaA_t = {
     DataAttributeModelType,
@@ -3556,23 +3503,25 @@ DataAttribute iedModel_Battery_ZBTC1_ChaA_t = {
     NULL,
     NULL,
     0,
-    0,
     MX,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 
 LogicalDevice iedModel_Physical_Measurements = {
+    LogicalDeviceModelType,
     "ied1Physical_Measurements",
+    (ModelNode*) &iedModel,
     NULL,
-    &iedModel_Physical_Measurements_LLN0
+    (ModelNode*) &iedModel_Physical_Measurements_LLN0
 };
 
 LogicalNode iedModel_Physical_Measurements_LLN0 = {
     LogicalNodeModelType,
     "LLN0",
-    &iedModel_Physical_Measurements,
+    (ModelNode*) &iedModel_Physical_Measurements,
     (ModelNode*) &iedModel_Physical_Measurements_LPHD1,
     (ModelNode*) &iedModel_Physical_Measurements_LLN0_Mod,
 };
@@ -3583,7 +3532,6 @@ DataObject iedModel_Physical_Measurements_LLN0_Mod = {
     (ModelNode*) &iedModel_Physical_Measurements_LLN0,
     (ModelNode*) &iedModel_Physical_Measurements_LLN0_Beh,
     (ModelNode*) &iedModel_Physical_Measurements_LLN0_Mod_q,
-    0,
     0
 };
 
@@ -3594,11 +3542,11 @@ DataAttribute iedModel_Physical_Measurements_LLN0_Mod_q = {
     (ModelNode*) &iedModel_Physical_Measurements_LLN0_Mod_t,
     NULL,
     0,
-    0,
     ST,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Physical_Measurements_LLN0_Mod_t = {
     DataAttributeModelType,
@@ -3607,11 +3555,11 @@ DataAttribute iedModel_Physical_Measurements_LLN0_Mod_t = {
     (ModelNode*) &iedModel_Physical_Measurements_LLN0_Mod_ctlModel,
     NULL,
     0,
-    0,
     ST,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataAttribute iedModel_Physical_Measurements_LLN0_Mod_ctlModel = {
     DataAttributeModelType,
@@ -3620,11 +3568,11 @@ DataAttribute iedModel_Physical_Measurements_LLN0_Mod_ctlModel = {
     NULL,
     NULL,
     0,
-    0,
     CF,
     ENUMERATED,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Physical_Measurements_LLN0_Beh = {
     DataObjectModelType,
@@ -3632,7 +3580,6 @@ DataObject iedModel_Physical_Measurements_LLN0_Beh = {
     (ModelNode*) &iedModel_Physical_Measurements_LLN0,
     (ModelNode*) &iedModel_Physical_Measurements_LLN0_Health,
     (ModelNode*) &iedModel_Physical_Measurements_LLN0_Beh_stVal,
-    0,
     0
 };
 
@@ -3643,11 +3590,11 @@ DataAttribute iedModel_Physical_Measurements_LLN0_Beh_stVal = {
     (ModelNode*) &iedModel_Physical_Measurements_LLN0_Beh_q,
     NULL,
     0,
-    0,
     ST,
     INT32,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Physical_Measurements_LLN0_Beh_q = {
     DataAttributeModelType,
@@ -3656,11 +3603,11 @@ DataAttribute iedModel_Physical_Measurements_LLN0_Beh_q = {
     (ModelNode*) &iedModel_Physical_Measurements_LLN0_Beh_t,
     NULL,
     0,
-    0,
     ST,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Physical_Measurements_LLN0_Beh_t = {
     DataAttributeModelType,
@@ -3669,11 +3616,11 @@ DataAttribute iedModel_Physical_Measurements_LLN0_Beh_t = {
     NULL,
     NULL,
     0,
-    0,
     ST,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Physical_Measurements_LLN0_Health = {
     DataObjectModelType,
@@ -3681,7 +3628,6 @@ DataObject iedModel_Physical_Measurements_LLN0_Health = {
     (ModelNode*) &iedModel_Physical_Measurements_LLN0,
     (ModelNode*) &iedModel_Physical_Measurements_LLN0_NamPlt,
     (ModelNode*) &iedModel_Physical_Measurements_LLN0_Health_stVal,
-    0,
     0
 };
 
@@ -3692,11 +3638,11 @@ DataAttribute iedModel_Physical_Measurements_LLN0_Health_stVal = {
     (ModelNode*) &iedModel_Physical_Measurements_LLN0_Health_q,
     NULL,
     0,
-    0,
     ST,
     INT32,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Physical_Measurements_LLN0_Health_q = {
     DataAttributeModelType,
@@ -3705,11 +3651,11 @@ DataAttribute iedModel_Physical_Measurements_LLN0_Health_q = {
     (ModelNode*) &iedModel_Physical_Measurements_LLN0_Health_t,
     NULL,
     0,
-    0,
     ST,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Physical_Measurements_LLN0_Health_t = {
     DataAttributeModelType,
@@ -3718,11 +3664,11 @@ DataAttribute iedModel_Physical_Measurements_LLN0_Health_t = {
     NULL,
     NULL,
     0,
-    0,
     ST,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Physical_Measurements_LLN0_NamPlt = {
     DataObjectModelType,
@@ -3730,7 +3676,6 @@ DataObject iedModel_Physical_Measurements_LLN0_NamPlt = {
     (ModelNode*) &iedModel_Physical_Measurements_LLN0,
     NULL,
     (ModelNode*) &iedModel_Physical_Measurements_LLN0_NamPlt_vendor,
-    0,
     0
 };
 
@@ -3741,11 +3686,11 @@ DataAttribute iedModel_Physical_Measurements_LLN0_NamPlt_vendor = {
     (ModelNode*) &iedModel_Physical_Measurements_LLN0_NamPlt_swRev,
     NULL,
     0,
-    0,
     DC,
     VISIBLE_STRING_255,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataAttribute iedModel_Physical_Measurements_LLN0_NamPlt_swRev = {
     DataAttributeModelType,
@@ -3754,11 +3699,11 @@ DataAttribute iedModel_Physical_Measurements_LLN0_NamPlt_swRev = {
     (ModelNode*) &iedModel_Physical_Measurements_LLN0_NamPlt_d,
     NULL,
     0,
-    0,
     DC,
     VISIBLE_STRING_255,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataAttribute iedModel_Physical_Measurements_LLN0_NamPlt_d = {
     DataAttributeModelType,
@@ -3767,11 +3712,11 @@ DataAttribute iedModel_Physical_Measurements_LLN0_NamPlt_d = {
     (ModelNode*) &iedModel_Physical_Measurements_LLN0_NamPlt_configRev,
     NULL,
     0,
-    0,
     DC,
     VISIBLE_STRING_255,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataAttribute iedModel_Physical_Measurements_LLN0_NamPlt_configRev = {
     DataAttributeModelType,
@@ -3780,11 +3725,11 @@ DataAttribute iedModel_Physical_Measurements_LLN0_NamPlt_configRev = {
     (ModelNode*) &iedModel_Physical_Measurements_LLN0_NamPlt_ldNs,
     NULL,
     0,
-    0,
     DC,
     VISIBLE_STRING_255,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataAttribute iedModel_Physical_Measurements_LLN0_NamPlt_ldNs = {
     DataAttributeModelType,
@@ -3793,16 +3738,16 @@ DataAttribute iedModel_Physical_Measurements_LLN0_NamPlt_ldNs = {
     NULL,
     NULL,
     0,
-    0,
     EX,
     VISIBLE_STRING_255,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 LogicalNode iedModel_Physical_Measurements_LPHD1 = {
     LogicalNodeModelType,
     "LPHD1",
-    &iedModel_Physical_Measurements,
+    (ModelNode*) &iedModel_Physical_Measurements,
     NULL,
     (ModelNode*) &iedModel_Physical_Measurements_LPHD1_PhyNam,
 };
@@ -3813,7 +3758,6 @@ DataObject iedModel_Physical_Measurements_LPHD1_PhyNam = {
     (ModelNode*) &iedModel_Physical_Measurements_LPHD1,
     (ModelNode*) &iedModel_Physical_Measurements_LPHD1_PhyHealth,
     (ModelNode*) &iedModel_Physical_Measurements_LPHD1_PhyNam_vendor,
-    0,
     0
 };
 
@@ -3824,11 +3768,11 @@ DataAttribute iedModel_Physical_Measurements_LPHD1_PhyNam_vendor = {
     NULL,
     NULL,
     0,
-    0,
     DC,
     VISIBLE_STRING_255,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Physical_Measurements_LPHD1_PhyHealth = {
     DataObjectModelType,
@@ -3836,7 +3780,6 @@ DataObject iedModel_Physical_Measurements_LPHD1_PhyHealth = {
     (ModelNode*) &iedModel_Physical_Measurements_LPHD1,
     (ModelNode*) &iedModel_Physical_Measurements_LPHD1_Proxy,
     (ModelNode*) &iedModel_Physical_Measurements_LPHD1_PhyHealth_stVal,
-    0,
     0
 };
 
@@ -3847,11 +3790,11 @@ DataAttribute iedModel_Physical_Measurements_LPHD1_PhyHealth_stVal = {
     (ModelNode*) &iedModel_Physical_Measurements_LPHD1_PhyHealth_q,
     NULL,
     0,
-    0,
     ST,
     INT32,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Physical_Measurements_LPHD1_PhyHealth_q = {
     DataAttributeModelType,
@@ -3860,11 +3803,11 @@ DataAttribute iedModel_Physical_Measurements_LPHD1_PhyHealth_q = {
     (ModelNode*) &iedModel_Physical_Measurements_LPHD1_PhyHealth_t,
     NULL,
     0,
-    0,
     ST,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Physical_Measurements_LPHD1_PhyHealth_t = {
     DataAttributeModelType,
@@ -3873,11 +3816,11 @@ DataAttribute iedModel_Physical_Measurements_LPHD1_PhyHealth_t = {
     NULL,
     NULL,
     0,
-    0,
     ST,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 DataObject iedModel_Physical_Measurements_LPHD1_Proxy = {
     DataObjectModelType,
@@ -3885,7 +3828,6 @@ DataObject iedModel_Physical_Measurements_LPHD1_Proxy = {
     (ModelNode*) &iedModel_Physical_Measurements_LPHD1,
     NULL,
     (ModelNode*) &iedModel_Physical_Measurements_LPHD1_Proxy_stVal,
-    0,
     0
 };
 
@@ -3896,11 +3838,11 @@ DataAttribute iedModel_Physical_Measurements_LPHD1_Proxy_stVal = {
     (ModelNode*) &iedModel_Physical_Measurements_LPHD1_Proxy_q,
     NULL,
     0,
-    0,
     ST,
     BOOLEAN,
-    NULL
-};
+    0 + TRG_OPT_DATA_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Physical_Measurements_LPHD1_Proxy_q = {
     DataAttributeModelType,
@@ -3909,11 +3851,11 @@ DataAttribute iedModel_Physical_Measurements_LPHD1_Proxy_q = {
     (ModelNode*) &iedModel_Physical_Measurements_LPHD1_Proxy_t,
     NULL,
     0,
-    0,
     ST,
     QUALITY,
-    NULL
-};
+    0 + TRG_OPT_QUALITY_CHANGED,
+    NULL,
+    0};
 
 DataAttribute iedModel_Physical_Measurements_LPHD1_Proxy_t = {
     DataAttributeModelType,
@@ -3922,31 +3864,63 @@ DataAttribute iedModel_Physical_Measurements_LPHD1_Proxy_t = {
     NULL,
     NULL,
     0,
-    0,
     ST,
     TIMESTAMP,
-    NULL
-};
+    0,
+    NULL,
+    0};
 
 
-static GSEControlBlock* gseControlBlocks[] = {
-    NULL
-};
+extern ReportControlBlock iedModel_Inverter_LLN0_report0;
 
-static ReportControlBlock iedModel_Inverter_LLN0_report0 = {&iedModel_Inverter_LLN0, "rcb1", "ID", false, "dataset1", 0, 6, 32, 0, 0};
+ReportControlBlock iedModel_Inverter_LLN0_report0 = {&iedModel_Inverter_LLN0, "rcb1", "ID", false, "dataset1", 0, 3, 32, 0, 0, NULL};
 
-static ReportControlBlock* reportControlBlocks[] = {
-    &iedModel_Inverter_LLN0_report0,
-    NULL
-};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 IedModel iedModel = {
     "ied1",
     &iedModel_Inverter,
-    datasets,
-    reportControlBlocks,
-    gseControlBlocks,
+    &ds_Inverter_LLN0_dataset1,
+    &iedModel_Inverter_LLN0_report0,
+    NULL,
     initializeValues
 };
 

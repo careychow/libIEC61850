@@ -1,7 +1,7 @@
 /*
  *  mms_goose.c
  *
- *  Copyright 2013 Michael Zillgith
+ *  Copyright 2013, 2014 Michael Zillgith
  *
  *  This file is part of libIEC61850.
  *
@@ -55,6 +55,7 @@ struct sMmsGooseControlBlock {
 
     LinkedList dataSetValues;
     uint64_t nextPublishTime;
+    int retransmissionsLeft; /* number of retransmissions left for the last event */
     Semaphore publisherMutex;
 
     MmsMapping* mmsMapping;
@@ -203,10 +204,7 @@ MmsGooseControlBlock_enable(MmsGooseControlBlock self)
 
             MmsValue* macAddress = MmsValue_getElement(dstAddress, 0);
 
-            int i;
-            for (i = 0; i < 6; i++) {
-               commParameters.dstAddress[i] = macAddress->value.octetString.buf[i];
-            }
+            memcpy(commParameters.dstAddress, MmsValue_getOctetStringBuffer(macAddress), 6);
 
             self->publisher = GoosePublisher_create(&commParameters, NULL);
 
@@ -230,10 +228,11 @@ MmsGooseControlBlock_enable(MmsGooseControlBlock self)
             //prepare data set values
             self->dataSetValues = LinkedList_create();
 
-            DataSet* dataSet = self->dataSet;
+            DataSetEntry* dataSetEntry = self->dataSet->fcdas;
 
-            for (i = 0; i < dataSet->elementCount; i++) {
-                LinkedList_add(self->dataSetValues, dataSet->fcda[i]->value);
+            while (dataSetEntry != NULL) {
+                LinkedList_add(self->dataSetValues, dataSetEntry->value);
+                dataSetEntry = dataSetEntry->sibling;
             }
 
             self->goEna = true;
@@ -277,8 +276,26 @@ MmsGooseControlBlock_checkAndPublish(MmsGooseControlBlock self, uint64_t current
 
         GoosePublisher_publish(self->publisher, self->dataSetValues);
 
-        self->nextPublishTime = currentTime +
+        if (self->retransmissionsLeft > 0) {
+            self->nextPublishTime = currentTime + CONFIG_GOOSE_EVENT_RETRANSMISSION_INTERVAL;
+
+
+            if (self->retransmissionsLeft > 1)
+                GoosePublisher_setTimeAllowedToLive(self->publisher,
+                        CONFIG_GOOSE_EVENT_RETRANSMISSION_INTERVAL * 3);
+            else
+                GoosePublisher_setTimeAllowedToLive(self->publisher,
+                        CONFIG_GOOSE_STABLE_STATE_TRANSMISSION_INTERVAL * 3);
+
+            self->retransmissionsLeft--;
+        }
+        else {
+            GoosePublisher_setTimeAllowedToLive(self->publisher,
+                                CONFIG_GOOSE_STABLE_STATE_TRANSMISSION_INTERVAL * 3);
+
+            self->nextPublishTime = currentTime +
                 CONFIG_GOOSE_STABLE_STATE_TRANSMISSION_INTERVAL;
+        }
 
         Semaphore_post(self->publisherMutex);
     }
@@ -291,8 +308,22 @@ MmsGooseControlBlock_observedObjectChanged(MmsGooseControlBlock self)
 
     uint64_t currentTime = GoosePublisher_increaseStNum(self->publisher);
 
-    self->nextPublishTime = currentTime +
+    self->retransmissionsLeft = CONFIG_GOOSE_EVENT_RETRANSMISSION_COUNT;
+
+    if (self->retransmissionsLeft > 0) {
+        self->nextPublishTime = currentTime +
+                CONFIG_GOOSE_EVENT_RETRANSMISSION_INTERVAL;
+
+        GoosePublisher_setTimeAllowedToLive(self->publisher,
+                           CONFIG_GOOSE_EVENT_RETRANSMISSION_INTERVAL * 3);
+    }
+    else {
+        self->nextPublishTime = currentTime +
             CONFIG_GOOSE_STABLE_STATE_TRANSMISSION_INTERVAL;
+
+        GoosePublisher_setTimeAllowedToLive(self->publisher,
+                           CONFIG_GOOSE_STABLE_STATE_TRANSMISSION_INTERVAL * 3);
+    }
 
     GoosePublisher_publish(self->publisher, self->dataSetValues);
 
@@ -377,19 +408,18 @@ getGCBForLogicalNodeWithIndex(MmsMapping* self, LogicalNode* logicalNode, int in
 {
     int gseCount = 0;
 
-    GSEControlBlock** gseControlBlocks = self->model->gseCBs;
+    GSEControlBlock* gcb = self->model->gseCBs;
 
-    int i = 0;
-
-    while (gseControlBlocks[i] != NULL ) {
-        if (gseControlBlocks[i]->parent == logicalNode) {
+    /* Iterate list of GoCBs */
+    while (gcb != NULL ) {
+        if (gcb->parent == logicalNode) {
             if (gseCount == index)
-                return gseControlBlocks[i];
+                return gcb;
 
             gseCount++;
         }
 
-        i++;
+        gcb = gcb->sibling;
     }
 
     return NULL ;
@@ -482,6 +512,10 @@ GOOSE_createGOOSEControlBlocks(MmsMapping* self, MmsDomain* domain,
 
         MmsValue* appIdVal = MmsValue_getElement(dstAddress, 3);
         MmsValue_setUint16(appIdVal, appId);
+
+        MmsValue* confRef = MmsValue_getElement(gseValues, 3);
+
+        MmsValue_setUint32(confRef, gooseControlBlock->confRef);
 
         mmsGCB->dataSet = NULL;
 

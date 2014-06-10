@@ -20,7 +20,9 @@
 #include <stddef.h>	/* for offsetof and ptrdiff_t */
 
 #ifdef _WIN32
+#ifndef WIN32
 #define WIN32
+#endif
 #endif
 
 #ifdef	WIN32

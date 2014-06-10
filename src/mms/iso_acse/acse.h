@@ -24,38 +24,38 @@
 #include "libiec61850_platform_includes.h"
 #include "stack_config.h"
 #include "byte_buffer.h"
+#include "buffer_chain.h"
+#include "iso_connection_parameters.h"
 
 #ifndef ACSE_H_
 #define ACSE_H_
 
-typedef enum {
-	AUTH_NONE,
-	AUTH_PASSWORD
-} AcseAuthenticationMechanism;
-
-typedef struct sAcseAuthenticationParameter {
-	AcseAuthenticationMechanism mechanism;
-	union {
-		struct {
-			char* string;
-		} password;
-	} value;
-}* AcseAuthenticationParameter;
-
-typedef enum eAcseConnectionState {
-	idle, requestIndicated, connected
+typedef enum
+{
+    idle, requestIndicated, connected
 } AcseConnectionState;
 
-typedef enum eAcseIndication {
-	ACSE_ERROR, ACSE_ASSOCIATE, ACSE_ASSOCIATE_FAILED, ACSE_OK
+typedef enum
+{
+    ACSE_ERROR,
+    ACSE_ASSOCIATE,
+    ACSE_ASSOCIATE_FAILED,
+    ACSE_OK,
+    ACSE_ABORT,
+    ACSE_RELEASE_REQUEST,
+    ACSE_RELEASE_RESPONSE
 } AcseIndication;
 
-typedef struct sAcseConnection {
-	AcseConnectionState		state;
-	long	            	nextReference;
-	uint8_t* 				userDataBuffer;
-	int 					userDataBufferSize;
-	AcseAuthenticationParameter authentication;
+typedef struct sAcseConnection
+{
+    AcseConnectionState state;
+    long nextReference;
+    uint8_t* userDataBuffer;
+    int userDataBufferSize;
+    AcseAuthenticationParameter authentication;
+    AcseAuthenticator authenticator;
+    void* authenticatorParameter;
+    void* securityToken;
 } AcseConnection;
 
 #define ACSE_RESULT_ACCEPT 0
@@ -63,10 +63,7 @@ typedef struct sAcseConnection {
 #define ACSE_RESULT_REJECT_TRANSIENT 2
 
 void
-AcseConnection_init(AcseConnection* self);
-
-void
-AcseConnection_setAuthenticationParameter(AcseConnection* self, AcseAuthenticationParameter auth);
+AcseConnection_init(AcseConnection* self, AcseAuthenticator authenticator, void* parameter);
 
 void
 AcseConnection_destroy(AcseConnection* self);
@@ -75,21 +72,30 @@ AcseIndication
 AcseConnection_parseMessage(AcseConnection* self, ByteBuffer* message);
 
 void
-AcseConnection_createAssociateFailedMessage(AcseConnection* connection, ByteBuffer* writeBuffer);
+AcseConnection_createAssociateFailedMessage(AcseConnection* connection, BufferChain writeBuffer);
 
 void
 AcseConnection_createAssociateResponseMessage(
-		AcseConnection* self,
-		uint8_t resultCode,
-		ByteBuffer* writeBuffer,
-		ByteBuffer* payload
-);
+        AcseConnection* self,
+        uint8_t resultCode,
+        BufferChain acseWriteBuffer,
+        BufferChain payloadBuffer
+        );
 
 void
-AcseConnection_createAssociateRequestMessage(
-		AcseConnection* self,
-		ByteBuffer* writeBuffer,
-		ByteBuffer* payload
-);
+AcseConnection_createAssociateRequestMessage(AcseConnection* self,
+        IsoConnectionParameters isoParameters,
+        BufferChain writeBuffer,
+        BufferChain payload,
+        AcseAuthenticationParameter authParameter);
+
+void
+AcseConnection_createAbortMessage(AcseConnection* self, BufferChain writeBuffer, bool isProvider);
+
+void
+AcseConnection_createReleaseRequestMessage(AcseConnection* self, BufferChain writeBuffer);
+
+void
+AcseConnection_createReleaseResponseMessage(AcseConnection* self, BufferChain writeBuffer);
 
 #endif /* ACSE_H_ */

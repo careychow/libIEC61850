@@ -38,6 +38,8 @@ public class ReportControlBlock {
 	private long bufferTime = 0;
 	private TriggerOptions triggerOptions = null;
 	private OptionFields optionFields = null;
+	private boolean indexed = false;
+	private RptEnabled rptEna = null;
 	
 	public ReportControlBlock(Node reportControlNode) throws SclParserException {
 	
@@ -82,10 +84,22 @@ public class ReportControlBlock {
 		this.optionFields = new OptionFields(optFieldsNode);
 		
 		
-		Node rptEnabledNode = ParserUtils.getChildNodeWithTag(reportControlNode, "RptEnabled");
+		Boolean indexed = ParserUtils.parseBooleanAttribute(reportControlNode, "indexed");
 		
+		if (indexed != null)
+			this.indexed = indexed.booleanValue();
 		
-		//TODO parse RptEnabled tag element
+		if (this.indexed) {
+			Node rptEnabledNode = ParserUtils.getChildNodeWithTag(reportControlNode, "RptEnabled");
+			
+			if (rptEnabledNode == null)
+				throw new SclParserException(reportControlNode, 
+						"ReportControl is missing required element \"RptEnabled\" (required when \"indexed\" is true)");
+			
+			RptEnabled rptEna = new RptEnabled(rptEnabledNode);
+			
+			this.rptEna = rptEna;
+		}
 	}
 
 	public String getName() {
@@ -128,6 +142,11 @@ public class ReportControlBlock {
 		return optionFields;
 	}
 
-	
-	
+	public boolean isIndexed() {
+		return indexed;
+	}
+
+	public RptEnabled getRptEna() {
+		return rptEna;
+	}
 }

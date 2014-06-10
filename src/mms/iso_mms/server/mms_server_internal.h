@@ -1,7 +1,7 @@
 /*
  *  mms_server_internal.h
  *
- *  Copyright 2013 Michael Zillgith
+ *  Copyright 2013, 2014 Michael Zillgith
  *
  *	This file is part of libIEC61850.
  *
@@ -35,21 +35,59 @@
 
 #include "byte_buffer.h"
 #include "string_utilities.h"
+#include "map.h"
+#include "thread.h"
 
 #include "ber_encoder.h"
 #include "ber_decode.h"
 
-#define MMS_REJECT_UNRECOGNIZED_SERVICE 1
-#define MMS_REJECT_UNKNOWN_PDU_TYPE 2
-#define MMS_REJECT_OTHER 3
+#ifndef DEBUG_MMS_SERVER
+#define DEBUG_MMS_SERVER 0
+#endif
 
-typedef enum {
-	MMS_ERROR_TYPE_OK,
-	MMS_ERROR_TYPE_OBJECT_NON_EXISTENT,
-	MMS_ERROR_TYPE_OBJECT_ACCESS_UNSUPPORTED,
-	MMS_ERROR_TYPE_ACCESS_DENIED,
-	MMS_ERROR_TYPE_RESPONSE_EXCEEDS_MAX_PDU_SIZE
-} MmsConfirmedErrorType;
+#ifndef MMS_STATUS_SERVICE
+#define MMS_STATUS_SERVICE 1
+#endif
+
+#ifndef MMS_IDENTIFY_SERVICE
+#define MMS_IDENTIFY_SERVICE 1
+#endif
+
+#ifndef MMS_FILE_SERVICE
+#define MMS_FILE_SERVICE 1
+#endif
+
+struct sMmsServer {
+    IsoServer isoServer;
+    MmsDevice* device;
+
+    ReadVariableHandler readHandler;
+    void* readHandlerParameter;
+
+    WriteVariableHandler writeHandler;
+    void* writeHandlerParameter;
+
+    MmsConnectionHandler connectionHandler;
+    void* connectionHandlerParameter;
+
+    Map openConnections;
+    Map valueCaches;
+    bool isLocked;
+    Semaphore modelMutex;
+
+#if MMS_STATUS_SERVICE == 1
+    int vmdLogicalStatus;
+    int vmdPhysicalStatus;
+    MmsStatusRequestListener statusRequestListener;
+    void* statusRequestListenerParameter;
+#endif /* MMS_STATUS_SERVICE == 1 */
+
+#if MMS_IDENTIFY_SERVICE == 1
+    char* vendorName;
+    char* modelName;
+    char* revision;
+#endif /* MMS_IDENTIFY_SERVICE == 1 */
+};
 
 /* write_out function required for ASN.1 encoding */
 int
@@ -57,9 +95,9 @@ mmsServer_write_out(const void *buffer, size_t size, void *app_key);
 
 void
 mmsServer_handleDeleteNamedVariableListRequest(MmsServerConnection* connection,
-		uint8_t* buffer, int bufPos, int maxBufPos,
-		int invokeId,
-		ByteBuffer* response);
+        uint8_t* buffer, int bufPos, int maxBufPos,
+        uint32_t invokeId,
+        ByteBuffer* response);
 
 void
 mmsServer_handleGetNamedVariableListAttributesRequest(
@@ -79,10 +117,16 @@ MmsPdu_t*
 mmsServer_createConfirmedResponse(uint32_t invokeId);
 
 void
-mmsServer_createConfirmedErrorPdu(uint32_t invokeId, ByteBuffer* response, MmsConfirmedErrorType errorType);
+mmsServer_createConfirmedErrorPdu(uint32_t invokeId, ByteBuffer* response, MmsError errorType);
 
 void
 mmsServer_writeConcludeResponsePdu(ByteBuffer* response);
+
+void
+mmsServer_handleInitiateRequest (
+        MmsServerConnection* self,
+        uint8_t* buffer, int bufPos, int maxBufPos,
+        ByteBuffer* response);
 
 int
 mmsServer_handleGetVariableAccessAttributesRequest(
@@ -105,12 +149,68 @@ mmsServer_handleGetNameListRequest(
 		uint32_t invokeId,
 		ByteBuffer* response);
 
-int /* MmsServiceError */
+void
 mmsServer_handleWriteRequest(
 		MmsServerConnection* connection,
 		uint8_t* buffer, int bufPos, int maxBufPos,
 		uint32_t invokeId,
 		ByteBuffer* response);
+
+void
+mmsServer_handleIdentifyRequest(
+        MmsServerConnection* connection,
+        int invokeId,
+        ByteBuffer* response);
+
+void
+mmsServer_handleStatusRequest(
+        MmsServerConnection* connection,
+        uint8_t* requestBuffer,
+        int bufPos,
+        int invokeId,
+        ByteBuffer* response);
+
+void
+mmsServer_handleFileDirectoryRequest(
+        MmsServerConnection* connection,
+        uint8_t* buffer, int bufPos, int maxBufPos,
+        uint32_t invokeId,
+        ByteBuffer* response);
+
+void
+mmsServer_handleFileOpenRequest(
+        MmsServerConnection* connection,
+        uint8_t* buffer, int bufPos, int maxBufPos,
+        uint32_t invokeId,
+        ByteBuffer* response);
+
+void
+mmsServer_handleFileDeleteRequest(
+        MmsServerConnection* connection,
+        uint8_t* buffer, int bufPos, int maxBufPos,
+        uint32_t invokeId,
+        ByteBuffer* response);
+
+void
+mmsServer_handleFileRenameRequest(
+        MmsServerConnection* connection,
+        uint8_t* buffer, int bufPos, int maxBufPos,
+        uint32_t invokeId,
+        ByteBuffer* response);
+
+void
+mmsServer_handleFileReadRequest(
+        MmsServerConnection* connection,
+        uint8_t* buffer, int bufPos, int maxBufPos,
+        uint32_t invokeId,
+        ByteBuffer* response);
+
+void
+mmsServer_handleFileCloseRequest(
+        MmsServerConnection* connection,
+        uint8_t* buffer, int bufPos, int maxBufPos,
+        uint32_t invokeId,
+        ByteBuffer* response);
 
 int
 mmsServer_isIndexAccess(AlternateAccess_t* alternateAccess);

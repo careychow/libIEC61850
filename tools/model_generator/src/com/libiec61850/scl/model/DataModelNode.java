@@ -29,4 +29,5 @@ public interface DataModelNode {
     public String getName();
     public DataModelNode getChildByName(String childName);
     public SclType getSclType();
+    public DataModelNode getParent();
 }

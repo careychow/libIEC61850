@@ -27,6 +27,7 @@
 #include "ethernet.h"
 #include "ber_encoder.h"
 #include "mms_server_internal.h"
+#include "mms_value_internal.h"
 
 #define GOOSE_MAX_MESSAGE_SIZE 1518
 
@@ -233,8 +234,8 @@ prepareGooseBuffer(GoosePublisher self, CommParameters* parameters, char* interf
     self->payloadStart = bufPos;
 }
 
-static int
-createGoosePayload(GoosePublisher self, LinkedList dataSetValues, uint8_t* buffer, int maxPayloadSize) {
+static int32_t
+createGoosePayload(GoosePublisher self, LinkedList dataSetValues, uint8_t* buffer, size_t maxPayloadSize) {
 
     /* Step 1 - calculate length fields */
     uint32_t goosePduLength = 0;
@@ -285,7 +286,7 @@ createGoosePayload(GoosePublisher self, LinkedList dataSetValues, uint8_t* buffe
 
     /* Step 2 - encode to buffer */
 
-    int bufPos = 0;
+    int32_t bufPos = 0;
 
     /* Encode GOOSE PDU */
     bufPos = BerEncoder_encodeTL(0x61, goosePduLength, buffer, bufPos);
@@ -348,16 +349,16 @@ GoosePublisher_publish(GoosePublisher self, LinkedList dataSet)
 
     self->sqNum++;
 
-    int maxPayloadSize = GOOSE_MAX_MESSAGE_SIZE - self->payloadStart;
+    size_t maxPayloadSize = GOOSE_MAX_MESSAGE_SIZE - self->payloadStart;
 
-    int payloadLength = createGoosePayload(self, dataSet, buffer, maxPayloadSize);
+    int32_t payloadLength = createGoosePayload(self, dataSet, buffer, maxPayloadSize);
 
     if (payloadLength == -1)
         return -1;
 
     int lengthIndex = self->lengthField;
 
-    int gooseLength = payloadLength + 8;
+    size_t gooseLength = payloadLength + 8;
 
     self->buffer[lengthIndex] = gooseLength / 256;
     self->buffer[lengthIndex + 1] = gooseLength & 0xff;

@@ -3,22 +3,22 @@
  *
  *  Copyright 2013 Michael Zillgith
  *
- *	This file is part of libIEC61850.
+ *  This file is part of libIEC61850.
  *
- *	libIEC61850 is free software: you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation, either version 3 of the License, or
- *	(at your option) any later version.
+ *  libIEC61850 is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
  *
- *	libIEC61850 is distributed in the hope that it will be useful,
- *	but WITHOUT ANY WARRANTY; without even the implied warranty of
- *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
+ *  libIEC61850 is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
- *	You should have received a copy of the GNU General Public License
- *	along with libIEC61850.  If not, see <http://www.gnu.org/licenses/>.
+ *  You should have received a copy of the GNU General Public License
+ *  along with libIEC61850.  If not, see <http://www.gnu.org/licenses/>.
  *
- *	See COPYING file for the complete license text.
+ *  See COPYING file for the complete license text.
  */
 
 #include "libiec61850_platform_includes.h"
@@ -32,20 +32,17 @@
 
 #include "mms_client_internal.h"
 #include "mms_common_internal.h"
-
-void
-memcpyReverseByteOrder(uint8_t* dst, uint8_t* src, int size);
+#include "mms_value_internal.h"
 
 MmsValue*
-mmsClient_parseListOfAccessResults(AccessResult_t** accessResultList, int listSize)
+mmsClient_parseListOfAccessResults(AccessResult_t** accessResultList, int listSize, bool createArray)
 {
     MmsValue* valueList = NULL;
     MmsValue* value = NULL;
-    MmsIndication retVal = MMS_OK;
 
     int elementCount = listSize;
 
-    if (elementCount > 1)
+    if ((elementCount > 1) || createArray)
         valueList = MmsValue_createEmtpyArray(elementCount);
 
     int i = 0;
@@ -54,23 +51,34 @@ mmsClient_parseListOfAccessResults(AccessResult_t** accessResultList, int listSi
         AccessResult_PR presentType = accessResultList[i]->present;
 
         if (presentType == AccessResult_PR_failure) {
-            if (DEBUG) printf("access error!\n");
+            if (DEBUG_MMS_CLIENT) printf("access error!\n");
 
-            retVal = MMS_ERROR;
+            if (accessResultList[i]->choice.failure.size > 0) {
+                int errorCode = (int) accessResultList[i]->choice.failure.buf[0];
+
+                MmsDataAccessError dataAccessError = DATA_ACCESS_ERROR_UNKNOWN;
+
+                if ((errorCode >= 0) && (errorCode < 12))
+                    dataAccessError = (MmsDataAccessError) errorCode;
+
+                value = MmsValue_newDataAccessError(dataAccessError);
+            }
+            else
+                value = MmsValue_newDataAccessError(DATA_ACCESS_ERROR_UNKNOWN);
         }
         else if (presentType == AccessResult_PR_array) {
             value = (MmsValue*) calloc(1, sizeof(MmsValue));
             value->type = MMS_ARRAY;
 
-            int elementCount =
+            int arrayElementCount =
                     accessResultList[i]->choice.array.list.count;
 
-            value->value.structure.size = elementCount;
-            value->value.structure.components = (MmsValue**) calloc(elementCount, sizeof(MmsValue*));
+            value->value.structure.size = arrayElementCount;
+            value->value.structure.components = (MmsValue**) calloc(arrayElementCount, sizeof(MmsValue*));
 
             int j;
 
-            for (j = 0; j < elementCount; j++) {
+            for (j = 0; j < arrayElementCount; j++) {
                 value->value.structure.components[j] = mmsMsg_parseDataElement(
                         accessResultList[i]->choice.array.list.array[j]);
             }
@@ -105,15 +113,18 @@ mmsClient_parseListOfAccessResults(AccessResult_t** accessResultList, int listSi
 
         }
         else if (presentType == AccessResult_PR_integer) {
-            long integerValue;
-            asn_INTEGER2long(&accessResultList[i]->choice.integer, &integerValue);
-            value = MmsValue_newIntegerFromInt32((int32_t) integerValue);
+            Asn1PrimitiveValue* berInteger =
+                    BerInteger_createFromBuffer(accessResultList[i]->choice.integer.buf,
+                                                accessResultList[i]->choice.integer.size);
+
+            value = MmsValue_newIntegerFromBerInteger(berInteger);
         }
         else if (presentType == AccessResult_PR_unsigned) {
             Asn1PrimitiveValue* berInteger =
-                    BerInteger_createFromBuffer(accessResultList[i]->choice.integer.buf,
-                            accessResultList[i]->choice.integer.size);
-            value = MmsValue_newIntegerFromBerInteger(berInteger);
+                    BerInteger_createFromBuffer(accessResultList[i]->choice.Unsigned.buf,
+                                                                    accessResultList[i]->choice.Unsigned.size);
+
+            value = MmsValue_newUnsignedFromBerInteger(berInteger);
         }
         else if (presentType == AccessResult_PR_floatingpoint) {
             int size = accessResultList[i]->choice.floatingpoint.size;
@@ -129,7 +140,7 @@ mmsClient_parseListOfAccessResults(AccessResult_t** accessResultList, int listSi
 
                 value->value.floatingPoint.buf = (uint8_t*) malloc(4);
 
-#ifdef ORDER_LITTLE_ENDIAN
+#if (ORDER_LITTLE_ENDIAN == 1)
                     memcpyReverseByteOrder(value->value.floatingPoint.buf, floatBuf, 4);
 #else
                     memcpy(value->value.floatingPoint.buf, floatBuf, 4);
@@ -145,10 +156,10 @@ mmsClient_parseListOfAccessResults(AccessResult_t** accessResultList, int listSi
 
                 value->value.floatingPoint.buf = (uint8_t*) malloc(8);
 
-#ifdef ORDER_LITTLE_ENDIAN
-                    memcpyReverseByteOrder(value->value.floatingPoint.buf, floatBuf, 8);
+#if (ORDER_LITTLE_ENDIAN == 1)
+                memcpyReverseByteOrder(value->value.floatingPoint.buf, floatBuf, 8);
 #else
-                    memcpy(value->value.floatingPoint.buf, floatBuf, 8);
+                memcpy(value->value.floatingPoint.buf, floatBuf, 8);
 #endif
             }
 
@@ -175,12 +186,12 @@ mmsClient_parseListOfAccessResults(AccessResult_t** accessResultList, int listSi
 
         	int strSize = accessResultList[i]->choice.mMSString.size;
 
-        	value->value.mmsString = (char*) malloc(strSize + 1);
+        	value->value.visibleString = (char*) malloc(strSize + 1);
 
-        	memcpy(value->value.mmsString,
+        	memcpy(value->value.visibleString,
         			accessResultList[i]->choice.mMSString.buf, strSize);
 
-        	value->value.mmsString[strSize] = 0;
+        	value->value.visibleString[strSize] = 0;
 
         }
         else if (presentType == AccessResult_PR_utctime) {
@@ -215,10 +226,10 @@ mmsClient_parseListOfAccessResults(AccessResult_t** accessResultList, int listSi
         }
         else {
             printf("unknown type %i\n", presentType);
-            retVal = MMS_ERROR;
+            value = MmsValue_newDataAccessError(DATA_ACCESS_ERROR_OBJECT_VALUE_INVALID);
         }
 
-        if (elementCount > 1)
+        if ((elementCount > 1) || createArray)
             MmsValue_setElement(valueList, i, value);
     }
 
@@ -229,20 +240,22 @@ mmsClient_parseListOfAccessResults(AccessResult_t** accessResultList, int listSi
 }
 
 
+/*
+ * \param createArray if multiple variables should be read (e.g. if a data set is read) an array should
+ *                    be created that contains the access results.
+ */
 MmsValue*
-mmsClient_parseReadResponse(ByteBuffer* message, uint32_t* invokeId)
+mmsClient_parseReadResponse(ByteBuffer* message, uint32_t* invokeId, bool createArray)
 {
 	MmsPdu_t* mmsPdu = 0; /* allow asn1c to allocate structure */
-	MmsIndication retVal =  MMS_OK;
 
 	MmsValue* valueList = NULL;
 
-	asn_dec_rval_t rval;
-
-	rval = ber_decode(NULL, &asn_DEF_MmsPdu,
+	asn_dec_rval_t rval = ber_decode(NULL, &asn_DEF_MmsPdu,
 			(void**) &mmsPdu, ByteBuffer_getBuffer(message), ByteBuffer_getSize(message));
 
-	if (DEBUG) xer_fprint(stdout, &asn_DEF_MmsPdu, mmsPdu);
+	if (rval.code != RC_OK)
+	    return NULL;
 
 	if (mmsPdu->present == MmsPdu_PR_confirmedResponsePdu) {
 
@@ -255,14 +268,8 @@ mmsClient_parseReadResponse(ByteBuffer* message, uint32_t* invokeId)
 			int elementCount = response->listOfAccessResult.list.count;
 
 			valueList = mmsClient_parseListOfAccessResults(response->listOfAccessResult.list.array,
-			        elementCount);
+			        elementCount, createArray);
 		}
-		else {
-			retVal = MMS_ERROR;
-		}
-	}
-	else {
-		retVal = MMS_ERROR;
 	}
 
 	asn_DEF_MmsPdu.free_struct(&asn_DEF_MmsPdu, mmsPdu, 0);
@@ -272,7 +279,8 @@ mmsClient_parseReadResponse(ByteBuffer* message, uint32_t* invokeId)
 
 
 static ReadRequest_t*
-createReadRequest (MmsPdu_t* mmsPdu) {
+createReadRequest (MmsPdu_t* mmsPdu)
+{
 	mmsPdu->choice.confirmedRequestPdu.confirmedServiceRequest.present =
 				ConfirmedServiceRequest_PR_read;
 
@@ -290,7 +298,7 @@ mmsClient_createReadNamedVariableListRequest(uint32_t invokeId, char* domainId, 
 
 	if (specWithResult) {
 		readRequest->specificationWithResult = (BOOLEAN_t*) calloc(1, sizeof(BOOLEAN_t));
-		*(readRequest->specificationWithResult) = true;
+		(*(readRequest->specificationWithResult)) = true;
 	}
 	else
 		readRequest->specificationWithResult = NULL;
@@ -330,7 +338,7 @@ mmsClient_createReadAssociationSpecificNamedVariableListRequest(
 
 	if (specWithResult) {
 		readRequest->specificationWithResult = (BOOLEAN_t*) calloc(1, sizeof(BOOLEAN_t));
-		*(readRequest->specificationWithResult) = true;
+		(*(readRequest->specificationWithResult)) = true;
 	}
 	else
 		readRequest->specificationWithResult = NULL;
@@ -378,11 +386,19 @@ mmsClient_createReadRequest(uint32_t invokeId, char* domainId, char* itemId, Byt
 
 	listOfVars->alternateAccess = NULL;
 	listOfVars->variableSpecification.present = VariableSpecification_PR_name;
-	listOfVars->variableSpecification.choice.name.present = ObjectName_PR_domainspecific;
-	listOfVars->variableSpecification.choice.name.choice.domainspecific.domainId.buf = (uint8_t*) domainId;
-	listOfVars->variableSpecification.choice.name.choice.domainspecific.domainId.size = strlen(domainId);
-	listOfVars->variableSpecification.choice.name.choice.domainspecific.itemId.buf = (uint8_t*) itemId;
-	listOfVars->variableSpecification.choice.name.choice.domainspecific.itemId.size = strlen(itemId);
+
+	if (domainId != NULL) {
+        listOfVars->variableSpecification.choice.name.present = ObjectName_PR_domainspecific;
+        listOfVars->variableSpecification.choice.name.choice.domainspecific.domainId.buf = (uint8_t*) domainId;
+        listOfVars->variableSpecification.choice.name.choice.domainspecific.domainId.size = strlen(domainId);
+        listOfVars->variableSpecification.choice.name.choice.domainspecific.itemId.buf = (uint8_t*) itemId;
+        listOfVars->variableSpecification.choice.name.choice.domainspecific.itemId.size = strlen(itemId);
+	}
+	else {
+	    listOfVars->variableSpecification.choice.name.present = ObjectName_PR_vmdspecific;
+	    listOfVars->variableSpecification.choice.name.choice.vmdspecific.buf = (uint8_t*) itemId;
+	    listOfVars->variableSpecification.choice.name.choice.vmdspecific.size = strlen(itemId);
+	}
 
 	asn_enc_rval_t rval;
 
@@ -479,8 +495,6 @@ mmsClient_createReadRequestAlternateAccessIndex(uint32_t invokeId, char* domainI
 	rval = der_encode(&asn_DEF_MmsPdu, mmsPdu,
 		(asn_app_consume_bytes_f*) mmsClient_write_out, (void*) writeBuffer);
 
-	if (DEBUG) xer_fprint(stdout, &asn_DEF_MmsPdu, mmsPdu);
-
 	variableIdentifier->variableSpecification.choice.name.choice.domainspecific.domainId.buf = 0;
 	variableIdentifier->variableSpecification.choice.name.choice.domainspecific.domainId.size = 0;
 	variableIdentifier->variableSpecification.choice.name.choice.domainspecific.itemId.buf = 0;
@@ -521,12 +535,11 @@ mmsClient_createReadRequestMultipleValues(uint32_t invokeId, char* domainId, Lin
 	ListOfVariableSeq_t** listOfVars = createListOfVariables(readRequest, valuesCount);
 
 	LinkedList item = items;
-	char* itemId;
+
 	int i = 0;
 
 	while ((item = LinkedList_getNext(item)) != NULL) {
-		itemId = (char*) (item->data);
-		listOfVars[i] = createVariableIdentifier(domainId, itemId);
+		listOfVars[i] = createVariableIdentifier(domainId, (char*) (item->data));
 		i++;
 	}
 
@@ -534,8 +547,6 @@ mmsClient_createReadRequestMultipleValues(uint32_t invokeId, char* domainId, Lin
 
 	rval = der_encode(&asn_DEF_MmsPdu, mmsPdu,
 		(asn_app_consume_bytes_f*) mmsClient_write_out, (void*) writeBuffer);
-
-	if (DEBUG) xer_fprint(stdout, &asn_DEF_MmsPdu, mmsPdu);
 
 	for (i = 0; i < valuesCount; i++) {
 		free(listOfVars[i]);
