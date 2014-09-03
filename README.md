@@ -2,7 +2,7 @@ README:
 -------
 
 Build Status:
-- [![Build Status](https://travis-ci.org/careychow/libIEC61850.png?branch=master)](https://travis-ci.org/careychow/libIEC61850)
+- [![Build Status](https://travis-ci.org/gythialy/libIEC61850.svg?branch=master)](https://travis-ci.org/gythialy/libIEC61850)
 
 This file is part of the documentation of libiec61850. More documentation can be found online at http://libiec61850.com or in the provided doxygen documentation.
 
