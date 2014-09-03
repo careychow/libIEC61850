@@ -30,9 +30,21 @@
 #include "mms_common.h"
 #include "mms_named_variable_list.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct {
     char* deviceName;
+
+    /* MMS VMD scope variables support */
+    int namedVariablesCount;
+    MmsVariableSpecification** namedVariables;
+
+    /* MMS VMD scope named variables list support */
+    LinkedList /*<MmsNamedVariableList>*/ namedVariableLists;
+
+    /* MMS domain support */
     int domainCount;
     MmsDomain** domains;
 } MmsDevice;
@@ -124,7 +136,7 @@ MmsDomain_createNamedVariableListValues(MmsDomain* self, char* variableListName)
  * \return MmsTypeSpecification instance of the named variable
  */
 MmsVariableSpecification*
-MmsDomain_getNamedVariable(MmsDomain* domain, char* nameId);
+MmsDomain_getNamedVariable(MmsDomain* self, char* nameId);
 
 /**
  * \brief Create a new MmsDevice instance.
@@ -156,6 +168,24 @@ MmsDevice_destroy(MmsDevice* self);
 MmsDomain*
 MmsDevice_getDomain(MmsDevice* self, char* domainId);
 
+/**
+ * \brief Get the MmsTypeSpecification instance of a MMS named variable of VMD scope
+ *
+ * \param self instance of MmsDevice to operate on
+ * \param variableName name of the named variable
+ *
+ * \return MmsTypeSpecification instance of the named variable
+ */
+MmsVariableSpecification*
+MmsDevice_getNamedVariable(MmsDevice* self, char* variableName);
+
+LinkedList
+MmsDevice_getNamedVariableLists(MmsDevice* self);
+
 /**@}*/
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* MMS_DEVICE_MODEL_H_ */

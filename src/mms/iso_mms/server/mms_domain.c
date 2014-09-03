@@ -1,7 +1,7 @@
 /*
  * 	mms_domain.c
  *
- *  Copyright 2013 Michael Zillgith
+ *  Copyright 2013, 2014 Michael Zillgith
  *
  *	This file is part of libIEC61850.
  *
@@ -24,75 +24,12 @@
 #include "mms_device_model.h"
 #include "mms_server_internal.h"
 
-static MmsVariableSpecification*
-getNamedVariableRecursive(MmsVariableSpecification* variable, char* nameId)
-{
-	char* separator = strchr(nameId, '$');
-
-	int i;
-
-	if (separator == NULL) {
-
-		i = 0;
-
-		if (variable->type == MMS_STRUCTURE) {
-			for (i = 0; i < variable->typeSpec.structure.elementCount; i++) {
-				if (strcmp(variable->typeSpec.structure.elements[i]->name, nameId) == 0) {
-					return variable->typeSpec.structure.elements[i];
-				}
-			}
-		}
-
-		return NULL;
-	}
-	else {
-		MmsVariableSpecification* namedVariable = NULL;
-		i = 0;
-
-		for (i = 0; i < variable->typeSpec.structure.elementCount; i++) {
-
-			if (strlen(variable->typeSpec.structure.elements[i]->name) == (unsigned) (separator - nameId)) {
-
-				if (strncmp(variable->typeSpec.structure.elements[i]->name, nameId, separator - nameId) == 0) {
-					namedVariable = variable->typeSpec.structure.elements[i];
-					break;
-				}
-
-			}
-		}
-
-		if (namedVariable != NULL) {
-		    if (namedVariable->type == MMS_STRUCTURE) {
-		        namedVariable = getNamedVariableRecursive(namedVariable, separator + 1);
-		    }
-		    else if (namedVariable->type == MMS_ARRAY) {
-		        namedVariable = namedVariable->typeSpec.array.elementTypeSpec;
-
-		        namedVariable = getNamedVariableRecursive(namedVariable, separator + 1);
-		    }
-		}
-
-		return namedVariable;
-	}
-}
-
 static void
 freeNamedVariables(MmsVariableSpecification** variables, int variablesCount)
 {
 	int i;
 	for (i = 0; i < variablesCount; i++) {
-		if (variables[i]->name != NULL)
-			free(variables[i]->name);
-
-		if (variables[i]->type == MMS_STRUCTURE) {
-			freeNamedVariables(variables[i]->typeSpec.structure.elements,
-					variables[i]->typeSpec.structure.elementCount);
-			free(variables[i]->typeSpec.structure.elements);
-		}
-		else if (variables[i]->type == MMS_ARRAY) {
-			freeNamedVariables(&(variables[i]->typeSpec.array.elementTypeSpec), 1);
-		}
-		free(variables[i]);
+	    MmsVariableSpecification_destroy(variables[i]);
 	}
 }
 
@@ -207,7 +144,7 @@ MmsDomain_getNamedVariable(MmsDomain* self, char* nameId)
 			}
 
 			if (namedVariable != NULL) {
-				namedVariable = getNamedVariableRecursive(namedVariable, separator + 1);
+				namedVariable = MmsVariableSpecification_getNamedVariableRecursive(namedVariable, separator + 1);
 			}
 
 			return namedVariable;
@@ -215,5 +152,3 @@ MmsDomain_getNamedVariable(MmsDomain* self, char* nameId)
 	}
 	return NULL;
 }
-
-

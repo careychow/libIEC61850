@@ -23,7 +23,6 @@
 
 
 #include "iec61850_server.h"
-
 #include "string_utilities.h"
 
 static void
@@ -498,6 +497,15 @@ ModelNode_destroy(ModelNode* modelNode)
         ModelNode_destroy(currentChild);
 
         currentChild = nextChild;
+    }
+
+    if (modelNode->modelType == DataAttributeModelType) {
+        DataAttribute* dataAttribute = (DataAttribute*) modelNode;
+
+        if (dataAttribute->mmsValue != NULL) {
+            MmsValue_delete(dataAttribute->mmsValue);
+            dataAttribute->mmsValue = NULL;
+        }
     }
 
     free(modelNode);

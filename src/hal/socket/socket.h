@@ -26,6 +26,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*! \addtogroup hal Hardware/OS abstraction layer
    *
    *  @{
@@ -92,5 +96,9 @@ Socket_destroy(Socket self);
 /*! @} */
 
 /*! @} */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* SOCKET_H_ */

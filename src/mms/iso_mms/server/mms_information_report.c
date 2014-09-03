@@ -49,7 +49,7 @@ MmsServerConnection_sendInformationReportSingleVariableVMDSpecific(MmsServerConn
 	uint32_t informationReportSize = 1 + BerEncoder_determineLengthSize(informationReportContentSize) +
 			informationReportContentSize;
 
-	if (DEBUG) printf("sendInfReportSingle variable: %s\n", itemId);
+	if (DEBUG_MMS_SERVER) printf("MMS_SERVER: sendInfReportSingle variable: %s\n", itemId);
 
 	ByteBuffer* reportBuffer = ByteBuffer_create(NULL, self->maxPduSize);
 
@@ -238,7 +238,7 @@ MmsServerConnection_sendInformationReportVMDSpecific(MmsServerConnection* self, 
     informationReportSize = 1 +  informationReportContentSize +
             BerEncoder_determineLengthSize(informationReportContentSize);
 
-    if (DEBUG) printf("sendInfReport: %i items\n", variableCount);
+    if (DEBUG_MMS_SERVER) printf("MMS_SERVER: sendInfReport: %i items\n", variableCount);
 
     ByteBuffer* reportBuffer = ByteBuffer_create(NULL, self->maxPduSize);
 

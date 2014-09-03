@@ -24,6 +24,10 @@
 #ifndef MMS_NAMED_VARIABLE_LIST_H_
 #define MMS_NAMED_VARIABLE_LIST_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** \addtogroup mms_server_api_group
  *  @{
  */
@@ -69,5 +73,9 @@ void
 MmsNamedVariableList_destroy(MmsNamedVariableList self);
 
 /**@}*/
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* MMS_NAMED_VARIABLE_LIST_H_ */

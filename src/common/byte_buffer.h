@@ -26,6 +26,10 @@
 
 #include "libiec61850_common_api.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
     uint8_t* buffer;
     int maxSize;
@@ -61,5 +65,10 @@ ByteBuffer_setSize(ByteBuffer* self, int size);
 
 void
 ByteBuffer_print(ByteBuffer* self, char* message);
+
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif /* BYTE_BUFFER_H_ */

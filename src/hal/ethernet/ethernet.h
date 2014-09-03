@@ -26,6 +26,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*! \addtogroup hal
    *
    *  @{
@@ -79,5 +83,9 @@ Ethernet_receivePacket(EthernetSocket self, uint8_t* buffer, int bufferSize);
 /*! @} */
 
 /*! @} */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ETHERNET_H_ */

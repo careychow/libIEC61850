@@ -1,7 +1,7 @@
 package com.libiec61850.scl.types;
 
 /*
- *  Copyright 2013 Michael Zillgith
+ *  Copyright 2013, 2014 Michael Zillgith
  *
  *	This file is part of libIEC61850.
  *
@@ -34,8 +34,27 @@ import com.libiec61850.scl.SclParserException;
 public class DataObjectType extends SclType {
 
 	private String cdc = null;
+	
 	private List<DataAttributeDefinition> dataAttributes = null;
 	private List<DataObjectDefinition> subDataObjects = null;
+	
+	private DataAttributeDefinition getDataAttributeByName(String name) {
+		for (DataAttributeDefinition dad : dataAttributes) {
+			if (dad.getName().equals(name))
+				return dad;
+		}
+		
+		return null;
+	}
+	
+	private DataObjectDefinition getDataObjectByName(String name) {
+		for (DataObjectDefinition dod : subDataObjects) {
+			if (dod.getName().equals(name))
+				return dod;
+		}
+		
+		return null;
+	}
 	
 	public DataObjectType(Node xmlNode) throws SclParserException {
 		super(xmlNode);
@@ -54,10 +73,29 @@ public class DataObjectType extends SclType {
 			for (int i = 0; i < elementNodes.getLength(); i++) {
 				Node elementNode = elementNodes.item(i);
 				
-				if (elementNode.getNodeName().equals("DA"))
-					dataAttributes.add(new DataAttributeDefinition(elementNode));
-				else if (elementNode.getNodeName().equals("SDO"))
-					this.subDataObjects.add(new DataObjectDefinition(elementNode));
+				if (elementNode.getNodeName().equals("DA")) {
+					DataAttributeDefinition dad = new DataAttributeDefinition(elementNode);
+					
+					if ((getDataAttributeByName(dad.getName()) != null) || 
+						(getDataObjectByName(dad.getName()) != null))
+						throw new SclParserException(xmlNode, 
+								"DO type definition contains multiple elements of name \"" + 
+										dad.getName() + "\"");
+						
+					
+					dataAttributes.add(dad);
+				}
+				else if (elementNode.getNodeName().equals("SDO")) {
+					DataObjectDefinition dod = new DataObjectDefinition(elementNode);
+					
+					if ((getDataAttributeByName(dod.getName()) != null) || 
+						(getDataObjectByName(dod.getName()) != null))
+						throw new SclParserException(xmlNode, 
+								"DO type definition contains multiple elements of name \"" + 
+										dod.getName() + "\"");
+					
+					this.subDataObjects.add(dod);
+				}
 				
 			}
 		}

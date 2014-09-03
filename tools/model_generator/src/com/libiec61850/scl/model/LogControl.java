@@ -41,7 +41,6 @@ public class LogControl {
 	private TriggerOptions triggerOptions;
 	
     public LogControl(Node logControlNode) throws SclParserException {
-
         name = ParserUtils.parseAttribute(logControlNode, "name");
         
         if (name == null)
@@ -65,10 +64,16 @@ public class LogControl {
         
         String intgPdString = ParserUtils.parseAttribute(logControlNode, "intgPd");
 
-        intgPd = Integer.decode(intgPdString);
+        if (intgPdString != null)
+        	intgPd = Integer.decode(intgPdString);
         
-        logEna = ParserUtils.parseBooleanAttribute(logControlNode, "logEna");
-        reasonCode = ParserUtils.parseBooleanAttribute(logControlNode, "reasonCode");
+        Boolean logEnaBoolean = ParserUtils.parseBooleanAttribute(logControlNode, "logEna");
+        if (logEnaBoolean != null)
+        	logEna = logEnaBoolean;
+        
+        Boolean reasonCodeBoolean = ParserUtils.parseBooleanAttribute(logControlNode, "reasonCode");
+        if (reasonCodeBoolean != null)
+        	reasonCode = reasonCodeBoolean;
 
 		Node trgOpsNode = ParserUtils.getChildNodeWithTag(logControlNode, "TrgOps");
 		

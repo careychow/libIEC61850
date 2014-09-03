@@ -26,6 +26,10 @@
 
 #include "libiec61850_common_api.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * \defgroup goose_api_group IEC 61850 GOOSE subscriber API
  */
@@ -136,6 +140,11 @@ GooseSubscriber_getTimestamp(GooseSubscriber self);
 
 MmsValue*
 GooseSubscriber_getDataSetValues(GooseSubscriber self);
+
+#ifdef __cplusplus
+}
+#endif
+
 
 /**@}*/
 

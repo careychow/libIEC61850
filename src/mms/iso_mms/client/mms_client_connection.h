@@ -24,6 +24,10 @@
 #ifndef MMS_CLIENT_CONNECTION_H_
 #define MMS_CLIENT_CONNECTION_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * \defgroup mms_client_api_group MMS client API (for IEC 61850 use IEC 61850 client API instead!)
  */
@@ -209,7 +213,7 @@ MmsConnection_getVMDVariableNames(MmsConnection self, MmsError* mmsError);
  * This will result in a VMD specific GetNameList request.
  *
  * \param self MmsConnection instance to operate on
- * \param mmsError user provided variable to store error code
+ * \param mmsError user provided variaextern "C" {ble to store error code
  *
  * \return the list of domain names or NULL if the request failed.
  *
@@ -645,5 +649,9 @@ MmsConnection_getFileDirectory(MmsConnection self, MmsError* mmsError, char* fil
 
 
 /**@}*/
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* MMS_CLIENT_CONNECTION_H_ */

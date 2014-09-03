@@ -1,7 +1,7 @@
 package com.libiec61850.scl.types;
 
 /*
- *  Copyright 2013 Michael Zillgith
+ *  Copyright 2013, 2014 Michael Zillgith
  *
  *	This file is part of libIEC61850.
  *
@@ -34,19 +34,38 @@ public class DataAttributeType extends SclType {
 	
 	private List<DataAttributeDefinition> subDataAttributes = null;
 
+	private DataAttributeDefinition getDataAttributeByName(String name) {
+		for (DataAttributeDefinition dad : subDataAttributes) {
+			if (dad.getName().equals(name))
+				return dad;
+		}
+		
+		return null;
+	}
+	
 	public DataAttributeType(Node xmlNode) throws SclParserException {
 		super(xmlNode);
 		
 		NodeList elementNodes = xmlNode.getChildNodes();
-
+		
 		if (elementNodes != null) {
 			this.subDataAttributes = new LinkedList<DataAttributeDefinition>();
 
 			for (int i = 0; i < elementNodes.getLength(); i++) {
 				Node elementNode = elementNodes.item(i);
 				
-				if (elementNode.getNodeName().equals("BDA"))
-					subDataAttributes.add(new DataAttributeDefinition(elementNode));				
+				if (elementNode.getNodeName().equals("BDA")) {
+					DataAttributeDefinition dad = new DataAttributeDefinition(elementNode);
+					
+					if (getDataAttributeByName(dad.getName()) != null) {
+						throw new SclParserException(xmlNode, 
+								"DA type definition contains multiple elements of name \"" + 
+										dad.getName() + "\"");
+					}
+						
+					
+					subDataAttributes.add(dad);
+				}
 			}
 		}
 	}

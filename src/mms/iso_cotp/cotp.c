@@ -56,7 +56,7 @@ writeOptions(CotpConnection* self)
     uint8_t* buffer = self->writeBuffer->buffer;
     int bufPos = self->writeBuffer->size;
 
-    if (self->options.tpdu_size != -1) {
+    if (self->options.tpdu_size != 0) {
 
         if (DEBUG_COTP)
             printf("COTP: send TPDU size: %i\n", CotpConnection_getTpduSize(self));
@@ -87,7 +87,7 @@ static int
 getOptionsLength(CotpConnection* self)
 {
     int optionsLength = 0;
-    if (self->options.tpdu_size != -1)
+    if (self->options.tpdu_size != 0)
         optionsLength += 3;
     if (self->options.tsap_id_dst != -1)
         optionsLength += 4;

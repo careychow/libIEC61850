@@ -140,10 +140,9 @@ mmsMsg_createBasicDataElement(MmsValue* value)
 
     case MMS_VISIBLE_STRING:
         dataElement->present = Data_PR_visiblestring;
-        if (value->value.visibleString != NULL ) {
-            dataElement->choice.visiblestring.buf = (uint8_t*) value->value.visibleString;
-            dataElement->choice.visiblestring.size = strlen(
-                    value->value.visibleString);
+        if (value->value.visibleString.buf != NULL ) {
+            dataElement->choice.visiblestring.buf = (uint8_t*) value->value.visibleString.buf;
+            dataElement->choice.visiblestring.size = strlen(value->value.visibleString.buf);
         } else
             dataElement->choice.visiblestring.size = 0;
         break;
@@ -160,9 +159,9 @@ mmsMsg_createBasicDataElement(MmsValue* value)
 
     case MMS_STRING:
         dataElement->present = Data_PR_mMSString;
-        if (value->value.visibleString != NULL ) {
-            dataElement->choice.mMSString.buf = (uint8_t*) value->value.visibleString;
-            dataElement->choice.mMSString.size = strlen(value->value.visibleString);
+        if (value->value.visibleString.buf != NULL ) {
+            dataElement->choice.mMSString.buf = (uint8_t*) value->value.visibleString.buf;
+            dataElement->choice.mMSString.size = strlen(value->value.visibleString.buf);
         } else
             dataElement->choice.mMSString.size = 0;
         break;
@@ -233,23 +232,12 @@ mmsMsg_parseDataElement(Data_t* dataElement)
             value = MmsValue_newUnsignedFromBerInteger(berInteger);
         }
         else if (dataElement->present == Data_PR_visiblestring) {
-            value = MmsValue_newVisibleStringFromByteArray(
-                    dataElement->choice.visiblestring.buf,
+            value = MmsValue_newVisibleStringFromByteArray(dataElement->choice.visiblestring.buf,
                     dataElement->choice.visiblestring.size);
         }
         else if (dataElement->present == Data_PR_mMSString) {
-        	value = (MmsValue*) calloc(1, sizeof(MmsValue));
-
-        	value->type = MMS_STRING;
-
-        	int strSize = dataElement->choice.mMSString.size;
-
-        	value->value.visibleString = (char*) malloc(strSize + 1);
-
-        	memcpy(value->value.visibleString, dataElement->choice.mMSString.buf, strSize);
-
-        	value->value.visibleString[strSize] = 0;
-
+            value = MmsValue_newMmsStringFromByteArray(dataElement->choice.mMSString.buf,
+                    dataElement->choice.mMSString.size);
         }
         else if (dataElement->present == Data_PR_bitstring) {
             value = (MmsValue*) calloc(1, sizeof(MmsValue));
@@ -442,22 +430,22 @@ mmsMsg_addResultToResultList(AccessResult_t* accessResult, MmsValue* value)
             break;
         case MMS_VISIBLE_STRING:
             accessResult->present = AccessResult_PR_visiblestring;
-            if (value->value.visibleString == NULL )
+            if (value->value.visibleString.buf == NULL )
                 accessResult->choice.visiblestring.size = 0;
             else {
-                accessResult->choice.visiblestring.buf = (uint8_t*) value->value.visibleString;
-                accessResult->choice.visiblestring.size = strlen(value->value.visibleString);
+                accessResult->choice.visiblestring.buf = (uint8_t*) value->value.visibleString.buf;
+                accessResult->choice.visiblestring.size = strlen(value->value.visibleString.buf);
             }
             break;
 
         case MMS_STRING:
             accessResult->present = AccessResult_PR_mMSString;
-            if (value->value.visibleString == NULL ) {
+            if (value->value.visibleString.buf == NULL ) {
                 accessResult->choice.mMSString.size = 0;
             }
             else {
-                accessResult->choice.mMSString.buf = (uint8_t*) value->value.visibleString;
-                accessResult->choice.mMSString.size = strlen(value->value.visibleString);
+                accessResult->choice.mMSString.buf = (uint8_t*) value->value.visibleString.buf;
+                accessResult->choice.mMSString.size = strlen(value->value.visibleString.buf);
             }
             break;
 

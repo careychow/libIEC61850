@@ -26,6 +26,10 @@
 
 #include "iec61850_common.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** \addtogroup server_api_group
  *  @{
  */
@@ -348,6 +352,10 @@ DataObject_hasFCData(DataObject* dataObject, FunctionalConstraint fc);
 
 DataAttribute*
 IedModel_lookupDataAttributeByMmsValue(IedModel* model, MmsValue* value);
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif /* MODEL_H_ */

@@ -59,6 +59,8 @@ typedef struct {
 
     MmsValue** bufferedDataSetValues; /* used to buffer values during bufTm time */
 
+    MmsValue** valueReferences; /* array to store value references for fast access */
+
     bool gi;
 
     uint16_t sqNum;
@@ -67,6 +69,8 @@ typedef struct {
     uint64_t nextIntgReportTime;
     uint64_t reservationTimeout;
     MmsServerConnection* clientConnection;
+
+    uint64_t lastEntryId;
 
     int triggerOps;
 

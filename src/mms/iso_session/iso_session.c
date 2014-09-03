@@ -26,6 +26,12 @@
 #include "iso_session.h"
 #include "buffer_chain.h"
 
+#if ((DEBUG_ISO_SERVER == 1) || (DEBUG_ISO_CLIENT == 1))
+#define DEBUG_SESSION 1
+#else
+#define DEBUG_SESSION 0
+#endif
+
 static int
 parseAcceptParameters(IsoSession* session, ByteBuffer* message, int startOffset, int parameterLength)
 {
@@ -46,56 +52,56 @@ parseAcceptParameters(IsoSession* session, ByteBuffer* message, int startOffset,
             if (param_len != 1)
                 return -1;
             session->protocolOptions = message->buffer[offset++];
-            if (DEBUG)
-                printf("iso_session: Param - Protocol Options: %02x\n", session->protocolOptions);
+            if (DEBUG_SESSION)
+                printf("SESSION: Param - Protocol Options: %02x\n", session->protocolOptions);
             hasProtocolOptions = 1;
             break;
         case 21: /* TSDU Maximum Size */
-            if (DEBUG)
-                printf("iso_session: Param - TODO TSDU Maximum Size\n");
+            if (DEBUG_SESSION)
+                printf("SESSION: Param - TODO TSDU Maximum Size\n");
             offset += 4;
             break;
         case 22: /* Version Number */
             param_val = message->buffer[offset++];
-            if (DEBUG)
-                printf("iso_session: Param - Version number\n");
+            if (DEBUG_SESSION)
+                printf("SESSION: Param - Version number\n");
             if (param_val != 2)
                 return -1;
             hasProtocolVersion = 1;
             break;
         case 23: /* Initial Serial Number */
-            if (DEBUG)
-                printf("iso_session: Param - TODO Initial Serial Number\n");
+            if (DEBUG_SESSION)
+                printf("SESSION: Param - TODO Initial Serial Number\n");
             offset += param_len;
             break;
         case 26: /* Token Setting Item */
             param_val = message->buffer[offset++];
-            if (DEBUG)
-                printf("iso_session: Param - Token Setting Item: %02x\n", param_val);
+            if (DEBUG_SESSION)
+                printf("SESSION: Param - Token Setting Item: %02x\n", param_val);
             break;
         case 55: /* Second Initial Serial Number */
-            if (DEBUG)
-                printf("iso_session: Param - TODO Second Initial Serial Number\n");
+            if (DEBUG_SESSION)
+                printf("SESSION: Param - TODO Second Initial Serial Number\n");
             offset += param_len;
             break;
         case 56: /* Upper Limit Serial Number */
-            if (DEBUG)
-                printf("iso_session: Param - TODO Upper Limit Serial Number\n");
+            if (DEBUG_SESSION)
+                printf("SESSION: Param - TODO Upper Limit Serial Number\n");
             offset += param_len;
             break;
         case 57: /* Large Initial Serial Number */
-            if (DEBUG)
-                printf("iso_session: Param - TODO Large Initial Serial Number\n");
+            if (DEBUG_SESSION)
+                printf("SESSION: Param - TODO Large Initial Serial Number\n");
             offset += param_len;
             break;
         case 58: /* Large Second Initial Serial Number */
-            if (DEBUG)
-                printf("iso_session: Param - TODO Large Second Initial Serial Number\n");
+            if (DEBUG_SESSION)
+                printf("SESSION: Param - TODO Large Second Initial Serial Number\n");
             offset += param_len;
             break;
         default:
-            if (DEBUG)
-                printf("iso_session: Param - Invalid Parameter with ID %02x\n", pi);
+            if (DEBUG_SESSION)
+                printf("SESSION: Param - Invalid Parameter with ID %02x\n", pi);
             break;
         }
     }
@@ -119,14 +125,14 @@ parseSessionHeaderParameters(IsoSession* session, ByteBuffer* message, int param
 
         switch (pgi) {
         case 1: /* Connection Identifier */
-            if (DEBUG_ISO_CLIENT || DEBUG_ISO_SERVER)
-                printf("iso_session: PGI - connection identifier\n");
+            if (DEBUG_SESSION)
+                printf("SESSION: PGI - connection identifier\n");
             printf("TODO: PGI not implemented!");
             offset += parameterLength;
             break;
         case 5: /* Connection/Accept Item */
-            if (DEBUG_ISO_CLIENT || DEBUG_ISO_SERVER)
-                printf("iso_session: PGI - Connection/Accept Item\n");
+            if (DEBUG_SESSION)
+                printf("SESSION: PGI - Connection/Accept Item\n");
             int connectAcceptLen;
 
             connectAcceptLen = parseAcceptParameters(session, message, offset, parameterLength);
@@ -140,8 +146,8 @@ parseSessionHeaderParameters(IsoSession* session, ByteBuffer* message, int param
             offset += parameterLength;
             break;
         case 20: /* Session User Requirements */
-            if (DEBUG_ISO_CLIENT || DEBUG_ISO_SERVER)
-                printf("iso_session: Parameter - Session User Req\n");
+            if (DEBUG_SESSION)
+                printf("SESSION: Parameter - Session User Req\n");
             if (parameterLength != 2)
                 return SESSION_ERROR;
 
@@ -155,8 +161,8 @@ parseSessionHeaderParameters(IsoSession* session, ByteBuffer* message, int param
             offset += parameterLength;
             break;
         case 51: /* Calling Session Selector */
-            if (DEBUG_ISO_CLIENT || DEBUG_ISO_SERVER)
-                printf("iso_session: Parameter - Calling Session Selector\n");
+            if (DEBUG_SESSION)
+                printf("SESSION: Parameter - Calling Session Selector\n");
 
             if (parameterLength != 2)
                 return SESSION_ERROR;
@@ -165,8 +171,8 @@ parseSessionHeaderParameters(IsoSession* session, ByteBuffer* message, int param
             session->callingSessionSelector += message->buffer[offset++];
             break;
         case 52: /* Called Session Selector */
-            if (DEBUG_ISO_CLIENT || DEBUG_ISO_SERVER)
-                printf("iso_session: Parameter - Called Session Selector\n");
+            if (DEBUG_SESSION)
+                printf("SESSION: Parameter - Called Session Selector\n");
 
             if (parameterLength != 2)
                 return SESSION_ERROR;
@@ -175,14 +181,13 @@ parseSessionHeaderParameters(IsoSession* session, ByteBuffer* message, int param
             session->calledSessionSelector += message->buffer[offset++];
             break;
         case 60: /* Data Overflow */
-            if (DEBUG_ISO_CLIENT || DEBUG_ISO_SERVER)
-                printf("iso_session: Parameter - Data Overflow\n");
-            printf("TODO: parameter not implemented!");
+            if (DEBUG_SESSION)
+                printf("SESSION: Parameter - Data Overflow\n");
             offset += parameterLength;
             break;
         case 193: /* User Data */
-            if (DEBUG_ISO_CLIENT || DEBUG_ISO_SERVER)
-                printf("iso_session: PGI - user data\n");
+            if (DEBUG_SESSION)
+                printf("SESSION: PGI - user data\n");
 
             /* here we should return - the remaining data is for upper layers ! */
             ByteBuffer_wrap(&session->userData, message->buffer + offset,
@@ -191,12 +196,12 @@ parseSessionHeaderParameters(IsoSession* session, ByteBuffer* message, int param
             return SESSION_OK;
 
         case 194: /* Extended User Data */
-            if (DEBUG_ISO_CLIENT || DEBUG_ISO_SERVER)
-                printf("iso_session: PGI - extended user data\n");
+            if (DEBUG_SESSION)
+                printf("SESSION: PGI - extended user data\n");
             break;
         default:
-            if (DEBUG_ISO_CLIENT || DEBUG_ISO_SERVER)
-                printf("iso_session: invalid parameter/PGI\n");
+            if (DEBUG_SESSION)
+                printf("SESSION: invalid parameter/PGI\n");
             break;
         }
     }
@@ -427,8 +432,8 @@ IsoSession_parseMessage(IsoSession* session, ByteBuffer* message)
         if (parseSessionHeaderParameters(session, message, length) == SESSION_OK)
             return SESSION_CONNECT;
         else {
-            if (DEBUG_ISO_CLIENT)
-                printf("ISO_SESSION: error parsing connect spdu\n");
+            if (DEBUG_SESSION)
+                printf("SESSION: error parsing connect spdu\n");
             return SESSION_ERROR;
         }
         break;
@@ -438,8 +443,8 @@ IsoSession_parseMessage(IsoSession* session, ByteBuffer* message)
         if (parseSessionHeaderParameters(session, message, length) == SESSION_OK)
             return SESSION_CONNECT;
         else {
-            if (DEBUG_ISO_SERVER)
-                printf("ISO_SESSION: error parsing accept spdu\n");
+            if (DEBUG_SESSION)
+                printf("SESSION: error parsing accept spdu\n");
             return SESSION_ERROR;
         }
 
@@ -459,8 +464,8 @@ IsoSession_parseMessage(IsoSession* session, ByteBuffer* message)
         return SESSION_NOT_FINISHED;
 
     case 9: /* FINISH SPDU */
-        if (DEBUG_ISO_CLIENT || DEBUG_ISO_SERVER)
-            printf("ISO_SESSION: recvd FINISH SPDU\n");
+        if (DEBUG_SESSION)
+            printf("SESSION: recvd FINISH SPDU\n");
 
         if (length != (message->size - 2))
             return SESSION_ERROR;
@@ -473,8 +478,8 @@ IsoSession_parseMessage(IsoSession* session, ByteBuffer* message)
         break;
 
     case 10: /* DISCONNECT SPDU */
-        if (DEBUG_ISO_CLIENT || DEBUG_ISO_SERVER)
-            printf("ISO_SESSION: recvd DISCONNECT SPDU\n");
+        if (DEBUG_SESSION)
+            printf("SESSION: recvd DISCONNECT SPDU\n");
 
         if (length != (message->size - 2))
             return SESSION_ERROR;

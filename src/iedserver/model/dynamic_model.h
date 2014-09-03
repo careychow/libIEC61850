@@ -27,6 +27,11 @@
 #include "model.h"
 #include "cdc.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 /** \addtogroup server_api_group
  *  @{
  */
@@ -224,5 +229,9 @@ DataSetEntry_create(DataSet* dataSet, char* variable, int index, char* component
 /**@}*/
 
 /**@}*/
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* DYNAMIC_MODEL_H_ */

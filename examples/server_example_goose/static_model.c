@@ -1959,17 +1959,11 @@ DataAttribute iedModel_GenericIO_GGIO1_Ind4_t = {
     NULL,
     0};
 
-
 extern ReportControlBlock iedModel_GenericIO_LLN0_report0;
 extern ReportControlBlock iedModel_GenericIO_LLN0_report1;
 
-ReportControlBlock iedModel_GenericIO_LLN0_report0 = {&iedModel_GenericIO_LLN0, "EventsRCB", "Events", false, "Events", 1, 8, 111, 50, 1000, &iedModel_GenericIO_LLN0_report1};
-ReportControlBlock iedModel_GenericIO_LLN0_report1 = {&iedModel_GenericIO_LLN0, "AnalogValuesRCB", "AnalogValues", false, "AnalogValues", 1, 8, 111, 50, 1000, NULL};
-
-
-
-
-
+ReportControlBlock iedModel_GenericIO_LLN0_report0 = {&iedModel_GenericIO_LLN0, "EventsRCB01", "Events", false, "Events", 1, 8, 111, 50, 1000, &iedModel_GenericIO_LLN0_report1};
+ReportControlBlock iedModel_GenericIO_LLN0_report1 = {&iedModel_GenericIO_LLN0, "AnalogValuesRCB01", "AnalogValues", false, "AnalogValues", 1, 8, 111, 50, 1000, NULL};
 
 extern GSEControlBlock iedModel_GenericIO_LLN0_gse0;
 extern GSEControlBlock iedModel_GenericIO_LLN0_gse1;
@@ -1982,6 +1976,7 @@ static PhyComAddress iedModel_GenericIO_LLN0_gse0_address = {
 };
 
 GSEControlBlock iedModel_GenericIO_LLN0_gse0 = {&iedModel_GenericIO_LLN0, "gcbEvents", "events", "Events", 2, false,&iedModel_GenericIO_LLN0_gse0_address, &iedModel_GenericIO_LLN0_gse1};
+
 static PhyComAddress iedModel_GenericIO_LLN0_gse1_address = {
   4,
   111,
@@ -1990,10 +1985,6 @@ static PhyComAddress iedModel_GenericIO_LLN0_gse1_address = {
 };
 
 GSEControlBlock iedModel_GenericIO_LLN0_gse1 = {&iedModel_GenericIO_LLN0, "gcbAnalogValues", "analog", "AnalogValues", 2, false,&iedModel_GenericIO_LLN0_gse1_address, NULL};
-
-
-
-
 
 
 IedModel iedModel = {

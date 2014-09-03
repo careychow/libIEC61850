@@ -24,6 +24,9 @@
 #ifndef MMS_VALUE_H_
 #define MMS_VALUE_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include "libiec61850_common_api.h"
 #include "mms_common.h"
@@ -196,6 +199,24 @@ MmsValue_setFloat(MmsValue* self, float newFloatValue);
  */
 void
 MmsValue_setDouble(MmsValue* self, double newFloatValue);
+
+/**
+ * \brief Set the Int8 value of a MmsValue object.
+ *
+ * \param self MmsValue instance to operate on. Has to be of a type MMS_INTEGER.
+ * \param integer the new value to set
+ */
+void
+MmsValue_setInt8(MmsValue* value, int8_t integer);
+
+/**
+ * \brief Set the Int16 value of a MmsValue object.
+ *
+ * \param self MmsValue instance to operate on. Has to be of a type MMS_INTEGER.
+ * \param integer the new value to set
+ */
+void
+MmsValue_setInt16(MmsValue* value, int16_t integer);
 
 /**
  * \brief Set the Int32 value of a MmsValue object.
@@ -576,7 +597,7 @@ MmsValue*
 MmsValue_newDefaultValue(MmsVariableSpecification* typeSpec);
 
 MmsValue*
-MmsValue_netIntegerFromInt8(int8_t integer);
+MmsValue_newIntegerFromInt8(int8_t integer);
 
 MmsValue*
 MmsValue_newIntegerFromInt16(int16_t integer);
@@ -677,12 +698,43 @@ MmsValue_deleteIfNotNull(MmsValue* value);
 /**
  * \brief Create a new MmsValue instance of type MMS_VISIBLE_STRING.
  *
+ * This function will allocate as much memory as required to hold the string and sets the maximum size of
+ * the string to this size.
+ *
  * \param string a text string that should be the value of the new instance of NULL for an empty string.
  *
  * \return new MmsValue instance of type MMS_VISIBLE_STRING
  */
 MmsValue*
 MmsValue_newVisibleString(char* string);
+
+/**
+ * \brief Create a new MmsValue instance of type MMS_VISIBLE_STRING.
+ *
+ * This function will create a new empty MmsValue string object. The maximum size of the string is set
+ * according to the size parameter. The function allocates as much memory as is required to hold a string
+ * of the maximum size.
+ *
+ * \param size the new maximum size of the string.
+ *
+ * \return new MmsValue instance of type MMS_VISIBLE_STRING
+ */
+MmsValue*
+MmsValue_newVisibleStringWithSize(int size);
+
+/**
+ * \brief Create a new MmsValue instance of type MMS_STRING.
+ *
+ * This function will create a new empty MmsValue string object. The maximum size of the string is set
+ * according to the size parameter. The function allocates as much memory as is required to hold a string
+ * of the maximum size.
+ *
+ * \param size the new maximum size of the string.
+ *
+ * \return new MmsValue instance of type MMS_STRING
+ */
+MmsValue*
+MmsValue_newMmsStringWithSize(int size);
 
 /**
  * \brief Create a new MmsValue instance of type MMS_BINARYTIME.
@@ -698,8 +750,27 @@ MmsValue_newVisibleString(char* string);
 MmsValue*
 MmsValue_newBinaryTime(bool timeOfDay);
 
+/**
+ * \brief Create a new MmsValue instance of type MMS_VISIBLE_STRING from the specified byte array
+ *
+ * \param byteArray the byte array containing the string data
+ * \param size the size of the byte array
+ *
+ * \return new MmsValue instance of type MMS_VISIBLE_STRING
+ */
 MmsValue*
 MmsValue_newVisibleStringFromByteArray(uint8_t* byteArray, int size);
+
+/**
+ * \brief Create a new MmsValue instance of type MMS_STRING from the specified byte array
+ *
+ * \param byteArray the byte array containing the string data
+ * \param size the size of the byte array
+ *
+ * \return new MmsValue instance of type MMS_STRING
+ */
+MmsValue*
+MmsValue_newMmsStringFromByteArray(uint8_t* byteArray, int size);
 
 /**
  * \brief Create a new MmsValue instance of type MMS_STRING.
@@ -785,8 +856,15 @@ MmsValue_getSubElement(MmsValue* self, MmsVariableSpecification* varSpec, char* 
 char*
 MmsValue_getTypeString(MmsValue* self);
 
+char*
+MmsValue_printToBuffer(MmsValue* self, char* buffer, int bufferSize);
+
 /**@}*/
 
 /**@}*/
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* MMS_VALUE_H_ */

@@ -28,6 +28,10 @@
  *  @{
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "mms_device_model.h"
 #include "mms_value.h"
 
@@ -270,5 +274,9 @@ void
 MmsServer_setStatusRequestListener(MmsServer self, MmsStatusRequestListener listener, void* parameter);
 
 /**@}*/
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* MMS_SERVER_H_ */

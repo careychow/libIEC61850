@@ -24,6 +24,11 @@
 #ifndef CDC_H_
 #define CDC_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 /** \addtogroup server_api_group
  *  @{
  */
@@ -527,5 +532,9 @@ CDC_TMS_create(char* dataObjectName, ModelNode* parent,
 /**@}*/
 
 /**@}*/
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* CDC_H_ */

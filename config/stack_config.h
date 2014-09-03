@@ -48,6 +48,7 @@
 /* Ethernet interface ID for GOOSE and SV */
 #define CONFIG_ETHERNET_INTERFACE_ID "eth0"
 //#define CONFIG_ETHERNET_INTERFACE_ID "vboxnet0"
+//#define CONFIG_ETHERNET_INTERFACE_ID "en0"  // OS X uses enX in place of ethX as ethernet NIC names.
 
 /* Set to 1 to include GOOSE support in the build. Otherwise set to 0 */
 #define CONFIG_INCLUDE_GOOSE_SUPPORT 1
@@ -99,12 +100,12 @@
 #define CONFIG_IEC61850_REPORT_SERVICE 1
 
 /* The default buffer size of buffered RCBs in bytes */
-#define CONFIG_REPORTING_DEFAULT_REPORT_BUFFER_SIZE 8000
+#define CONFIG_REPORTING_DEFAULT_REPORT_BUFFER_SIZE 65536
 
 /* default results for MMS identify service */
 #define CONFIG_DEFAULT_MMS_VENDOR_NAME "libiec61850.com"
 #define CONFIG_DEFAULT_MMS_MODEL_NAME "LIBIEC61850"
-#define CONFIG_DEFAULT_MMS_REVISION "0.7.6"
+#define CONFIG_DEFAULT_MMS_REVISION "0.7.8"
 
 /* MMS virtual file store base path - where file services are looking for files */
 #define CONFIG_VIRTUAL_FILESTORE_BASEPATH "./vmd-filestore/"
@@ -132,5 +133,11 @@
 #undef CONFIG_IEC61850_CONTROL_SERVICE
 #define CONFIG_IEC61850_CONTROL_SERVICE 0
 #endif
+
+/* support flatted named variable name space required by IEC 61850-8-1 MMS mapping */
+#define CONFIG_MMS_SUPPORT_FLATTED_NAME_SPACE 1
+
+/* VMD scope named variables are not used by IEC 61850 */
+#define CONFIG_MMS_SUPPORT_VMD_SCOPE_NAMED_VARIABLES 0
 
 #endif /* STACK_CONFIG_H_ */

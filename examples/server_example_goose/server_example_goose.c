@@ -73,8 +73,18 @@ int main(int argc, char** argv) {
 
 	signal(SIGINT, sigint_handler);
 
+	float anIn1 = 0.f;
+
 	while (running) {
-		Thread_sleep(1);
+
+	    IedServer_lockDataModel(iedServer);
+	    IedServer_updateFloatAttributeValue(iedServer, IEDMODEL_GenericIO_GGIO1_AnIn1_mag_f, anIn1);
+	    IedServer_updateUTCTimeAttributeValue(iedServer, IEDMODEL_GenericIO_GGIO1_AnIn1_t, Hal_getTimeInMs());
+	    IedServer_unlockDataModel(iedServer);
+
+	    anIn1 += 0.1;
+
+		Thread_sleep(1000);
 	}
 
 	/* stop MMS server - close TCP server socket and all client sockets */

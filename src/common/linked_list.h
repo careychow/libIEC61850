@@ -26,6 +26,10 @@
 
 #include "libiec61850_common_api.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * \addtogroup common_api_group
  */
@@ -168,5 +172,9 @@ LinkedList_printStringList(LinkedList self);
 /**@}*/
 
 /**@}*/
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* LINKED_LIST_H_ */

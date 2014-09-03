@@ -26,6 +26,10 @@
 #ifndef MMS_COMMON_H_
 #define MMS_COMMON_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //TODO move to other file
 #define DEFAULT_MAX_SERV_OUTSTANDING_CALLING 5
 #define DEFAULT_MAX_SERV_OUTSTANDING_CALLED 5
@@ -140,5 +144,9 @@ typedef struct
 
 typedef struct sMmsNamedVariableList* MmsNamedVariableList;
 typedef struct sMmsAccessSpecifier* MmsNamedVariableListEntry;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* MMS_COMMON_H_ */

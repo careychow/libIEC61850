@@ -24,6 +24,10 @@
 #ifndef FILESYSTEM_H_
 #define FILESYSTEM_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*! \addtogroup hal
    *
    *  @{
@@ -161,5 +165,9 @@ FileSystem_setBasePath(char* basePath);
 /*! @} */
 
 /*! @} */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* FILESYSTEM_H_ */

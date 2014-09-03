@@ -1,7 +1,7 @@
 /*
  * static_model.c
  *
- * automatically generated from simpleIO_direct_control.scd
+ * automatically generated from simpleIO_direct_control.icd
  */
 #include <stdlib.h>
 #include "model.h"
@@ -151,6 +151,7 @@ extern DataAttribute iedModel_GenericIO_GGIO1_Ind4_q;
 extern DataAttribute iedModel_GenericIO_GGIO1_Ind4_t;
 
 extern DataSet ds_GenericIO_LLN0_Events;
+extern DataSet ds_GenericIO_LLN0_Events2;
 
 
 extern DataSetEntry ds_GenericIO_LLN0_Events_fcda0;
@@ -199,6 +200,55 @@ DataSet ds_GenericIO_LLN0_Events = {
   "LLN0$Events",
   4,
   &ds_GenericIO_LLN0_Events_fcda0,
+  &ds_GenericIO_LLN0_Events2
+};
+
+extern DataSetEntry ds_GenericIO_LLN0_Events2_fcda0;
+extern DataSetEntry ds_GenericIO_LLN0_Events2_fcda1;
+extern DataSetEntry ds_GenericIO_LLN0_Events2_fcda2;
+extern DataSetEntry ds_GenericIO_LLN0_Events2_fcda3;
+
+DataSetEntry ds_GenericIO_LLN0_Events2_fcda0 = {
+  "simpleIOGenericIO",
+  "GGIO1$ST$SPCSO1",
+  -1,
+  NULL,
+  NULL,
+  &ds_GenericIO_LLN0_Events2_fcda1
+};
+
+DataSetEntry ds_GenericIO_LLN0_Events2_fcda1 = {
+  "simpleIOGenericIO",
+  "GGIO1$ST$SPCSO2",
+  -1,
+  NULL,
+  NULL,
+  &ds_GenericIO_LLN0_Events2_fcda2
+};
+
+DataSetEntry ds_GenericIO_LLN0_Events2_fcda2 = {
+  "simpleIOGenericIO",
+  "GGIO1$ST$SPCSO3",
+  -1,
+  NULL,
+  NULL,
+  &ds_GenericIO_LLN0_Events2_fcda3
+};
+
+DataSetEntry ds_GenericIO_LLN0_Events2_fcda3 = {
+  "simpleIOGenericIO",
+  "GGIO1$ST$SPCSO4",
+  -1,
+  NULL,
+  NULL,
+  NULL
+};
+
+DataSet ds_GenericIO_LLN0_Events2 = {
+  "simpleIOGenericIO",
+  "LLN0$Events2",
+  4,
+  &ds_GenericIO_LLN0_Events2_fcda0,
   NULL
 };
 

@@ -31,6 +31,10 @@
 #include "byte_buffer.h"
 #include "iso_connection_parameters.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum
 {
     ISO_IND_ASSOCIATION_SUCCESS,
@@ -86,5 +90,9 @@ IsoClientConnection_releaseReceiveBuffer(IsoClientConnection self);
 
 void*
 IsoClientConnection_getSecurityToken(IsoClientConnection self);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ISO_CLIENT_CONNECTION_H_ */

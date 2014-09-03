@@ -497,6 +497,9 @@ parseServiceError(uint8_t* buffer, int bufPos, int maxLength, MmsServiceError* e
         case 0xa3: /* serviceSpecificInfo */
             bufPos += length; /* ignore */
             break;
+        default:
+            bufPos += length; /* ignore */
+            break;
         }
     }
 
@@ -547,6 +550,9 @@ parseConfirmedErrorPDU(ByteBuffer* message, uint32_t* invokeId, MmsServiceError*
             bufPos = parseServiceError(buffer, bufPos, length, serviceError);
             if (bufPos < 0)
                 goto exit_error;
+            break;
+        default:
+            bufPos += length; /* ignore */
             break;
         }
     }

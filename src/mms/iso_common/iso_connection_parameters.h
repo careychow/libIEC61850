@@ -24,6 +24,10 @@
 #ifndef ISO_CONNECTION_PARAMETERS_H_
 #define ISO_CONNECTION_PARAMETERS_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * \addtogroup mms_client_api_group
  */
@@ -32,9 +36,20 @@
 
 typedef enum
 {
-    AUTH_NONE,
-    AUTH_PASSWORD
+    ACSE_AUTH_NONE = 0,
+    ACSE_AUTH_PASSWORD = 1
 } AcseAuthenticationMechanism;
+
+
+/* --> for compatibility with older versions (libiec61850 < 0.7.7) */
+#ifndef AUTH_NONE
+#define AUTH_NONE ACSE_AUTH_NONE
+#endif
+
+#ifndef AUTH_PASSWORD
+#define AUTH_PASSWORD ACSE_AUTH_PASSWORD
+#endif
+/* <-- for compatibility with older versions (libiec61850 < 0.7.7) */
 
 typedef struct sAcseAuthenticationParameter* AcseAuthenticationParameter;
 
@@ -50,6 +65,19 @@ struct sAcseAuthenticationParameter
         } password;
     } value;
 };
+
+AcseAuthenticationParameter
+AcseAuthenticationParameter_create(void);
+
+void
+AcseAuthenticationParameter_destroy(AcseAuthenticationParameter self);
+
+void
+AcseAuthenticationParameter_setAuthMechanism(AcseAuthenticationParameter self, AcseAuthenticationMechanism mechanism);
+
+void
+AcseAuthenticationParameter_setPassword(AcseAuthenticationParameter self, char* password);
+
 
 /**
  * \brief Callback function to authenticate a client
@@ -94,7 +122,7 @@ typedef struct sIsoConnectionParameters* IsoConnectionParameters;
  * NOTE: This function used internally by the MMS client library. When using the MMS or IEC 61850 API
  * there should be no reason for the user to call this function.
  *
- * \return new IsoConnectionParameters instance
+ * \return new IsoConnectionParameters instanceextern "C" {
  */
 IsoConnectionParameters
 IsoConnectionParameters_create(void);
@@ -196,5 +224,9 @@ void
 IsoConnectionParameters_setLocalAddresses(IsoConnectionParameters self, uint32_t pSelector, uint16_t sSelector, uint16_t tSelector);
 
 /**@}*/
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ISO_CONNECTION_PARAMETERS_H_ */

@@ -51,6 +51,7 @@ struct sControlObjectClient
     bool interlockCheck;
     bool synchroCheck;
     bool hasTimeActivatedMode;
+    int edition; /* 1 = Ed. 1 - 2 = Ed. 2 */
 
     LastApplError lastApplError;
 
@@ -199,6 +200,22 @@ ControlObjectClient_create(char* objectReference, IedConnection connection)
     self->hasTimeActivatedMode = hasTimeActivatedControl;
     self->ctlVal = MmsValue_getElement(oper, 0);
 
+    /* Check for T element type (EntryTime -> Ed.1, Timestamp -> Ed.2) */
+    MmsValue* t;
+
+    if (hasTimeActivatedControl)
+        t = MmsValue_getElement(oper, 4);
+    else
+        t = MmsValue_getElement(oper, 3);
+
+    if (MmsValue_getType(t) == MMS_BINARY_TIME)
+        self->edition = 1;
+    else
+        self->edition = 2;
+
+    if (DEBUG_IED_CLIENT)
+        printf("IED_CLIENT: Detected edition %i control\n", self->edition);
+
     MmsValue_setElement(oper, 0, NULL);
     MmsValue_delete(oper);
 
@@ -302,7 +319,14 @@ ControlObjectClient_operate(ControlObjectClient self, MmsValue* ctlVal, uint64_t
     MmsValue_setElement(operParameters, index++, ctlNum);
 
     uint64_t timestamp = Hal_getTimeInMs();
-    MmsValue* ctlTime = MmsValue_newUtcTimeByMsTime(timestamp);
+    MmsValue* ctlTime;
+
+    if (self->edition == 2)
+        ctlTime = MmsValue_newUtcTimeByMsTime(timestamp);
+    else {
+        ctlTime = MmsValue_newBinaryTime(false);
+        MmsValue_setBinaryTime(ctlTime, timestamp);
+    }
     MmsValue_setElement(operParameters, index++, ctlTime);
 
     MmsValue* ctlTest = MmsValue_newBoolean(self->test);
@@ -381,8 +405,17 @@ ControlObjectClient_selectWithValue(ControlObjectClient self, MmsValue* ctlVal)
     MmsValue* ctlNum = MmsValue_newUnsignedFromUint32(self->ctlNum + 1);
     MmsValue_setElement(selValParameters, index++, ctlNum);
 
+
     uint64_t timestamp = Hal_getTimeInMs();
-    MmsValue* ctlTime = MmsValue_newUtcTimeByMsTime(timestamp);
+    MmsValue* ctlTime;
+
+    if (self->edition == 2)
+        ctlTime = MmsValue_newUtcTimeByMsTime(timestamp);
+    else {
+        ctlTime = MmsValue_newBinaryTime(false);
+        MmsValue_setBinaryTime(ctlTime, timestamp);
+    }
+
     MmsValue_setElement(selValParameters, index++, ctlTime);
 
     MmsValue* ctlTest = MmsValue_newBoolean(self->test);
@@ -475,8 +508,6 @@ ControlObjectClient_cancel(ControlObjectClient self)
     else
         cancelParameters = MmsValue_createEmptyStructure(5);
 
-    //TODO check if there is an active outstanding control action
-
     MmsValue_setElement(cancelParameters, 0, self->ctlVal);
 
     int index = 1;
@@ -494,7 +525,14 @@ ControlObjectClient_cancel(ControlObjectClient self)
     MmsValue_setElement(cancelParameters, index++, ctlNum);
 
     uint64_t timestamp = Hal_getTimeInMs();
-    MmsValue* ctlTime = MmsValue_newUtcTimeByMsTime(timestamp);
+    MmsValue* ctlTime;
+
+    if (self->edition == 2)
+        ctlTime = MmsValue_newUtcTimeByMsTime(timestamp);
+    else {
+        ctlTime = MmsValue_newBinaryTime(false);
+        MmsValue_setBinaryTime(ctlTime, timestamp);
+    }
     MmsValue_setElement(cancelParameters, index++, ctlTime);
 
     MmsValue* ctlTest = MmsValue_newBoolean(self->test);

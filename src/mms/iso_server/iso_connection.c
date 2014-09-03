@@ -314,7 +314,7 @@ handleTcpConnection(IsoConnection self)
                         CotpConnection_sendDataMessage(self->cotpConnection, sessionBufferPart);
                     }
 
-                    //TODO else send ABORT message
+                    self->state = ISO_CON_STATE_STOPPED;
 
                     break;
 
@@ -344,6 +344,9 @@ handleTcpConnection(IsoConnection self)
             break;
         }
     }
+
+    if (DEBUG_ISO_SERVER)
+        printf("ISO_SERVER: Connection handling loop finished --> close transport connection\n");
 
     IsoServer_closeConnection(self->isoServer, self);
 

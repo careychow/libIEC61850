@@ -8,8 +8,8 @@ set (lib_common_SRCS
 ./common/string_utilities.c
 ./common/buffer_chain.c
 ./common/conversions.c
+./common/mem_alloc_linked_list.c
 ./common/simple_allocator.c
-./hal/hal.c
 ./common/byte_stream.c
 ./mms/iso_server/iso_connection.c
 ./mms/iso_server/iso_server.c
@@ -69,7 +69,8 @@ set (lib_common_SRCS
 ./iedserver/mms_mapping/control.c
 ./iedserver/mms_mapping/mms_mapping.c
 ./iedserver/mms_mapping/reporting.c
-./iedserver/mms_mapping/mms_goose.c	
+./iedserver/mms_mapping/mms_goose.c
+
 )
 
 set (lib_asn1c_SRCS
@@ -175,6 +176,7 @@ set (lib_linux_SRCS
 ./hal/ethernet/linux/ethernet_linux.c
 ./hal/thread/linux/thread_linux.c
 ./hal/filesystem/linux/file_provider_linux.c
+./hal/time/unix/time.c
 )
 
 set (lib_windows_SRCS
@@ -182,6 +184,15 @@ set (lib_windows_SRCS
 ./hal/ethernet/win32/ethernet_win32.c
 ./hal/thread/win32/thread_win32.c
 ./hal/filesystem/win32/file_provider_win32.c
+./hal/time/win32/time.c
+)
+
+set (lib_bsd_SRCS
+./hal/socket/bsd/socket_bsd.c
+./hal/ethernet/bsd/ethernet_bsd.c
+./hal/thread/linux/thread_linux.c
+./hal/filesystem/linux/file_provider_linux.c
+./hal/time/unix/time.c
 )
 
 IF(WIN32)
@@ -228,12 +239,28 @@ set (library_SRCS
 ENDIF(WITH_WPCAP)
 
 ELSEIF(UNIX)
+IF(APPLE)
+set (library_SRCS
+	${lib_common_SRCS}
+	${lib_asn1c_SRCS}
+	${lib_goose_SRCS}
+    ${lib_bsd_SRCS}
+)
+ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
+set (library_SRCS
+	${lib_common_SRCS}
+	${lib_asn1c_SRCS}
+	${lib_goose_SRCS}
+    ${lib_bsd_SRCS}
+)
+ELSE()
 set (library_SRCS
 	${lib_common_SRCS}
 	${lib_asn1c_SRCS}
 	${lib_goose_SRCS}
     ${lib_linux_SRCS}	
 )
+ENDIF(APPLE)
 ENDIF(WIN32)
 
 

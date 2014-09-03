@@ -765,10 +765,6 @@ MmsMapping_create(IedModel* model)
 
     self->mmsDevice = createMmsModelFromIedModel(self, model);
 
-#if (CONFIG_IEC61850_REPORT_SERVICE == 1)
-    Reporting_activateBufferedReports(self);
-#endif
-
     return self;
 }
 
@@ -947,9 +943,9 @@ static MmsDataAccessError
 writeAccessGooseControlBlock(MmsMapping* self, MmsDomain* domain, char* variableIdOrig,
         MmsValue* value)
 {
-    MmsDataAccessError indication = DATA_ACCESS_ERROR_OBJECT_ACCESS_DENIED;
+    char variableId[130];
 
-    char* variableId = copyString(variableIdOrig);
+    strncpy(variableId, variableIdOrig, 129);
 
     char* separator = strchr(variableId, '$');
 
@@ -958,64 +954,52 @@ writeAccessGooseControlBlock(MmsMapping* self, MmsDomain* domain, char* variable
     char* lnName = variableId;
 
     if (lnName == NULL)
-        goto free_and_return;
+        return DATA_ACCESS_ERROR_OBJECT_ACCESS_DENIED;
 
     char* objectName = MmsMapping_getNextNameElement(separator + 1);
 
     if (objectName == NULL)
-        goto free_and_return;
+        return DATA_ACCESS_ERROR_OBJECT_ACCESS_DENIED;
 
     char* varName = MmsMapping_getNextNameElement(objectName);
 
     if (varName != NULL)
         *(varName - 1) = 0;
     else
-        goto free_and_return;
+       return DATA_ACCESS_ERROR_OBJECT_ACCESS_DENIED;
 
     MmsGooseControlBlock mmsGCB = lookupGCB(self, domain, lnName, objectName);
 
-    if (mmsGCB == NULL) {
-        indication = DATA_ACCESS_ERROR_OBJECT_ACCESS_DENIED;
-        goto free_and_return;
-    }
+    if (mmsGCB == NULL)
+        return DATA_ACCESS_ERROR_OBJECT_ACCESS_DENIED;
 
     if (strcmp(varName, "GoEna") == 0) {
-        if (MmsValue_getType(value) != MMS_BOOLEAN) {
-            indication = DATA_ACCESS_ERROR_TYPE_INCONSISTENT;
-            goto free_and_return;
-        }
+        if (MmsValue_getType(value) != MMS_BOOLEAN)
+            return DATA_ACCESS_ERROR_TYPE_INCONSISTENT;
 
         if (MmsValue_getBoolean(value))
             MmsGooseControlBlock_enable(mmsGCB);
         else
             MmsGooseControlBlock_disable(mmsGCB);
 
-        indication = DATA_ACCESS_ERROR_SUCCESS;
+        return DATA_ACCESS_ERROR_SUCCESS;
     }
     else {
-        if (MmsGooseControlBlock_isEnabled(mmsGCB)) {
-            indication = DATA_ACCESS_ERROR_TEMPORARILY_UNAVAILABLE;
-        }
+        if (MmsGooseControlBlock_isEnabled(mmsGCB))
+            return DATA_ACCESS_ERROR_TEMPORARILY_UNAVAILABLE;
         else {
             MmsValue* subValue = MmsValue_getSubElement(MmsGooseControlBlock_getMmsValues(mmsGCB),
                     MmsGooseControlBlock_getVariableSpecification(mmsGCB), varName);
 
-            if (subValue == NULL) {
-                indication = DATA_ACCESS_ERROR_INVALID_ADDRESS;
-                goto free_and_return;
-            }
+            if (subValue == NULL)
+                return DATA_ACCESS_ERROR_INVALID_ADDRESS;
 
             if (MmsValue_update(subValue, value))
-                indication = DATA_ACCESS_ERROR_SUCCESS;
+                return DATA_ACCESS_ERROR_SUCCESS;
             else
-                indication = DATA_ACCESS_ERROR_OBJECT_VALUE_INVALID;
+                return DATA_ACCESS_ERROR_OBJECT_VALUE_INVALID;
         }
     }
-
-    free_and_return:
-    free(variableId);
-
-    return indication;
 }
 
 #endif /* (CONFIG_INCLUDE_GOOSE_SUPPORT == 1) */
@@ -1038,7 +1022,7 @@ checkIfValueBelongsToModelNode(DataAttribute* dataAttribute, MmsValue* value)
     if (MmsValue_getType(value) == MMS_STRUCTURE) {
         int elementCount = MmsValue_getArraySize(value);
 
-        int i = 0;
+        int i;
         for (i = 0; i < elementCount; i++) {
             MmsValue* childValue = MmsValue_getElement(value, i);
 
@@ -1267,7 +1251,9 @@ readAccessGooseControlBlock(MmsMapping* self, MmsDomain* domain, char* variableI
 {
     MmsValue* value = NULL;
 
-    char* variableId = copyString(variableIdOrig);
+    char variableId[130];
+
+    strncpy(variableId, variableIdOrig, 129);
 
     char* separator = strchr(variableId, '$');
 
@@ -1299,8 +1285,6 @@ readAccessGooseControlBlock(MmsMapping* self, MmsDomain* domain, char* variableI
             value = MmsGooseControlBlock_getMmsValues(mmsGCB);
         }
     }
-
-    free(variableId);
 
     return value;
 }
@@ -1482,7 +1466,7 @@ MmsMapping_setConnectionIndicationHandler(MmsMapping* self, IedConnectionIndicat
     self->connectionIndicationHandlerParameter = parameter;
 }
 
-#if ((CONFIG_IEC61850_REPORT_SERVICE == 1) || (CONFIG_INCLUDE_GOOSE_SUPPORT))
+#if ((CONFIG_IEC61850_REPORT_SERVICE == 1) || (CONFIG_INCLUDE_GOOSE_SUPPORT == 1))
 
 static bool
 isMemberValueRecursive(MmsValue* container, MmsValue* value)
@@ -1521,6 +1505,7 @@ DataSet_isMemberValue(DataSet* dataSet, MmsValue* value, int* index)
         if (isMemberValueRecursive(dataSetValue, value)) {
             if (index != NULL)
                 *index = i;
+
             return true;
         }
 

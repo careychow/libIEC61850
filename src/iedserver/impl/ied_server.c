@@ -26,6 +26,8 @@
 #include "control.h"
 #include "stack_config.h"
 #include "ied_server_private.h"
+#include "thread.h"
+#include "reporting.h"
 
 #ifndef DEBUG_IED_SERVER
 #define DEBUG_IED_SERVER 0
@@ -81,7 +83,7 @@ createControlObjects(IedServer self, MmsDomain* domain, char* lnName, MmsVariabl
                     }
                     else if (!(strcmp(coElementSpec->name, "SBO") == 0)) {
                         if (DEBUG_IED_SERVER)
-                            printf("IED_SERVER: reateControlObjects: Unknown element in CO: %s! --> seems not to be a control object\n", coElementSpec->name);
+                            printf("IED_SERVER: createControlObjects: Unknown element in CO: %s! --> seems not to be a control object\n", coElementSpec->name);
 
                         assert(false);
 
@@ -206,9 +208,6 @@ installDefaultValuesForDataAttribute(IedServer self, DataAttribute* dataAttribut
             printf("Error domain (%s) not found!\n", domainName);
         return;
     }
-
-//    if (DEBUG_IED_SERVER)
-//        printf("OBJREF: %s VARNAME: %s\n", objectReference, mmsVariableName);
 
     MmsValue* cacheValue = MmsServer_getValueFromCache(self->mmsServer, domain, mmsVariableName);
 
@@ -360,6 +359,10 @@ IedServer_create(IedModel* iedModel)
 
     /* default write access policy allows access to SP and SV FCDAs but denies access to DC and CF FCDAs */
     self->writeAccessPolicies = ALLOW_WRITE_ACCESS_SP | ALLOW_WRITE_ACCESS_SV;
+
+#if (CONFIG_IEC61850_REPORT_SERVICE == 1)
+    Reporting_activateBufferedReports(self->mmsMapping);
+#endif
 
     return self;
 }
@@ -517,6 +520,98 @@ IedServer_getAttributeValue(IedServer self, DataAttribute* dataAttribute)
     return dataAttribute->mmsValue;
 }
 
+bool
+IedServer_getBooleanAttributeValue(IedServer self, DataAttribute* dataAttribute)
+{
+    assert(self != NULL);
+    assert(dataAttribute != NULL);
+    assert(dataAttribute->mmsValue != NULL);
+    assert(MmsValue_getType(dataAttribute->mmsValue) == MMS_BOOLEAN);
+
+    return MmsValue_getBoolean(dataAttribute->mmsValue);
+}
+
+int32_t
+IedServer_getInt32AttributeValue(IedServer self, DataAttribute* dataAttribute)
+{
+    assert(self != NULL);
+    assert(dataAttribute != NULL);
+    assert(dataAttribute->mmsValue != NULL);
+    assert((MmsValue_getType(dataAttribute->mmsValue) == MMS_INTEGER) ||
+            (MmsValue_getType(dataAttribute->mmsValue) == MMS_UNSIGNED));
+
+    return MmsValue_toInt32(dataAttribute->mmsValue);
+}
+
+int64_t
+IedServer_getInt64AttributeValue(IedServer self, DataAttribute* dataAttribute)
+{
+    assert(self != NULL);
+    assert(dataAttribute != NULL);
+    assert(dataAttribute->mmsValue != NULL);
+    assert((MmsValue_getType(dataAttribute->mmsValue) == MMS_INTEGER) ||
+            (MmsValue_getType(dataAttribute->mmsValue) == MMS_UNSIGNED));
+
+    return MmsValue_toInt64(dataAttribute->mmsValue);
+}
+
+uint32_t
+IedServer_getUInt32AttributeValue(IedServer self, DataAttribute* dataAttribute)
+{
+    assert(self != NULL);
+    assert(dataAttribute != NULL);
+    assert(dataAttribute->mmsValue != NULL);
+    assert((MmsValue_getType(dataAttribute->mmsValue) == MMS_INTEGER) ||
+            (MmsValue_getType(dataAttribute->mmsValue) == MMS_UNSIGNED));
+
+    return MmsValue_toUint32(dataAttribute->mmsValue);
+}
+
+float
+IedServer_getFloatAttributeValue(IedServer self, DataAttribute* dataAttribute)
+{
+    assert(self != NULL);
+    assert(dataAttribute != NULL);
+    assert(dataAttribute->mmsValue != NULL);
+    assert(MmsValue_getType(dataAttribute->mmsValue) == MMS_FLOAT);
+
+    return MmsValue_toFloat(dataAttribute->mmsValue);
+}
+
+uint64_t
+IedServer_getUTCTimeAttributeValue(IedServer self, DataAttribute* dataAttribute)
+{
+    assert(self != NULL);
+    assert(dataAttribute != NULL);
+    assert(dataAttribute->mmsValue != NULL);
+    assert(MmsValue_getType(dataAttribute->mmsValue) == MMS_UTC_TIME);
+
+    return MmsValue_getUtcTimeInMs(dataAttribute->mmsValue);
+}
+
+uint32_t
+IedServer_getBitStringAttributeValue(IedServer self, DataAttribute* dataAttribute)
+{
+    assert(self != NULL);
+    assert(dataAttribute != NULL);
+    assert(dataAttribute->mmsValue != NULL);
+    assert(MmsValue_getType(dataAttribute->mmsValue) == MMS_BIT_STRING);
+    assert(MmsValue_getBitStringSize(dataAttribute->mmsValue) < 33);
+
+    return MmsValue_getBitStringAsInteger(dataAttribute->mmsValue);
+}
+
+char*
+IedServer_getStringAttributeValue(IedServer self, DataAttribute* dataAttribute)
+{
+    assert(self != NULL);
+    assert(dataAttribute != NULL);
+    assert(dataAttribute->mmsValue != NULL);
+    assert(MmsValue_getType(dataAttribute->mmsValue) == MMS_VISIBLE_STRING);
+
+    return MmsValue_toString(dataAttribute->mmsValue);
+}
+
 static inline void
 checkForUpdateTrigger(IedServer self, DataAttribute* dataAttribute)
 {
@@ -575,7 +670,6 @@ IedServer_updateFloatAttributeValue(IedServer self, DataAttribute* dataAttribute
     }
     else {
         MmsValue_setFloat(dataAttribute->mmsValue, value);
-
         checkForChangedTriggers(self, dataAttribute);
     }
 }
@@ -594,6 +688,25 @@ IedServer_updateInt32AttributeValue(IedServer self, DataAttribute* dataAttribute
     }
     else {
         MmsValue_setInt32(dataAttribute->mmsValue, value);
+
+        checkForChangedTriggers(self, dataAttribute);
+    }
+}
+
+void
+IedServer_updateInt64AttributeValue(IedServer self, DataAttribute* dataAttribute, int64_t value)
+{
+    assert(MmsValue_getType(dataAttribute->mmsValue) == MMS_INTEGER);
+    assert(dataAttribute != NULL);
+    assert(self != NULL);
+
+    int64_t currentValue = MmsValue_toInt64(dataAttribute->mmsValue);
+
+    if (currentValue == value) {
+        checkForUpdateTrigger(self, dataAttribute);
+    }
+    else {
+        MmsValue_setInt64(dataAttribute->mmsValue, value);
 
         checkForChangedTriggers(self, dataAttribute);
     }
@@ -651,6 +764,25 @@ IedServer_updateBooleanAttributeValue(IedServer self, DataAttribute* dataAttribu
     }
     else {
         MmsValue_setBoolean(dataAttribute->mmsValue, value);
+
+        checkForChangedTriggers(self, dataAttribute);
+    }
+}
+
+void
+IedServer_updateVisibleStringAttributeValue(IedServer self, DataAttribute* dataAttribute, char *value)
+{
+    assert(MmsValue_getType(dataAttribute->mmsValue) == MMS_VISIBLE_STRING);
+    assert(dataAttribute != NULL);
+    assert(self != NULL);
+
+    char *currentValue = MmsValue_toString(dataAttribute->mmsValue);
+
+    if (!strcmp(currentValue ,value)) {
+        checkForUpdateTrigger(self, dataAttribute);
+    }
+    else {
+        MmsValue_setVisibleString(dataAttribute->mmsValue, value);
 
         checkForChangedTriggers(self, dataAttribute);
     }

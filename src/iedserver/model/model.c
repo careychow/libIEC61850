@@ -256,8 +256,7 @@ IedModel_getModelNodeByObjectReference(IedModel* model, char* objectReference)
 ModelNode*
 IedModel_getModelNodeByShortObjectReference(IedModel* model, char* objectReference)
 {
-    assert(strlen(objectReference) < 129);
-    assert((strlen(model->name) + strlen(objRef)) < 65);
+    assert((strlen(model->name) + strlen(objectReference)) < 130);
 
     char objRef[130];
 

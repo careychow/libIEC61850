@@ -549,8 +549,8 @@ mmsClient_createFileCloseRequest(uint32_t invokeId, ByteBuffer* request, int32_t
     bufPos = BerEncoder_encodeTL(0x02, invokeIdSize, buffer, bufPos);
     bufPos = BerEncoder_encodeUInt32(invokeId, buffer, bufPos);
 
-    /* Encode FileClose tag (context | structured ) [74 = 4ah] */
-    buffer[bufPos++] = 0xbf;
+    /* Encode FileClose tag (context | primitive) [74 = 4ah] */
+    buffer[bufPos++] = 0x9f;
     buffer[bufPos++] = 0x4a;
     bufPos = BerEncoder_encodeLength(frsmIdSize, buffer, bufPos);
     bufPos = BerEncoder_encodeUInt32(frsmId, buffer, bufPos);

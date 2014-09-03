@@ -51,7 +51,10 @@ struct ATTRIBUTE_PACKED sMmsValue {
             int size;     /* Number of bits */
             uint8_t* buf;
         } bitString;
-        char* visibleString;
+        struct {
+            char* buf;
+            int16_t size; /* size of the string, equals the amount of allocated memory - 1 */
+        } visibleString;
         uint8_t utcTime[8];
         struct {
             uint8_t size;

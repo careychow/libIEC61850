@@ -347,11 +347,11 @@ GoosePublisher_publish(GoosePublisher self, LinkedList dataSet)
 {
     uint8_t* buffer = self->buffer + self->payloadStart;
 
-    self->sqNum++;
-
     size_t maxPayloadSize = GOOSE_MAX_MESSAGE_SIZE - self->payloadStart;
 
     int32_t payloadLength = createGoosePayload(self, dataSet, buffer, maxPayloadSize);
+
+    self->sqNum++;
 
     if (payloadLength == -1)
         return -1;

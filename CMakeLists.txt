@@ -11,7 +11,11 @@ project(libiec61850)
 
 set(LIB_VERSION_MAJOR "0")
 set(LIB_VERSION_MINOR "7")
-set(LIB_VERSION_PATCH "6")
+set(LIB_VERSION_PATCH "8")
+
+# feature checks
+include(CheckLibraryExists)
+check_library_exists(rt clock_gettime "time.h" CONFIG_SYSTEM_HAS_CLOCK_GETTIME)
 
 # check if we are on a little or a big endian
 include (TestBigEndian)
@@ -54,6 +58,7 @@ include_directories(
     src/hal/socket
     src/hal/thread
     src/hal/filesystem
+    src/hal/time
     src/iedclient
     src/iedcommon
     src/iedserver
@@ -75,7 +80,7 @@ include_directories(
 )
 
 set(API_HEADERS 
-	src/hal/hal.h 
+	src/hal/time/time_hal.h 
 	src/hal/ethernet/ethernet.h 
 	src/hal/thread/thread.h 
 	src/hal/filesystem/filesystem.h 

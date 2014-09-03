@@ -26,6 +26,10 @@
 
 #include "asn1_ber_primitive_value.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 Asn1PrimitiveValue*
 BerInteger_createFromBuffer(uint8_t* buf, int size);
 
@@ -70,5 +74,9 @@ BerInteger_toUint32(Asn1PrimitiveValue* self, uint32_t* nativeValue);
 
 int /* 1 - if conversion is possible, 0 - out of range */
 BerInteger_toInt64(Asn1PrimitiveValue* self, int64_t* nativeValue);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* BER_INTEGER_H_ */

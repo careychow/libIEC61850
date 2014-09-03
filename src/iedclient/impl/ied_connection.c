@@ -314,7 +314,7 @@ doesReportMatchControlObject(char* domainName, char* itemName, char* objectRef)
     return true;
 }
 
-void
+static void
 handleLastApplErrorMessage(IedConnection self, MmsValue* value)
 {
     if (DEBUG_IED_CLIENT)
@@ -571,9 +571,8 @@ IedConnection_getVariableSpecification(IedConnection self, IedClientError* error
     varSpec =
             MmsConnection_getVariableAccessAttributes(self->connection, &mmsError, domainId, itemId);
 
-    if (varSpec != NULL) {
+    if (varSpec != NULL)
         *error = IED_ERROR_OK;
-    }
     else
         *error = iedConnection_mapMmsErrorToIedError(mmsError);
 
@@ -605,9 +604,8 @@ IedConnection_readObject(IedConnection self, IedClientError* error, char* object
 
     value = MmsConnection_readVariable(self->connection, &mmsError, domainId, itemId);
 
-    if (value != NULL) {
+    if (value != NULL)
         *error = IED_ERROR_OK;
-    }
     else
         *error = iedConnection_mapMmsErrorToIedError(mmsError);
 
@@ -893,7 +891,7 @@ IedConnection_writeVisibleStringValue(IedConnection self, IedClientError* error,
     MmsValue mmsValue;
     mmsValue.deleteValue = 0;
     mmsValue.type = MMS_VISIBLE_STRING;
-    mmsValue.value.visibleString = value;
+    mmsValue.value.visibleString.buf = value;
 
     IedConnection_writeObject(self, error, objectReference, fc, &mmsValue);
 }
@@ -1016,7 +1014,6 @@ IedConnection_getFileDirectory(IedConnection self, IedClientError* error, char* 
 
     bool moreFollows = false;
 
-
     do {
         moreFollows =
                 MmsConnection_getFileDirectory(self->connection, &mmsError, directoryName, continueAfter,
@@ -1027,6 +1024,13 @@ IedConnection_getFileDirectory(IedConnection self, IedClientError* error, char* 
             LinkedList_destroyDeep(fileNames, (LinkedListValueDeleteFunction) FileDirectoryEntry_destroy);
 
             return NULL;
+        }
+
+        if (moreFollows) {
+            FileDirectoryEntry lastDirectoryEntry = (FileDirectoryEntry)
+                    LinkedList_getData(LinkedList_getLastElement(fileNames));
+
+            continueAfter = lastDirectoryEntry->fileName;
         }
 
     } while (moreFollows == true);

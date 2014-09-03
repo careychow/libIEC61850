@@ -32,6 +32,10 @@
 #include "mms_types.h"
 #include "linked_list.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * \brief Delete MmsTypeSpecification object (recursive).
  *
@@ -42,6 +46,9 @@ MmsVariableSpecification_destroy(MmsVariableSpecification* self);
 
 MmsValue*
 MmsVariableSpecification_getChildValue(MmsVariableSpecification* self, MmsValue* value, char* childId);
+
+MmsVariableSpecification*
+MmsVariableSpecification_getNamedVariableRecursive(MmsVariableSpecification* variable, char* nameId);
 
 MmsType
 MmsVariableSpecification_getType(MmsVariableSpecification* self);
@@ -69,5 +76,9 @@ MmsVariableSpecification_getArrayElementSpecification(MmsVariableSpecification* 
 
 int
 MmsVariableSpecification_getExponentWidth(MmsVariableSpecification* self);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* MMS_TYPE_SPEC_H_ */

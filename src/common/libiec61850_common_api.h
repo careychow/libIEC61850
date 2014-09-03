@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdint.h>
+#include <inttypes.h>
 #include <stdbool.h>
 #include <string.h>
 
@@ -17,7 +18,7 @@
 #define ATTRIBUTE_PACKED
 #endif
 
-#include "hal.h"
+#include "time_hal.h"
 #include "mms_value.h"
 
 #endif /* LIBIEC61850_COMMON_API_INCLUDES_H_ */

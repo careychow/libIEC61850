@@ -36,8 +36,11 @@ MemoryAllocator_init(MemoryAllocator* self, char* memoryBlock, int size)
 char*
 MemoryAllocator_allocate(MemoryAllocator* self, int size)
 {
-    if (((self->currentPtr - self->memoryBlock) + size) <= self->size)
-        return (self->currentPtr += size);
+    if (((self->currentPtr - self->memoryBlock) + size) <= self->size) {
+        char* ptr = self->currentPtr;
+        self->currentPtr += size;
+        return ptr;
+    }
     else
         return NULL;
 }

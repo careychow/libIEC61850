@@ -268,13 +268,19 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
                         if (valueIndicator != NULL) {
                             switch (dataAttribute->type) {
                             case UNICODE_STRING_255:
+                                {
+                                    char* stringStart = valueIndicator + 2;
+                                    terminateString(stringStart, '"');
+                                    dataAttribute->mmsValue = MmsValue_newMmsString(stringStart);
+                                }
+                                break;
+
                             case VISIBLE_STRING_255:
                             case VISIBLE_STRING_129:
                             case VISIBLE_STRING_65:
                             case VISIBLE_STRING_64:
                             case VISIBLE_STRING_32:
                                 {
-                                    //TODO add length checks
                                     char* stringStart = valueIndicator + 2;
                                     terminateString(stringStart, '"');
                                     dataAttribute->mmsValue = MmsValue_newVisibleString(stringStart);

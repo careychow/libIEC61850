@@ -43,7 +43,6 @@ EXPORTS
     ClientReportControlBlock_create @156
     ClientReportControlBlock_destroy @157
     ClientReportControlBlock_getBufTm @158
-    ClientReportControlBlock_getConvRev @159
     ClientReportControlBlock_getDataSetReference @160
     ClientReportControlBlock_getEntryId @161
     ClientReportControlBlock_getEntryTime @162
@@ -74,12 +73,13 @@ EXPORTS
     ClientReportControlBlock_setTrgOps @187
     ClientReport_create @188
     ClientReport_destroy @189
-    ClientReport_getDataSet @190
+    ClientReport_getDataSetValues
     ClientReport_getEntryId @191
     ClientReport_getRcbReference @192
     ClientReport_getReasonForInclusion @193
     ClientReport_getTimestamp @194
     ClientReport_hasTimestamp @195
+    ClientReport_getRptId
     ConfigFileParser_createModelFromConfigFile @210
     ControlObjectClient_cancel @211
     ControlObjectClient_create @212
@@ -125,8 +125,6 @@ EXPORTS
     IedConnection_deleteDataSet @371
     IedConnection_deleteFile @372
     IedConnection_destroy @373
-    IedConnection_disableReporting @374
-    IedConnection_enableReporting @375
     IedConnection_getDataDirectory @376
     IedConnection_getDataDirectoryFC @377
     IedConnection_getDataSetDirectory @378
@@ -148,8 +146,6 @@ EXPORTS
     IedConnection_readDataSetValues @395
     IedConnection_readObject @396
     IedConnection_release @397
-    IedConnection_releaseRCB @398
-    IedConnection_reserveRCB @399
     IedConnection_setRCBValues @401
     IedConnection_triggerGIReport @402
     IedConnection_uninstallReportHandler @403
@@ -331,7 +327,6 @@ EXPORTS
     MmsValue_getType @722
     MmsValue_getUtcTimeInMs @723
     MmsValue_isDeletable @724
-    MmsValue_netIntegerFromInt8 @725
     MmsValue_newBinaryTime @726
     MmsValue_newBitString @727
     MmsValue_newBoolean @728
@@ -437,4 +432,9 @@ EXPORTS
     Timestamp_setTimeInMilliseconds
     MmsValue_getTypeString
     IedModel_getModelNodeByShortObjectReference
-
+    ClientReportControlBlock_getConfRev
+    MmsValue_newIntegerFromInt8
+    AcseAuthenticationParameter_create
+    AcseAuthenticationParameter_destroy
+    AcseAuthenticationParameter_setAuthMechanism
+    AcseAuthenticationParameter_setPassword

@@ -1,7 +1,7 @@
 /*
  *  mms_server.c
  *
- *  Copyright 2013 Michael Zillgith
+ *  Copyright 2013, 2014 Michael Zillgith
  *
  *  This file is part of libIEC61850.
  *
@@ -28,7 +28,7 @@
 #include "iso_server_private.h"
 
 static Map
-createValueCachesForDomains(MmsDevice* device)
+createValueCaches(MmsDevice* device)
 {
     Map valueCaches = Map_create();
 
@@ -37,6 +37,11 @@ createValueCachesForDomains(MmsDevice* device)
         MmsValueCache valueCache = MmsValueCache_create(device->domains[i]);
         Map_addEntry(valueCaches, device->domains[i], valueCache);
     }
+
+#if (CONFIG_MMS_SUPPORT_VMD_SCOPE_NAMED_VARIABLES == 1)
+    MmsValueCache valueCache = MmsValueCache_create((MmsDomain*) device);
+    Map_addEntry(valueCaches, (MmsDomain*) device, valueCache);
+#endif
 
     return valueCaches;
 }
@@ -51,7 +56,7 @@ MmsServer_create(IsoServer isoServer, MmsDevice* device)
     self->isoServer = isoServer;
     self->device = device;
     self->openConnections = Map_create();
-    self->valueCaches = createValueCachesForDomains(device);
+    self->valueCaches = createValueCaches(device);
     self->isLocked = false;
     self->modelMutex = Semaphore_create(1);
 
@@ -156,6 +161,9 @@ mmsServer_setValue(MmsServer self, MmsDomain* domain, char* itemId, MmsValue* va
                 itemId, value, connection);
     } else {
         MmsValue* cachedValue;
+
+        if (domain == NULL)
+            domain = (MmsDomain*) self->device;
 
         cachedValue = MmsServer_getValueFromCache(self, domain, itemId);
 

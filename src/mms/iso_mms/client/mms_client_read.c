@@ -171,13 +171,14 @@ mmsClient_parseListOfAccessResults(AccessResult_t** accessResultList, int listSi
 
             int strSize = accessResultList[i]->choice.visiblestring.size;
 
-            value->value.visibleString = (char*) malloc(strSize + 1);
+            value->value.visibleString.buf = (char*) malloc(strSize + 1);
+            value->value.visibleString.size = strSize;
 
-            memcpy(value->value.visibleString,
+            memcpy(value->value.visibleString.buf,
                     accessResultList[i]->choice.visiblestring.buf,
                     strSize);
 
-            value->value.visibleString[strSize] = 0;
+            value->value.visibleString.buf[strSize] = 0;
         }
         else if (presentType == AccessResult_PR_mMSString) {
         	value = (MmsValue*) calloc(1, sizeof(MmsValue));
@@ -186,12 +187,13 @@ mmsClient_parseListOfAccessResults(AccessResult_t** accessResultList, int listSi
 
         	int strSize = accessResultList[i]->choice.mMSString.size;
 
-        	value->value.visibleString = (char*) malloc(strSize + 1);
+        	value->value.visibleString.buf = (char*) malloc(strSize + 1);
+        	value->value.visibleString.size = strSize;
 
-        	memcpy(value->value.visibleString,
+        	memcpy(value->value.visibleString.buf,
         			accessResultList[i]->choice.mMSString.buf, strSize);
 
-        	value->value.visibleString[strSize] = 0;
+        	value->value.visibleString.buf[strSize] = 0;
 
         }
         else if (presentType == AccessResult_PR_utctime) {

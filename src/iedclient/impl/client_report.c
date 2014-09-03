@@ -33,11 +33,12 @@
 
 struct sClientReport
 {
-    ClientDataSet dataSet;
     ReportCallbackFunction callback;
     void* callbackParameter;
     char* rcbReference;
+    char* rptId;
     MmsValue* entryId;
+    MmsValue* dataSetValues;
     ReasonForInclusion* reasonForInclusion;
     bool hasTimestamp;
     uint64_t timestamp;
@@ -65,15 +66,9 @@ ReasonForInclusion_getValueAsString(ReasonForInclusion reasonCode)
 }
 
 ClientReport
-ClientReport_create(ClientDataSet dataSet)
+ClientReport_create()
 {
     ClientReport self = (ClientReport) calloc(1, sizeof(struct sClientReport));
-
-    self->dataSet = dataSet;
-
-    int dataSetSize = ClientDataSet_getDataSetSize(dataSet);
-
-    self->reasonForInclusion = (ReasonForInclusion*) calloc(dataSetSize, sizeof(ReasonForInclusion));
 
     return self;
 }
@@ -85,7 +80,16 @@ ClientReport_destroy(ClientReport self)
         MmsValue_delete(self->entryId);
 
     free(self->rcbReference);
-    free(self->reasonForInclusion);
+
+    if (self->rptId != NULL)
+        free(self->rptId);
+
+    if (self->dataSetValues != NULL)
+        MmsValue_delete(self->dataSetValues);
+
+    if (self->reasonForInclusion != NULL)
+        free(self->reasonForInclusion);
+
     free(self);
 }
 
@@ -95,16 +99,19 @@ ClientReport_getRcbReference(ClientReport self)
     return self->rcbReference;
 }
 
-ClientDataSet
-ClientReport_getDataSet(ClientReport self)
+char*
+ClientReport_getRptId(ClientReport self)
 {
-    return self->dataSet;
+    return self->rptId;
 }
 
 ReasonForInclusion
 ClientReport_getReasonForInclusion(ClientReport self, int elementIndex)
 {
-    return self->reasonForInclusion[elementIndex];
+    if (self->reasonForInclusion != NULL)
+        return self->reasonForInclusion[elementIndex];
+    else
+        return REASON_NOT_INCLUDED;
 }
 
 MmsValue*
@@ -125,195 +132,10 @@ ClientReport_getTimestamp(ClientReport self)
     return self->timestamp;
 }
 
-static void
-writeReportResv(IedConnection self, IedClientError* error, char* rcbReference, bool resvValue)
+MmsValue*
+ClientReport_getDataSetValues(ClientReport self)
 {
-    char domainId[65];
-    char itemId[129];
-
-    MmsError mmsError;
-
-    MmsMapping_getMmsDomainFromObjectReference(rcbReference, domainId);
-
-    strcpy(itemId, rcbReference + strlen(domainId) + 1);
-
-    StringUtils_replace(itemId, '.', '$');
-
-    if (DEBUG_IED_CLIENT)
-        printf("DEBUG_IED_CLIENT: reserve report for (%s) (%s)\n", domainId, itemId);
-
-    int itemIdLen = strlen(itemId);
-
-    strcpy(itemId + itemIdLen, "$Resv");
-
-    MmsValue* resv = MmsValue_newBoolean(resvValue);
-
-    MmsConnection_writeVariable(self->connection, &mmsError, domainId, itemId, resv);
-
-    MmsValue_delete(resv);
-
-    *error = iedConnection_mapMmsErrorToIedError(mmsError);
-
-    if (DEBUG_IED_CLIENT) {
-        if (mmsError != MMS_ERROR_NONE)
-            printf("DEBUG_IED_CLIENT:  failed to write to RCB!\n");
-    }
-
-}
-
-void
-IedConnection_reserveRCB(IedConnection self, IedClientError* error, char* rcbReference)
-{
-    writeReportResv(self, error, rcbReference, true);
-}
-
-void
-IedConnection_releaseRCB(IedConnection self, IedClientError* error, char* rcbReference)
-{
-    writeReportResv(self, error, rcbReference, false);
-}
-
-void
-IedConnection_enableReporting(IedConnection self, IedClientError* error,
-        char* rcbReference,
-        ClientDataSet dataSet,
-        int triggerOptions,
-        ReportCallbackFunction callback,
-        void* callbackParameter)
-{
-    MmsError mmsError = MMS_ERROR_NONE;
-
-    char domainId[65];
-    char itemId[129];
-
-    MmsMapping_getMmsDomainFromObjectReference(rcbReference, domainId);
-
-    strcpy(itemId, rcbReference + strlen(domainId) + 1);
-
-    StringUtils_replace(itemId, '.', '$');
-
-    if (DEBUG_IED_CLIENT)
-        printf("DEBUG_IED_CLIENT: enable report for (%s) (%s)\n", domainId, itemId);
-
-    int itemIdLen = strlen(itemId);
-
-    // check if data set is matching
-    strcpy(itemId + itemIdLen, "$DatSet");
-    MmsValue* datSet = MmsConnection_readVariable(self->connection, &mmsError, domainId, itemId);
-
-    if (datSet != NULL) {
-
-        if (DEBUG_IED_CLIENT)
-            printf("DEBUG_IED_CLIENT: RCB has dataset: %s\n", MmsValue_toString(datSet));
-
-        bool matching = false;
-
-        if (strcmp(MmsValue_toString(datSet), ClientDataSet_getReference(dataSet)) == 0) {
-            if (DEBUG_IED_CLIENT)
-                printf("DEBUG_IED_CLIENT:   data sets are matching!\n");
-            matching = true;
-        }
-        else {
-            if (DEBUG_IED_CLIENT)
-                printf("DEBUG_IED_CLIENT:  data sets (%s) - (%s) not matching!", MmsValue_toString(datSet),
-                        ClientDataSet_getReference(dataSet));
-        }
-
-        MmsValue_delete(datSet);
-
-        if (!matching) {
-            *error = IED_ERROR_ENABLE_REPORT_FAILED_DATASET_MISMATCH;
-            goto cleanup_and_exit;
-        }
-
-    }
-    else {
-        if (DEBUG_IED_CLIENT)
-            printf("DEBUG_IED_CLIENT: Error accessing RCB!\n");
-        *error = IED_ERROR_ACCESS_DENIED;
-        return;
-    }
-
-    // set include data set reference
-
-    strcpy(itemId + itemIdLen, "$OptFlds");
-    MmsValue* optFlds = MmsConnection_readVariable(self->connection, &mmsError,
-            domainId, itemId);
-
-    if (MmsValue_getBitStringBit(optFlds, 4) == true) {
-        if (DEBUG_IED_CLIENT)
-            printf("DEBUG_IED_CLIENT:  data set reference is included in report.\n");
-        MmsValue_delete(optFlds);
-    }
-    else {
-        MmsValue_setBitStringBit(optFlds, 4, true);
-
-        MmsConnection_writeVariable(self->connection, &mmsError, domainId, itemId, optFlds);
-
-        MmsValue_delete(optFlds);
-
-        if (mmsError != MMS_ERROR_NONE) {
-            if (DEBUG_IED_CLIENT)
-                printf("DEBUG_IED_CLIENT:  failed to write to RCB!\n");
-            *error = iedConnection_mapMmsErrorToIedError(mmsError);
-            goto cleanup_and_exit;
-        }
-    }
-
-    // set trigger options
-    if (triggerOptions != 0) {
-        strcpy(itemId + itemIdLen, "$TrgOps");
-
-        MmsValue* trgOps = MmsConnection_readVariable(self->connection, &mmsError,
-                domainId, itemId);
-
-        if (trgOps != NULL) {
-            MmsValue_deleteAllBitStringBits(trgOps);
-
-            if (triggerOptions & TRG_OPT_DATA_CHANGED)
-                MmsValue_setBitStringBit(trgOps, 1, true);
-            if (triggerOptions & TRG_OPT_QUALITY_CHANGED)
-                MmsValue_setBitStringBit(trgOps, 2, true);
-            if (triggerOptions & TRG_OPT_DATA_UPDATE)
-                MmsValue_setBitStringBit(trgOps, 3, true);
-            if (triggerOptions & TRG_OPT_INTEGRITY)
-                MmsValue_setBitStringBit(trgOps, 4, true);
-            if (triggerOptions & TRG_OPT_GI)
-                MmsValue_setBitStringBit(trgOps, 5, true);
-
-            MmsConnection_writeVariable(self->connection, &mmsError, domainId,
-                    itemId, trgOps);
-
-            MmsValue_delete(trgOps);
-        }
-        else {
-            if (DEBUG_IED_CLIENT)
-                printf("DEBUG_IED_CLIENT:  failed to read trigger options!\n");
-            *error = iedConnection_mapMmsErrorToIedError(mmsError);
-            MmsValue_delete(trgOps);
-            goto cleanup_and_exit;
-        }
-    }
-
-    // enable report
-    strcpy(itemId + itemIdLen, "$RptEna");
-    MmsValue* rptEna = MmsValue_newBoolean(true);
-
-    MmsConnection_writeVariable(self->connection, &mmsError, domainId, itemId, rptEna);
-
-    MmsValue_delete(rptEna);
-
-    if (mmsError == MMS_ERROR_NONE) {
-        IedConnection_installReportHandler(self, rcbReference, callback, callbackParameter, dataSet);
-    }
-    else {
-        if (DEBUG_IED_CLIENT)
-            printf("DEBUG_IED_CLIENT:Failed to enable report!\n");
-        *error = iedConnection_mapMmsErrorToIedError(mmsError);
-    }
-
-    cleanup_and_exit:
-    return;
+    return self->dataSetValues;
 }
 
 static ClientReport
@@ -334,8 +156,8 @@ lookupReportHandler(IedConnection self, char* rcbReference)
 }
 
 void
-IedConnection_installReportHandler(IedConnection self, char* rcbReference, ReportCallbackFunction handler,
-        void* handlerParameter, ClientDataSet dataSet)
+IedConnection_installReportHandler(IedConnection self, char* rcbReference, char* rptId, ReportCallbackFunction handler,
+        void* handlerParameter)
 {
     ClientReport report = lookupReportHandler(self, rcbReference);
 
@@ -346,10 +168,16 @@ IedConnection_installReportHandler(IedConnection self, char* rcbReference, Repor
             printf("DEBUG_IED_CLIENT: Removed existing report callback handler for %s\n", rcbReference);
     }
 
-    report = ClientReport_create(dataSet);
+    report = ClientReport_create();
     report->callback = handler;
     report->callbackParameter = handlerParameter;
     report->rcbReference = copyString(rcbReference);
+
+    if (rptId != NULL)
+        report->rptId = copyString(rptId);
+    else
+        report->rptId = NULL;
+
     LinkedList_add(self->enabledReports, report);
 
     if (DEBUG_IED_CLIENT)
@@ -364,45 +192,6 @@ IedConnection_uninstallReportHandler(IedConnection self, char* rcbReference)
     if (report != NULL) {
         LinkedList_remove(self->enabledReports, report);
         ClientReport_destroy(report);
-    }
-}
-
-void
-IedConnection_disableReporting(IedConnection self, IedClientError* error, char* rcbReference)
-{
-    char domainId[65];
-    char itemId[129];
-
-    MmsMapping_getMmsDomainFromObjectReference(rcbReference, domainId);
-
-    strcpy(itemId, rcbReference + strlen(domainId) + 1);
-
-    StringUtils_replace(itemId, '.', '$');
-
-    if (DEBUG_IED_CLIENT)
-        printf("DEBUG_IED_CLIENT: disable reporting for (%s) (%s)\n", domainId, itemId);
-
-    int itemIdLen = strlen(itemId);
-
-    strcpy(itemId + itemIdLen, "$RptEna");
-    MmsValue* rptEna = MmsValue_newBoolean(false);
-
-    MmsError mmsError;
-
-    MmsConnection_writeVariable(self->connection, &mmsError, domainId, itemId, rptEna);
-
-    MmsValue_delete(rptEna);
-
-    if (mmsError != MMS_ERROR_NONE) {
-        if (DEBUG_IED_CLIENT)
-            printf("DEBUG_IED_CLIENT:  failed to disable RCB!\n");
-
-        *error = iedConnection_mapMmsErrorToIedError(mmsError);
-    }
-    else {
-        IedConnection_uninstallReportHandler(self, rcbReference);
-
-        *error = IED_ERROR_OK;
     }
 }
 
@@ -446,57 +235,54 @@ IedConnection_triggerGIReport(IedConnection self, IedClientError* error, char* r
 void
 private_IedConnection_handleReport(IedConnection self, MmsValue* value)
 {
-    MmsValue* optFlds = MmsValue_getElement(value, 1);
-    if (MmsValue_getBitStringBit(optFlds, 4) == false)
-       return;
+    MmsValue* rptIdValue = MmsValue_getElement(value, 0);
 
-    bool hasTimestamp = false;
-    uint64_t timestamp;
-
-    int datSetIndex = 2;
-
-    /* has sequence-number */
-    if (MmsValue_getBitStringBit(optFlds, 1) == true)
-        datSetIndex++;
-
-    /* has report-timestamp */
-    if (MmsValue_getBitStringBit(optFlds, 2) == true) {
-        MmsValue* timeStampValue = MmsValue_getElement(value, datSetIndex);
-
-        if (MmsValue_getType(timeStampValue) == MMS_BINARY_TIME) {
-            timestamp = MmsValue_getBinaryTimeAsUtcMs(timeStampValue);
-            hasTimestamp = true;
-        }
-
-        datSetIndex++;
-    }
-
-    MmsValue* datSet = MmsValue_getElement(value, datSetIndex);
-    char* datSetName = MmsValue_toString(datSet);
-    if (DEBUG_IED_CLIENT)
-        printf("DEBUG_IED_CLIENT:  with datSet %s\n", datSetName);
-
-    int inclusionIndex = datSetIndex + 1;
     LinkedList element = LinkedList_getNext(self->enabledReports);
     ClientReport report = NULL;
+
     while (element != NULL) {
         report = (ClientReport) element->data;
 
-        ClientDataSet dataSet = report->dataSet;
+        char* rptId =report->rptId;
 
-        if (strcmp(datSetName, ClientDataSet_getReference(dataSet)) == 0) {
+        if (rptId == NULL)
+            rptId = report->rcbReference;
+
+        if (strcmp(MmsValue_toString(rptIdValue), rptId) == 0) {
             break;
         }
 
         element = LinkedList_getNext(element);
     }
+
     if (report == NULL)
         return;
 
-    if (hasTimestamp) {
-        report->hasTimestamp = true;
-        report->timestamp = timestamp;
+    if (DEBUG_IED_CLIENT)
+        printf("DEBUG_IED_CLIENT: received report with ID %s\n", MmsValue_toString(rptIdValue));
+
+    MmsValue* optFlds = MmsValue_getElement(value, 1);
+
+    int inclusionIndex = 2;
+
+    /* has sequence-number */
+    if (MmsValue_getBitStringBit(optFlds, 1) == true)
+        inclusionIndex++;
+
+    /* has report-timestamp */
+    if (MmsValue_getBitStringBit(optFlds, 2) == true) {
+        MmsValue* timeStampValue = MmsValue_getElement(value, inclusionIndex);
+
+        if (MmsValue_getType(timeStampValue) == MMS_BINARY_TIME) {
+            report->hasTimestamp = true;
+            report->timestamp = MmsValue_getBinaryTimeAsUtcMs(timeStampValue);
+        }
+
+        inclusionIndex++;
     }
+
+    if (MmsValue_getBitStringBit(optFlds, 4) == true) /* check if data set name is present */
+       inclusionIndex++;
 
     if (DEBUG_IED_CLIENT)
         printf("DEBUG_IED_CLIENT: Found enabled report!\n");
@@ -532,9 +318,14 @@ private_IedConnection_handleReport(IedConnection self, MmsValue* value)
         inclusionIndex += 2;
 
     MmsValue* inclusion = MmsValue_getElement(value, inclusionIndex);
+
+    int dataSetSize = MmsValue_getBitStringSize(inclusion);
+
     int includedElements = MmsValue_getNumberOfSetBits(inclusion);
+
     if (DEBUG_IED_CLIENT)
-        printf("DEBUG_IED_CLIENT: Report includes %i data set elements\n", includedElements);
+        printf("DEBUG_IED_CLIENT: Report includes %i data set elements of %i\n", includedElements,
+                dataSetSize);
 
     int valueIndex = inclusionIndex + 1;
     /* skip data-reference fields */
@@ -542,21 +333,38 @@ private_IedConnection_handleReport(IedConnection self, MmsValue* value)
         valueIndex += includedElements;
 
     int i;
-    ClientDataSet dataSet = report->dataSet;
-    MmsValue* dataSetValues = ClientDataSet_getValues(dataSet);
+
+    if (report->dataSetValues == NULL) {
+        report->dataSetValues = MmsValue_createEmtpyArray(dataSetSize);
+        report->reasonForInclusion = (ReasonForInclusion*)
+                malloc(sizeof(ReasonForInclusion) * dataSetSize);
+
+        int elementIndex;
+
+        for (elementIndex = 0; elementIndex < dataSetSize; elementIndex++)
+            report->reasonForInclusion[elementIndex] = REASON_NOT_INCLUDED;
+
+    }
+
+    MmsValue* dataSetValues = report->dataSetValues;
+
     bool hasReasonForInclusion = MmsValue_getBitStringBit(optFlds, 3);
     int reasonForInclusionIndex = valueIndex + includedElements;
-    for (i = 0; i < ClientDataSet_getDataSetSize(dataSet); i++) {
+
+    for (i = 0; i < dataSetSize; i++) {
         if (MmsValue_getBitStringBit(inclusion, i) == true) {
 
             MmsValue* dataSetElement = MmsValue_getElement(dataSetValues, i);
 
             MmsValue* newElementValue = MmsValue_getElement(value, valueIndex);
 
+            if (dataSetElement == NULL)
+                MmsValue_setElement(dataSetValues, i, MmsValue_clone(newElementValue));
+            else
+                MmsValue_update(dataSetElement, newElementValue);
+
             if (DEBUG_IED_CLIENT)
                 printf("DEBUG_IED_CLIENT:  update element value type: %i\n", MmsValue_getType(newElementValue));
-
-            MmsValue_update(dataSetElement, newElementValue);
 
             valueIndex++;
 

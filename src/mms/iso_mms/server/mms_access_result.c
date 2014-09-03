@@ -127,9 +127,9 @@ mmsServer_encodeAccessResult(MmsValue* value, uint8_t* buffer, int bufPos, bool 
 
     case MMS_VISIBLE_STRING:
         if (encode)
-            bufPos = BerEncoder_encodeStringWithTag(0x8a, value->value.visibleString, buffer, bufPos);
+            bufPos = BerEncoder_encodeStringWithTag(0x8a, value->value.visibleString.buf, buffer, bufPos);
         else
-            size = BerEncoder_determineEncodedStringSize(value->value.visibleString);
+            size = BerEncoder_determineEncodedStringSize(value->value.visibleString.buf);
         break;
     case MMS_UNSIGNED:
         if (encode)
@@ -195,9 +195,9 @@ mmsServer_encodeAccessResult(MmsValue* value, uint8_t* buffer, int bufPos, bool 
         break;
     case MMS_STRING:
         if (encode)
-            bufPos = BerEncoder_encodeStringWithTag(0x90, value->value.visibleString, buffer, bufPos);
+            bufPos = BerEncoder_encodeStringWithTag(0x90, value->value.visibleString.buf, buffer, bufPos);
         else
-            size = BerEncoder_determineEncodedStringSize(value->value.visibleString);
+            size = BerEncoder_determineEncodedStringSize(value->value.visibleString.buf);
         break;
     default:
         if (DEBUG_MMS_SERVER)

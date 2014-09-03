@@ -22,12 +22,15 @@
  */
 
 #include "mms_device_model.h"
+#include "stack_config.h"
 
 MmsDevice*
 MmsDevice_create(char* deviceName)
 {
     MmsDevice* self = (MmsDevice*) calloc(1, sizeof(MmsDevice));
     self->deviceName = deviceName;
+
+    self->namedVariableLists = LinkedList_create();
 
     return self;
 }
@@ -40,6 +43,18 @@ MmsDevice_destroy(MmsDevice* self)
     for (i = 0; i < self->domainCount; i++) {
         MmsDomain_destroy(self->domains[i]);
     }
+
+#if (CONFIG_MMS_SUPPORT_VMD_SCOPE_NAMED_VARIABLES == 1)
+    if (self->namedVariables != NULL) {
+        for (i = 0; i < self->namedVariablesCount; i++) {
+            MmsVariableSpecification_destroy(self->namedVariables[i]);
+        }
+
+        free (self->namedVariables);
+    }
+#endif /* (CONFIG_MMS_SUPPORT_VMD_SCOPE_NAMED_VARIABLES == 1) */
+
+    LinkedList_destroyDeep(self->namedVariableLists, (LinkedListValueDeleteFunction) MmsNamedVariableList_destroy);
 
     free(self->domains);
     free(self);
@@ -60,4 +75,53 @@ MmsDevice_getDomain(MmsDevice* self, char* domainId)
     return NULL;
 }
 
+#if (CONFIG_MMS_SUPPORT_VMD_SCOPE_NAMED_VARIABLES == 1)
+MmsVariableSpecification*
+MmsDevice_getNamedVariable(MmsDevice* self, char* variableName)
+{
+    if (self->namedVariables != NULL) {
+        char* separator = strchr(variableName, '$');
 
+        int i;
+
+        if (separator == NULL) {
+
+            for (i = 0; i < self->namedVariablesCount; i++) {
+                if (strcmp(self->namedVariables[i]->name, variableName) == 0) {
+                    return self->namedVariables[i];
+                }
+            }
+
+            return NULL;
+        }
+        else {
+            MmsVariableSpecification* namedVariable = NULL;
+
+            for (i = 0; i < self->namedVariablesCount; i++) {
+
+                if (strlen(self->namedVariables[i]->name) == (unsigned) (separator - variableName)) {
+
+                    if (strncmp(self->namedVariables[i]->name, variableName, separator - variableName) == 0) {
+                        namedVariable = self->namedVariables[i];
+                        break;
+                    }
+                }
+            }
+
+            if (namedVariable != NULL) {
+                namedVariable = MmsVariableSpecification_getNamedVariableRecursive(namedVariable, separator + 1);
+            }
+
+            return namedVariable;
+        }
+    }
+
+    return NULL;
+}
+#endif /* (CONFIG_MMS_SUPPORT_VMD_SCOPE_NAMED_VARIABLES == 1) */
+
+LinkedList
+MmsDevice_getNamedVariableLists(MmsDevice* self)
+{
+    return self->namedVariableLists;
+}

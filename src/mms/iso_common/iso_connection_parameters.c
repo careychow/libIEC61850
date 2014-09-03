@@ -31,6 +31,39 @@
 
 #include "ber_encoder.h"
 
+AcseAuthenticationParameter
+AcseAuthenticationParameter_create()
+{
+    AcseAuthenticationParameter self = (AcseAuthenticationParameter)
+            calloc(1, sizeof(struct sAcseAuthenticationParameter));
+
+    return self;
+}
+
+void
+AcseAuthenticationParameter_destroy(AcseAuthenticationParameter self)
+{
+    if (self->mechanism == ACSE_AUTH_PASSWORD)
+        if (self->value.password.octetString != NULL)
+            free(self->value.password.octetString);
+
+    free(self);
+}
+
+void
+AcseAuthenticationParameter_setPassword(AcseAuthenticationParameter self, char* password)
+{
+    self->value.password.octetString = (uint8_t*) copyString(password);
+    self->value.password.passwordLength = strlen(password);
+}
+
+void
+AcseAuthenticationParameter_setAuthMechanism(AcseAuthenticationParameter self, AcseAuthenticationMechanism mechanism)
+{
+    self->mechanism = mechanism;
+}
+
+
 IsoConnectionParameters
 IsoConnectionParameters_create()
 {

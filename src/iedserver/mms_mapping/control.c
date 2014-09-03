@@ -760,7 +760,7 @@ getOperParameterTime(MmsValue* operParameters)
     }
 
     if (timeParameter != NULL)
-        if (MmsValue_getType(timeParameter) == MMS_UTC_TIME)
+        if ((MmsValue_getType(timeParameter) == MMS_UTC_TIME) || (MmsValue_getType(timeParameter) == MMS_BINARY_TIME))
             return timeParameter;
 
     return NULL;
@@ -823,7 +823,8 @@ ControlObject_sendLastApplError(ControlObject* self, MmsServerConnection* connec
 
     MmsValue* ctlObjValue = &ctlObjValueMemory;
     ctlObjValue->type = MMS_VISIBLE_STRING;
-    ctlObjValue->value.visibleString = ctlObj;
+    ctlObjValue->value.visibleString.buf = ctlObj;
+    ctlObjValue->value.visibleString.size = sizeof(ctlObj);
 
     MmsValue_setElement(lastApplError, 0, ctlObjValue);
 

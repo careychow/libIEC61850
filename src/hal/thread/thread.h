@@ -28,6 +28,11 @@
 
 #include <stdbool.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 /*! \addtogroup hal
    *
    *  @{
@@ -101,5 +106,10 @@ Semaphore_destroy(Semaphore self);
 /*! @} */
 
 /*! @} */
+
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif /* THREAD_H_ */

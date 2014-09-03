@@ -121,7 +121,7 @@ FileSystem_getFileInfo(char* filename, uint32_t* fileSize, uint64_t* lastModific
     if (fileSize != NULL)
         *fileSize = (uint32_t) fad.nFileSizeLow;
 
-    return false;
+    return true;
 }
 
 DirectoryHandle

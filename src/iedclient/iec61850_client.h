@@ -24,6 +24,10 @@
 #ifndef IEC61850_CLIENT_H_
 #define IEC61850_CLIENT_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "libiec61850_common_api.h"
 #include "iec61850_common.h"
 #include "goose_subscriber.h"
@@ -443,26 +447,6 @@ IedConnection_setGoCBValues(IedConnection self, IedClientError* error, ClientGoo
  */
 
 /**
- * \brief Reserve a report control block (RCB)
- *
- * \param self the connection object
- * \param error the error code if an error occurs
- * \param rcbReference object reference of the report control block
- */
-void
-IedConnection_reserveRCB(IedConnection self, IedClientError* error, char* rcbReference);
-
-/**
- * \brief Release a report control block (RCB)
- *
- * \param self the connection object
- * \param error the error code if an error occurs
- * \param rcbReference object reference of the report control block
- */
-void
-IedConnection_releaseRCB(IedConnection self, IedClientError* error, char* rcbReference);
-
-/**
  * \brief Read access to attributes of a report control block (RCB) at the connected server
  *
  * The requested RCB has to be specified by its object reference. E.g.
@@ -618,54 +602,20 @@ typedef void (*ReportCallbackFunction) (void* parameter, ClientReport report);
  *
  * \param connection the connection object
  * \param rcbReference object reference of the report control block
- * \param callback user provided callback function to be invoked when a report is received.
- * \param callbackParameter user provided parameter that will be passed to the callback function
- * \param dataSet a data set instance where to store the retrieved values the data set has to match with the
- *        data set of the RCB
+ * \param rptId a string that identifies the report. If the rptId is not available then the
+ *        rcbReference is used to identify the report.
+ * \param handler user provided callback function to be invoked when a report is received.
+ * \param handlerParameter user provided parameter that will be passed to the callback function
  */
 void
-IedConnection_installReportHandler(IedConnection self, char* rcbReference, ReportCallbackFunction handler,
-        void* handlerParameter, ClientDataSet dataSet);
+IedConnection_installReportHandler(IedConnection self, char* rcbReference, char* rptId, ReportCallbackFunction handler,
+        void* handlerParameter);
 
 /**
  * \brief uninstall a report handler function for the specified report control block (RCB)
  */
 void
 IedConnection_uninstallReportHandler(IedConnection self, char* rcbReference);
-
-/**
- * \brief enable a report control block (RCB)
- *
- * This is a convenience function that unifies the setRCBValues and installReportHandler functions.
- *
- * It is important that you provide a ClientDataSet instance that is already populated with an MmsValue object
- * of type MMS_STRUCTURE that contains the data set entries as structure elements. This is required because otherwise
- * the report handler is not able to correctly parse the report message from the server.
- *
- * \param connection the connection object
- * \param error the error code if an error occurs
- * \param rcbReference object reference of the report control block
- * \param dataSet a data set instance where to store the retrieved values the data set has to match with the
- *        data set of the RCB
- * \param triggerOptions the options for report triggering. If set to 0 the configured trigger options of
- *        the RCB will not be changed
- * \param callback user provided callback function to be invoked when a report is received.
- * \param callbackParameter user provided parameter that will be passed to the callback function
- *
- */
-void
-IedConnection_enableReporting(IedConnection self, IedClientError* error, char* rcbReference, ClientDataSet dataSet,
-        int triggerOptions, ReportCallbackFunction callback, void* callbackParameter);
-
-/**
- * \brief disable a report control block (RCB)
- *
- * \param self the connection object
- * \param error the error code if an error occurs
- * \param rcbReference object reference of the report control block
- */
-void
-IedConnection_disableReporting(IedConnection self, IedClientError* error, char* rcbReference);
 
 /**
  * \brief Trigger a general interrogation (GI) report for the specified report control block (RCB)
@@ -684,27 +634,36 @@ IedConnection_triggerGIReport(IedConnection self, IedClientError* error, char* r
  ****************************************/
 
 /**
- * \brief return the data set associated with this ClientReport object
+ * \brief return the received data set values of the report
  *
- * \param self the ClientReport object handled to the report handler function
- * \return data set object
+ * \param self the ClientReport instance
+ * \return an MmsValue array instance containing the data set values
  */
-ClientDataSet
-ClientReport_getDataSet(ClientReport self);
+MmsValue*
+ClientReport_getDataSetValues(ClientReport self);
 
 /**
  * \brief return reference (name) of the server RCB associated with this ClientReport object
  *
- * \param self the ClientReport object handled to the report handler function
+ * \param self the ClientReport instance
  * \return report control block reference as string
  */
 char*
 ClientReport_getRcbReference(ClientReport self);
 
 /**
+ * \brief return RptId of the server RCB associated with this ClientReport object
+ *
+ * \param self the ClientReport instance
+ * \return report control block reference as string
+ */
+char*
+ClientReport_getRptId(ClientReport self);
+
+/**
  * \brief get the reason code (reason for inclusion) for a specific report data set element
  *
- * \param self the ClientReport object handled to the report handler function
+ * \param self the ClientReport instance
  * \param elementIndex index of the data set element (starting with 0)
  *
  * \return reason code for the inclusion of the specified element
@@ -717,7 +676,7 @@ ClientReport_getReasonForInclusion(ClientReport self, int elementIndex);
  *
  * Returns the entryId of the report if included in the report. Otherwise returns NULL.
  *
- * \param self the ClientReport object handled to the report handler function
+ * \param self the ClientReport instance
  *
  * \return entryId or NULL
  */
@@ -727,7 +686,7 @@ ClientReport_getEntryId(ClientReport self);
 /**
  * \brief determine if the last received report contains a timestamp
  *
- * \param self the ClientReport object handled to the report handler function
+ * \param self the ClientReport instance
  *
  * \return true if the report contains a timestamp, false otherwise
  */
@@ -740,7 +699,7 @@ ClientReport_hasTimestamp(ClientReport self);
  * Returns the timestamp of the report if included in the report. Otherwise the value is undefined.
  * Use the ClientReport_hasTimestamp function first to figure out if the timestamp is valid
  *
- * \param self the ClientReport object handled to the report handler function
+ * \param self the ClientReport instance
  *
  * \return the timestamp as milliseconds since 1.1.1970 UTC
  */
@@ -794,17 +753,33 @@ ClientReportControlBlock_setResv(ClientReportControlBlock self, bool resv);
 char*
 ClientReportControlBlock_getDataSetReference(ClientReportControlBlock self);
 
+/**
+ * \brief set the data set to be observed by the RCB
+ *
+ * The data set reference is a mixture of MMS and IEC 61850 syntax! In general the reference has
+ * the form:
+ * LDName/LNName$DataSetName
+ *
+ * e.g. "simpleIOGenericIO/LLN0$Events"
+ *
+ * It is standard that data sets are defined in LN0 logical nodes. But this is not mandatory.
+ *
+ * Note: As a result of changing the data set the server will increase the confRev attribute of the RCB.
+ *
+ * \param self the RCB instance
+ * \param dataSetReference the reference of the data set
+ */
 void
 ClientReportControlBlock_setDataSetReference(ClientReportControlBlock self, char* dataSetReference);
 
 uint32_t
-ClientReportControlBlock_getConvRev(ClientReportControlBlock self);
+ClientReportControlBlock_getConfRev(ClientReportControlBlock self);
 
-MmsValue* /* <MMS_BIT_STRING(6)> */
+int
 ClientReportControlBlock_getOptFlds(ClientReportControlBlock self);
 
 void
-ClientReportControlBlock_setOptFlds(ClientReportControlBlock self, MmsValue* optFlds);
+ClientReportControlBlock_setOptFlds(ClientReportControlBlock self, int optFlds);
 
 uint32_t
 ClientReportControlBlock_getBufTm(ClientReportControlBlock self);
@@ -1517,5 +1492,10 @@ IedConnection_deleteFile(IedConnection self, IedClientError* error, char* fileNa
 /** @} */
 
 /**@}*/
+
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif /* IEC61850_CLIENT_H_ */

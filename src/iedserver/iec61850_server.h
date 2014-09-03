@@ -27,6 +27,10 @@
 #ifndef IED_SERVER_API_H_
 #define IED_SERVER_API_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** \defgroup server_api_group IEC 61850 server API
  *  @{
  */
@@ -266,6 +270,31 @@ IedServer_unlockDataModel(IedServer self);
 MmsValue*
 IedServer_getAttributeValue(IedServer self, DataAttribute* dataAttribute);
 
+bool
+IedServer_getBooleanAttributeValue(IedServer self, DataAttribute* dataAttribute);
+
+int32_t
+IedServer_getInt32AttributeValue(IedServer self, DataAttribute* dataAttribute);
+
+int64_t
+IedServer_getInt64AttributeValue(IedServer self, DataAttribute* dataAttribute);
+
+uint32_t
+IedServer_getUInt32AttributeValue(IedServer self, DataAttribute* dataAttribute);
+
+float
+IedServer_getFloatAttributeValue(IedServer self, DataAttribute* dataAttribute);
+
+uint64_t
+IedServer_getUTCTimeAttributeValue(IedServer self, DataAttribute* dataAttribute);
+
+uint32_t
+IedServer_getBitStringAttributeValue(IedServer self, DataAttribute* dataAttribute);
+
+char*
+IedServer_getStringAttributeValue(IedServer self, DataAttribute* dataAttribute);
+
+
 /**
  * \brief Get the MmsValue object related to a FunctionalConstrainedData object
  *
@@ -334,6 +363,21 @@ void
 IedServer_updateInt32AttributeValue(IedServer self, DataAttribute* dataAttribute, int32_t value);
 
 /**
+ * \brief Update the value of an IEC 61850 integer64 data attribute (like BCR actVal)
+ *
+ * Update the value of a integer data attribute without handling with MmsValue instances.
+ *
+ * This function will also check if a trigger condition is satisfied in the case when a report or GOOSE
+ * control block is enabled.
+ *
+ * \param self the instance of IedServer to operate on.
+ * \param dataAttribute the data attribute handle
+ * \param value the new 64 bit integer value of the data attribute.
+ */
+void
+IedServer_updateInt64AttributeValue(IedServer self, DataAttribute* dataAttribute, int64_t value);
+
+/**
  * \brief Update the value of an IEC 61850 unsigned integer data attribute.
  *
  * Update the value of a unsigned data attribute without handling with MmsValue instances.
@@ -379,9 +423,24 @@ void
 IedServer_updateBooleanAttributeValue(IedServer self, DataAttribute* dataAttribute, bool value);
 
 /**
+ * \brief Update the value of an IEC 61850 visible string data attribute.
+ *
+ * Update the value of a visible string data attribute without handling MmsValue instances.
+ *
+ * This function will also check if a trigger condition is satisfied in the case when a report or GOOSE
+ * control block is enabled.
+ *
+ * \param self the instance of IedServer to operate on.
+ * \param dataAttribute the data attribute handle
+ * \param value the new visible string value of the data attribute.
+ */
+void
+IedServer_updateVisibleStringAttributeValue(IedServer self, DataAttribute* dataAttribute, char *value);
+
+/**
  * \brief Update the value of an IEC 61850 UTC time (timestamp) data attribute.
  *
- * Update the value of a UTC time data attribute without handling with MmsValue instances.
+ * Update the value of a UTC time data attribute without handling MmsValue instances.
  *
  * This function will also check if a trigger condition is satisfied in the case when a report or GOOSE
  * control block is enabled.
@@ -631,5 +690,9 @@ IedServer_setWriteAccessPolicy(IedServer self, FunctionalConstraint fc, AccessPo
 /**@}*/
 
 /**@}*/
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* IED_SERVER_API_H_ */
