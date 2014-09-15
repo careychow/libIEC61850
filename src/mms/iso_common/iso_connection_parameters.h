@@ -95,7 +95,7 @@ struct sIsoConnectionParameters
 {
     AcseAuthenticationParameter acseAuthParameter;
 
-    char* hostname;
+    const char* hostname;
     int tcpPort;
 
     uint8_t remoteApTitle[10];
@@ -161,7 +161,7 @@ IsoConnectionParameters_setAcseAuthenticationParameter(IsoConnectionParameters s
  * \param tcpPort the TCP port number of the server
  */
 void
-IsoConnectionParameters_setTcpParameters(IsoConnectionParameters self, char* hostname, int tcpPort);
+IsoConnectionParameters_setTcpParameters(IsoConnectionParameters self, const char* hostname, int tcpPort);
 
 /**
  * \brief set the remote AP-Title and AE-Qualifier
@@ -176,7 +176,7 @@ IsoConnectionParameters_setTcpParameters(IsoConnectionParameters self, char* hos
  * \param aeQualifier the AP-qualifier
  */
 void
-IsoConnectionParameters_setRemoteApTitle(IsoConnectionParameters self, char* apTitle, int aeQualifier);
+IsoConnectionParameters_setRemoteApTitle(IsoConnectionParameters self, const char* apTitle, int aeQualifier);
 
 /**
  * \brief set remote addresses for the lower layers

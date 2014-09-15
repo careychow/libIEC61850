@@ -13,6 +13,7 @@
 #define DEBUG 0
 
 /* print debugging information with printf if set to 1 */
+#define DEBUG_SOCKET 0
 #define DEBUG_COTP 0
 #define DEBUG_ISO_SERVER 0
 #define DEBUG_ISO_CLIENT 0
@@ -23,6 +24,22 @@
 
 /* Maximum MMS PDU SIZE - default is 65000 */
 #define CONFIG_MMS_MAXIMUM_PDU_SIZE 65000
+
+/*
+ * Enable single threaded mode
+ *
+ * 1 ==> server runs in single threaded mode (a single thread for the server and all client connections)
+ * 0 ==> server runs in multi-threaded mode (one thread for each connection and
+ * one server background thread )
+ */
+#define CONFIG_MMS_SINGLE_THREADED 1
+
+/*
+ * Optimize stack for threadless operation - don't use semaphores
+ *
+ * WARNING: If set to 1 normal single- and multi-threaded server are no longer working!
+ */
+#define CONFIG_MMS_THREADLESS_STACK 0
 
 /* number of concurrent MMS client connections the server accepts, -1 for no limit */
 #define CONFIG_MAXIMUM_TCP_CLIENT_CONNECTIONS 5
@@ -105,7 +122,7 @@
 /* default results for MMS identify service */
 #define CONFIG_DEFAULT_MMS_VENDOR_NAME "libiec61850.com"
 #define CONFIG_DEFAULT_MMS_MODEL_NAME "LIBIEC61850"
-#define CONFIG_DEFAULT_MMS_REVISION "0.7.8"
+#define CONFIG_DEFAULT_MMS_REVISION "0.8.0"
 
 /* MMS virtual file store base path - where file services are looking for files */
 #define CONFIG_VIRTUAL_FILESTORE_BASEPATH "./vmd-filestore/"

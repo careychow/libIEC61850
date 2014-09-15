@@ -32,7 +32,7 @@ iedModel_emptyVariableInitializer(void)
 }
 
 IedModel*
-IedModel_create(char* name/*, MemoryAllocator allocator*/)
+IedModel_create(const char* name/*, MemoryAllocator allocator*/)
 {
     IedModel* self = (IedModel*) calloc(1, sizeof(IedModel));
 
@@ -117,7 +117,7 @@ IedModel_addGSEControlBlock(IedModel* self, GSEControlBlock* gcb)
 }
 
 LogicalDevice*
-LogicalDevice_create(char* name, IedModel* parent)
+LogicalDevice_create(const char* name, IedModel* parent)
 {
     LogicalDevice* self = (LogicalDevice*) calloc(1, sizeof(LogicalDevice));
 
@@ -159,7 +159,7 @@ LogicalDevice_addLogicalNode(LogicalDevice* self, LogicalNode* lNode)
 }
 
 LogicalNode*
-LogicalNode_create(char* name, LogicalDevice* parent)
+LogicalNode_create(const char* name, LogicalDevice* parent)
 {
     LogicalNode* self = (LogicalNode*) malloc(sizeof(LogicalNode));
 
@@ -211,7 +211,7 @@ LogicalNode_addReportControlBlock(LogicalNode* self, ReportControlBlock* rcb)
 }
 
 ReportControlBlock*
-ReportControlBlock_create(char* name, LogicalNode* parent, char* rptId, bool isBuffered, char*
+ReportControlBlock_create(const char* name, LogicalNode* parent, char* rptId, bool isBuffered, char*
         dataSetName, uint32_t confRef, uint8_t trgOps, uint8_t options, uint32_t bufTm, uint32_t intgPd)
 {
     ReportControlBlock* self = (ReportControlBlock*) malloc(sizeof(ReportControlBlock));
@@ -252,7 +252,7 @@ LogicalNode_addGSEControlBlock(LogicalNode* self, GSEControlBlock* gcb)
 }
 
 GSEControlBlock*
-GSEControlBlock_create(char* name, LogicalNode* parent, char* appId, char* dataSet, uint32_t confRef, bool fixedOffs)
+GSEControlBlock_create(const char* name, LogicalNode* parent, char* appId, char* dataSet, uint32_t confRef, bool fixedOffs)
 {
     GSEControlBlock* self = (GSEControlBlock*) malloc(sizeof(GSEControlBlock));
 
@@ -333,7 +333,7 @@ DataObject_addChild(DataObject* self, ModelNode* child)
 }
 
 DataObject*
-DataObject_create(char* name, ModelNode* parent, int arrayElements)
+DataObject_create(const char* name, ModelNode* parent, int arrayElements)
 {
     DataObject* self = (DataObject*) malloc(sizeof(DataObject));
 
@@ -380,7 +380,7 @@ DataAttribute_addChild(DataAttribute* self, ModelNode* child)
 }
 
 DataAttribute*
-DataAttribute_create(char* name, ModelNode* parent, DataAttributeType type, FunctionalConstraint fc,
+DataAttribute_create(const char* name, ModelNode* parent, DataAttributeType type, FunctionalConstraint fc,
         uint8_t triggerOptions, int arrayElements, uint32_t sAddr)
 {
     DataAttribute* self = (DataAttribute*) malloc(sizeof(DataAttribute));
@@ -406,7 +406,7 @@ DataAttribute_create(char* name, ModelNode* parent, DataAttributeType type, Func
 }
 
 DataSet*
-DataSet_create(char* name, LogicalNode* parent)
+DataSet_create(const char* name, LogicalNode* parent)
 {
     DataSet* self = (DataSet*) malloc(sizeof(DataSet));
 

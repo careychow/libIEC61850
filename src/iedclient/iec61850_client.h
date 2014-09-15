@@ -856,7 +856,7 @@ ClientReportControlBlock_getOwner(ClientReportControlBlock self);
  * \return the MmsValue instance of the received value or NULL if the request failed
  */
 MmsValue*
-IedConnection_readObject(IedConnection self, IedClientError* error, char* dataAttributeReference, FunctionalConstraint fc);
+IedConnection_readObject(IedConnection self, IedClientError* error, const char* dataAttributeReference, FunctionalConstraint fc);
 
 /**
  * \brief write a functional constrained data attribute (FCDA) or functional constrained data (FCD).
@@ -868,7 +868,7 @@ IedConnection_readObject(IedConnection self, IedClientError* error, char* dataAt
  * \param value the MmsValue to write (has to be of the correct type - MMS_STRUCTURE for FCD)
  */
 void
-IedConnection_writeObject(IedConnection self, IedClientError* error, char* dataAttributeReference, FunctionalConstraint fc,
+IedConnection_writeObject(IedConnection self, IedClientError* error, const char* dataAttributeReference, FunctionalConstraint fc,
         MmsValue* value);
 
 
@@ -881,7 +881,7 @@ IedConnection_writeObject(IedConnection self, IedClientError* error, char* dataA
  * \param fc the functional constraint of the data attribute to read
  */
 bool
-IedConnection_readBooleanValue(IedConnection self, IedClientError* error, char* objectReference, FunctionalConstraint fc);
+IedConnection_readBooleanValue(IedConnection self, IedClientError* error, const char* objectReference, FunctionalConstraint fc);
 
 /**
  * \brief read a functional constrained data attribute (FCDA) of type float
@@ -892,7 +892,7 @@ IedConnection_readBooleanValue(IedConnection self, IedClientError* error, char* 
  * \param fc the functional constraint of the data attribute to read
  */
 float
-IedConnection_readFloatValue(IedConnection self, IedClientError* error, char* objectReference, FunctionalConstraint fc);
+IedConnection_readFloatValue(IedConnection self, IedClientError* error, const char* objectReference, FunctionalConstraint fc);
 
 /**
  * \brief read a functional constrained data attribute (FCDA) of type VisibleString or MmsString
@@ -907,7 +907,7 @@ IedConnection_readFloatValue(IedConnection self, IedClientError* error, char* ob
  * \return a C string representation of the value. Has to be freed by the caller!
  */
 char*
-IedConnection_readStringValue(IedConnection self, IedClientError* error, char* objectReference, FunctionalConstraint fc);
+IedConnection_readStringValue(IedConnection self, IedClientError* error, const char* objectReference, FunctionalConstraint fc);
 
 /**
  * \brief read a functional constrained data attribute (FCDA) of type Integer or Unsigned and return the result as int32_t
@@ -920,7 +920,7 @@ IedConnection_readStringValue(IedConnection self, IedClientError* error, char* o
  * \return an int32_t value of the read data attributes
  */
 int32_t
-IedConnection_readInt32Value(IedConnection self, IedClientError* error, char* objectReference, FunctionalConstraint fc);
+IedConnection_readInt32Value(IedConnection self, IedClientError* error, const char* objectReference, FunctionalConstraint fc);
 
 /**
  * \brief read a functional constrained data attribute (FCDA) of type Integer or Unsigned and return the result as uint32_t
@@ -933,7 +933,7 @@ IedConnection_readInt32Value(IedConnection self, IedClientError* error, char* ob
  * \return an uint32_t value of the read data attributes
  */
 uint32_t
-IedConnection_readUnsigned32Value(IedConnection self, IedClientError* error, char* objectReference, FunctionalConstraint fc);
+IedConnection_readUnsigned32Value(IedConnection self, IedClientError* error, const char* objectReference, FunctionalConstraint fc);
 
 /**
  * \brief read a functional constrained data attribute (FCDA) of type Timestamp (UTC Time)
@@ -950,7 +950,7 @@ IedConnection_readUnsigned32Value(IedConnection self, IedClientError* error, cha
  * \return the timestamp value
  */
 Timestamp*
-IedConnection_readTimestampValue(IedConnection self, IedClientError* error, char* objectReference, FunctionalConstraint fc,
+IedConnection_readTimestampValue(IedConnection self, IedClientError* error, const char* objectReference, FunctionalConstraint fc,
         Timestamp* timeStamp);
 
 /**
@@ -964,7 +964,7 @@ IedConnection_readTimestampValue(IedConnection self, IedClientError* error, char
  * \return the timestamp value
  */
 Quality
-IedConnection_readQualityValue(IedConnection self, IedClientError* error, char* objectReference, FunctionalConstraint fc);
+IedConnection_readQualityValue(IedConnection self, IedClientError* error, const char* objectReference, FunctionalConstraint fc);
 
 /**
  * \brief write a functional constrained data attribute (FCDA) of type boolean
@@ -976,7 +976,7 @@ IedConnection_readQualityValue(IedConnection self, IedClientError* error, char* 
  * \param value the boolean value to write
  */
 void
-IedConnection_writeBooleanValue(IedConnection self, IedClientError* error, char* objectReference,
+IedConnection_writeBooleanValue(IedConnection self, IedClientError* error, const char* objectReference,
         FunctionalConstraint fc, bool value);
 
 /**
@@ -989,7 +989,7 @@ IedConnection_writeBooleanValue(IedConnection self, IedClientError* error, char*
  * \param value the int32_t value to write
  */
 void
-IedConnection_writeInt32Value(IedConnection self, IedClientError* error, char* objectReference,
+IedConnection_writeInt32Value(IedConnection self, IedClientError* error, const char* objectReference,
         FunctionalConstraint fc, int32_t value);
 
 /**
@@ -1002,7 +1002,7 @@ IedConnection_writeInt32Value(IedConnection self, IedClientError* error, char* o
  * \param value the uint32_t value to write
  */
 void
-IedConnection_writeUnsigned32Value(IedConnection self, IedClientError* error, char* objectReference,
+IedConnection_writeUnsigned32Value(IedConnection self, IedClientError* error, const char* objectReference,
         FunctionalConstraint fc, uint32_t value);
 
 /**
@@ -1015,15 +1015,15 @@ IedConnection_writeUnsigned32Value(IedConnection self, IedClientError* error, ch
  * \param value the float value to write
  */
 void
-IedConnection_writeFloatValue(IedConnection self, IedClientError* error, char* objectReference,
+IedConnection_writeFloatValue(IedConnection self, IedClientError* error, const char* objectReference,
         FunctionalConstraint fc, float value);
 
 void
-IedConnection_writeVisibleStringValue(IedConnection self, IedClientError* error, char* objectReference,
+IedConnection_writeVisibleStringValue(IedConnection self, IedClientError* error, const char* objectReference,
         FunctionalConstraint fc, char* value);
 
 void
-IedConnection_writeOctetString(IedConnection self, IedClientError* error, char* objectReference,
+IedConnection_writeOctetString(IedConnection self, IedClientError* error, const char* objectReference,
         FunctionalConstraint fc, uint8_t* value, int valueLength);
 
 /** @} */
@@ -1050,7 +1050,7 @@ IedConnection_writeOctetString(IedConnection self, IedClientError* error, char* 
  * \return data set instance with retrieved values of NULL if an error occurred.
  */
 ClientDataSet
-IedConnection_readDataSetValues(IedConnection self, IedClientError* error, char* dataSetReference, ClientDataSet dataSet);
+IedConnection_readDataSetValues(IedConnection self, IedClientError* error, const char* dataSetReference, ClientDataSet dataSet);
 
 /**
  * \brief create a new data set at the connected server device
@@ -1068,7 +1068,7 @@ IedConnection_readDataSetValues(IedConnection self, IedClientError* error, char*
  *
  */
 void
-IedConnection_createDataSet(IedConnection self, IedClientError* error, char* dataSetReference, LinkedList /* char* */ dataSetElements);
+IedConnection_createDataSet(IedConnection self, IedClientError* error, const char* dataSetReference, LinkedList /* char* */ dataSetElements);
 
 /**
  * \brief delete a deletable data set at the connected server device
@@ -1082,7 +1082,7 @@ IedConnection_createDataSet(IedConnection self, IedClientError* error, char* dat
  * \param dataSetReference object reference of the data set
  */
 void
-IedConnection_deleteDataSet(IedConnection self, IedClientError* error, char* dataSetReference);
+IedConnection_deleteDataSet(IedConnection self, IedClientError* error, const char* dataSetReference);
 
 
 /**
@@ -1100,7 +1100,7 @@ IedConnection_deleteDataSet(IedConnection self, IedClientError* error, char* dat
  * \return LinkedList containing the data set elements as char* strings.
  */
 LinkedList /* <char*> */
-IedConnection_getDataSetDirectory(IedConnection self, IedClientError* error, char* dataSetReference, bool* isDeletable);
+IedConnection_getDataSetDirectory(IedConnection self, IedClientError* error, const char* dataSetReference, bool* isDeletable);
 
 /********************************************************
  * Data set object (local representation of a data set)
@@ -1212,7 +1212,7 @@ void
 ControlObjectClient_setTestMode(ControlObjectClient self);
 
 void
-ControlObjectClient_setOrigin(ControlObjectClient self, char* orIdent, int orCat);
+ControlObjectClient_setOrigin(ControlObjectClient self, const char* orIdent, int orCat);
 
 void
 ControlObjectClient_enableInterlockCheck(ControlObjectClient self);
@@ -1301,7 +1301,7 @@ IedConnection_getServerDirectory(IedConnection self, IedClientError* error, bool
  * \return  LinkedList with string elements representing the logical node names
  */
 LinkedList /*<char*>*/
-IedConnection_getLogicalDeviceDirectory(IedConnection self, IedClientError* error, char* logicalDeviceName);
+IedConnection_getLogicalDeviceDirectory(IedConnection self, IedClientError* error, const char* logicalDeviceName);
 
 typedef enum {
     ACSI_CLASS_DATA_OBJECT,
@@ -1332,7 +1332,7 @@ typedef enum {
  */
 LinkedList /*<char*>*/
 IedConnection_getLogicalNodeVariables(IedConnection self, IedClientError* error,
-		char* logicalNodeReference);
+		const char* logicalNodeReference);
 
 /**
  * \brief returns the directory of the given logical node (LN) containing elements of the specified ACSI class
@@ -1349,7 +1349,7 @@ IedConnection_getLogicalNodeVariables(IedConnection self, IedClientError* error,
  */
 LinkedList /*<char*>*/
 IedConnection_getLogicalNodeDirectory(IedConnection self, IedClientError* error,
-		char* logicalNodeReference, ACSIClass acsiClass);
+		const char* logicalNodeReference, ACSIClass acsiClass);
 
 /**
  * \brief returns the directory of the given data object (DO)
@@ -1365,8 +1365,7 @@ IedConnection_getLogicalNodeDirectory(IedConnection self, IedClientError* error,
  *
  */
 LinkedList /*<char*>*/
-IedConnection_getDataDirectory(IedConnection self, IedClientError* error,
-		char* dataReference);
+IedConnection_getDataDirectory(IedConnection self, IedClientError* error, const char* dataReference);
 
 /**
  * \brief returns the directory of the given data object (DO)
@@ -1383,8 +1382,7 @@ IedConnection_getDataDirectory(IedConnection self, IedClientError* error,
  *
  */
 LinkedList /*<char*>*/
-IedConnection_getDataDirectoryFC(IedConnection self, IedClientError* error,
-		char* dataReference);
+IedConnection_getDataDirectoryFC(IedConnection self, IedClientError* error, const char* dataReference);
 
 /**
  * \brief return the MMS variable type specification of the data attribute referenced by dataAttributeReference and function constraint fc.
@@ -1401,7 +1399,7 @@ IedConnection_getDataDirectoryFC(IedConnection self, IedClientError* error,
  *
  */
 MmsVariableSpecification*
-IedConnection_getVariableSpecification(IedConnection self, IedClientError* error, char* dataAttributeReference,
+IedConnection_getVariableSpecification(IedConnection self, IedClientError* error, const char* dataAttributeReference,
         FunctionalConstraint fc);
 
 /** @} */
@@ -1415,7 +1413,7 @@ IedConnection_getVariableSpecification(IedConnection self, IedClientError* error
 typedef struct sFileDirectoryEntry* FileDirectoryEntry;
 
 FileDirectoryEntry
-FileDirectoryEntry_create(char* fileName, uint32_t fileSize, uint64_t lastModified);
+FileDirectoryEntry_create(const char* fileName, uint32_t fileSize, uint64_t lastModified);
 
 void
 FileDirectoryEntry_destroy(FileDirectoryEntry self);
@@ -1442,7 +1440,7 @@ FileDirectoryEntry_getLastModified(FileDirectoryEntry self);
  * \return the list of directory entries. The return type is a LinkedList with FileDirectoryEntry elements
  */
 LinkedList /*<FileDirectoryEntry>*/
-IedConnection_getFileDirectory(IedConnection self, IedClientError* error, char* directoryName);
+IedConnection_getFileDirectory(IedConnection self, IedClientError* error, const char* directoryName);
 
 /**
  * \brief user provided handler to receive the data of the GetFile request
@@ -1473,7 +1471,7 @@ typedef bool
  * \return number of bytes received
  */
 uint32_t
-IedConnection_getFile(IedConnection self, IedClientError* error, char* fileName, IedClientGetFileHandler handler,
+IedConnection_getFile(IedConnection self, IedClientError* error, const char* fileName, IedClientGetFileHandler handler,
         void* handlerParameter);
 
 /**
@@ -1486,7 +1484,7 @@ IedConnection_getFile(IedConnection self, IedClientError* error, char* fileName,
  * \param fileName the name of the file to delete
  */
 void
-IedConnection_deleteFile(IedConnection self, IedClientError* error, char* fileName);
+IedConnection_deleteFile(IedConnection self, IedClientError* error, const char* fileName);
 
 
 /** @} */

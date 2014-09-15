@@ -465,5 +465,9 @@ EXPORTS
     AcseAuthenticationParameter_destroy
     AcseAuthenticationParameter_setAuthMechanism
     AcseAuthenticationParameter_setPassword
-
+    IedServer_startThreadless
+    IedServer_processIncomingData
+    IedServer_performPeriodicTasks
+    IedServer_stopThreadless
+    
 

@@ -314,9 +314,13 @@ public class StaticModelGenerator {
 				int rcbCount = 0;
 				
 				for (ReportControlBlock rcb : rcbs) {
-					String rcbVariableName = "iedModel_" + ldName + "_" + ln.getName() + "_report" + rcbCount;					
-					rcbVariableNames.add(rcbVariableName);
-					rcbCount++;
+					
+					for (int i = 0; i < rcb.getRptEna().getMaxInstances(); i++) {
+						String rcbVariableName = "iedModel_" + ldName + "_" + ln.getName() + "_report" + rcbCount;					
+						rcbVariableNames.add(rcbVariableName);
+						rcbCount++;
+					}
+					
 				}
 			}
 		}
@@ -794,6 +798,8 @@ public class StaticModelGenerator {
             rcbString += "NULL";
 
         rcbString += "};\n";
+        
+        System.out.println("RCB: " + rcbString);
 
         this.reportControlBlocks.append(rcbString);
     }
@@ -916,9 +922,7 @@ public class StaticModelGenerator {
                     cOut.println("  \"" + logicalNode.getName() + "$" + dataSet.getName() + "\",");
                     cOut.println("  " + dataSet.getFcda().size() + ",");
                     cOut.println("  &" + dataSetVariableName + "_fcda0,");
-                    
-                   
-                    
+                                        
                     if (dataSetNameListIndex < dataSetNames.size()) {
                     	 String nextDataSetVariableName = dataSetNames.get(dataSetNameListIndex);
                     	cOut.println("  &" + nextDataSetVariableName);

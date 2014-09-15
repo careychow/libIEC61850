@@ -86,14 +86,14 @@ IsoConnectionParameters_setAcseAuthenticationParameter(IsoConnectionParameters s
 }
 
 void
-IsoConnectionParameters_setTcpParameters(IsoConnectionParameters self, char* hostname, int tcpPort)
+IsoConnectionParameters_setTcpParameters(IsoConnectionParameters self, const char* hostname, int tcpPort)
 {
     self->hostname = hostname;
     self->tcpPort = tcpPort;
 }
 
 void
-IsoConnectionParameters_setRemoteApTitle(IsoConnectionParameters self, char* apTitle, int aeQualifier)
+IsoConnectionParameters_setRemoteApTitle(IsoConnectionParameters self, const char* apTitle, int aeQualifier)
 {
     if (apTitle == NULL)
         self->remoteApTitleLen = 0;

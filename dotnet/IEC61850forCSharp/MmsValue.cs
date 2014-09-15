@@ -29,8 +29,11 @@ using System.Collections;
 
 namespace IEC61850
 {
-	namespace Client
+	namespace Common
 	{
+        /// <summary>
+        /// This class is used to hold MMS data values of different types.
+        /// </summary>
 		public class MmsValue : IEnumerable
 		{
 			[DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
@@ -136,11 +139,28 @@ namespace IEC61850
 			internal IntPtr valueReference;
 			private bool responsableForDeletion;
 
+            /// <summary>
+            /// Gets the type of the value
+            /// </summary>
+            /// <returns>
+            /// The type.
+            /// </returns>
 			public new MmsType GetType ()
 			{
 				return (MmsType)MmsValue_getType (valueReference);
 			}
 
+            /// <summary>
+            /// Gets the size of an array or structure.
+            /// </summary>
+            /// <returns>
+            /// <description>
+            /// Return the size of an array of structure (number of elements)
+            /// The value has to be of type MMS_ARRAY or MMS_STRUCTURE.
+            /// </description>
+            /// the number of elements
+            /// </returns>
+            /// <exception cref="MmsValueException">This exception is thrown if the value has the wrong type.</exception>
 			public int Size ()
 			{
 				if ((GetType () == MmsType.MMS_ARRAY) || (GetType () == MmsType.MMS_STRUCTURE)) {
@@ -149,6 +169,17 @@ namespace IEC61850
 					throw new MmsValueException ("Value is not a complex type");
 			}
 
+            /// <summary>
+            /// Get an element of an array or structure
+            /// </summary>
+            /// <returns>
+            /// the MmsValue element.
+            /// </returns>
+            /// <param name='index'>
+            /// index of the element starting with 0
+            /// </param>
+            /// <exception cref="MmsValueException">This exception is thrown if the value has the wrong type.</exception>
+            /// <exception cref="MmsValueException">This exception is thrown if the index is out of range.</exception>
 			public MmsValue GetElement (int index)
 			{
 				MmsType type = GetType ();
@@ -163,6 +194,17 @@ namespace IEC61850
 					throw new MmsValueException ("Value is of wrong type");
 			}
 
+            /// <summary>
+            /// Gets the timestamp value as UTC time in s (UNIX time stamp).
+            /// </summary>
+            /// <description>
+            /// Return the value as seconds since epoch (1.1.1970 UTC).
+            /// The value has to be of type MMS_UTC_TIME.
+            /// </description>
+            /// <returns>
+            /// The UTC time in seconds (UNIX time stamp).
+            /// </returns>
+            /// <exception cref="MmsValueException">This exception is thrown if the value has the wrong type.</exception>
 			public UInt32 ToUnixTimestamp ()
 			{
 				if (GetType () == MmsType.MMS_UTC_TIME)
@@ -171,6 +213,17 @@ namespace IEC61850
 					throw new MmsValueException ("Value is not a time type");
 			}
 
+            /// <summary>
+            /// Gets the timestamp value as UTC time in ms.
+            /// </summary>
+            /// <description>
+            /// Return the value as milliseconds since epoch (1.1.1970 UTC).
+            /// The value has to be of type MMS_UTC_TIME.
+            /// </description>
+            /// <returns>
+            /// The UTC time in ms.
+            /// </returns>
+            /// <exception cref="MmsValueException">This exception is thrown if the value has the wrong type.</exception>
 			public ulong GetUtcTimeInMs ()
 			{
 				if (GetType () == MmsType.MMS_UTC_TIME) {
@@ -179,6 +232,15 @@ namespace IEC61850
 					throw new MmsValueException ("Value is not a time type");
 			}
 
+            /// <summary>
+            /// Convert a millisecond time (milliseconds since epoch) to DataTimeOffset
+            /// </summary>
+            /// <returns>
+            /// The time as DataTimeOffset
+            /// </returns>
+            /// <param name='msTime'>
+            /// the millisecond time
+            /// </param>
 			public static DateTimeOffset MsTimeToDateTimeOffset (UInt64 msTime)
 			{
 				DateTimeOffset retVal = new DateTimeOffset (1970, 1, 1, 0, 0, 0, TimeSpan.Zero);
@@ -186,6 +248,17 @@ namespace IEC61850
 				return retVal.AddMilliseconds (msTime);
 			}
 
+            /// <summary>
+            /// Convert MMS_UTC_TIME to DateTimeOffset instance
+            /// </summary>
+            /// <description>
+            /// Return the value as DateTimeOffset instance.
+            /// The value has to be of type MMS_UTC_TIME.
+            /// </description>
+            /// <returns>
+            /// the value as DataTimeOffset instance
+            /// </returns>
+            /// <exception cref="MmsValueException">This exception is thrown if the value has the wrong type.</exception>
 			public DateTimeOffset GetUtcTimeAsDateTimeOffset ()
 			{
 				if (GetType () == MmsType.MMS_UTC_TIME)
@@ -194,6 +267,18 @@ namespace IEC61850
 					throw new MmsValueException ("Value is not a time type");
 			}
 
+
+            /// <summary>
+            /// Return the value as 32 bit signed integer.
+            /// </summary>
+            /// <description>
+            /// Return the value as 32 bit signed integer (Int32).
+            /// The value has to be of type MMS_INTEGER.
+            /// </description>
+            /// <returns>
+            /// the value if the object as 32 bit signed integer
+            /// </returns>
+            /// <exception cref="MmsValueException">This exception is thrown if the value has the wrong type.</exception>
 			public Int32 ToInt32 ()
 			{
 				if (GetType () != MmsType.MMS_INTEGER)
@@ -204,6 +289,17 @@ namespace IEC61850
 				return retVal;
 			}
 
+            /// <summary>
+            /// Return the value as 64 bit signed integer.
+            /// </summary>
+            /// <description>
+            /// Return the value as 64 bit signed integer (Int64).
+            /// The value has to be of type MMS_INTEGER.
+            /// </description>
+            /// <returns>
+            /// the value if the object as 64 bit signed integer
+            /// </returns>
+            /// <exception cref="MmsValueException">This exception is thrown if the value has the wrong type.</exception>
 			public Int64 ToInt64 ()
 			{
 				if (GetType () != MmsType.MMS_INTEGER)
@@ -214,6 +310,17 @@ namespace IEC61850
 				return retVal;
 			}
 
+            /// <summary>
+            /// Return the value as 32 bit unsigned integer.
+            /// </summary>
+            /// <description>
+            /// Return the value as 32 bit unsigned integer (Int32).
+            /// The value has to be of type MMS_INTEGER.
+            /// </description>
+            /// <returns>
+            /// the value if the object as 32 bit unsigned integer
+            /// </returns>
+            /// <exception cref="MmsValueException">This exception is thrown if the value has the wrong type.</exception>
 			public UInt32 ToUint32 ()
 			{
 				if (GetType () != MmsType.MMS_UNSIGNED)
@@ -224,6 +331,13 @@ namespace IEC61850
 				return retVal;
 			}
 
+            /// <summary>
+            /// Gets the boolean value
+            /// </summary>
+            /// <returns>
+            /// The boolean value
+            /// </returns>
+            /// <exception cref="MmsValueException">This exception is thrown if the value has the wrong type.</exception>
 			public bool GetBoolean ()
 			{
 				if (GetType () == MmsType.MMS_BOOLEAN)
@@ -232,6 +346,13 @@ namespace IEC61850
 					throw new MmsValueException ("Value type is not boolean");
 			}
 
+            /// <summary>
+            /// Gets the float value of an MMS_FLOAT instance
+            /// </summary>
+            /// <returns>
+            /// The float value
+            /// </returns>
+            /// <exception cref="MmsValueException">This exception is thrown if the value has the wrong type.</exception>
 			public float ToFloat ()
 			{
 				if (GetType () == MmsType.MMS_FLOAT)
@@ -240,6 +361,13 @@ namespace IEC61850
 					throw new MmsValueException ("Value type is not float");
 			}
 
+            /// <summary>
+            /// Gets the double value of an MMS_FLOAT instance
+            /// </summary>
+            /// <returns>
+            /// The float value
+            /// </returns>
+            /// <exception cref="MmsValueException">This exception is thrown if the value has the wrong type.</exception>
 			public double ToDouble ()
 			{
 				if (GetType () == MmsType.MMS_FLOAT)
@@ -321,21 +449,37 @@ namespace IEC61850
 
 		public enum MmsType
 		{
+            /** array type (multiple elements of the same type) */
 			MMS_ARRAY = 0,
+            /** structure type (multiple elements of different types) */
 			MMS_STRUCTURE = 1,
+            /** boolean */
 			MMS_BOOLEAN = 2,
+            /** bit string */
 			MMS_BIT_STRING = 3,
+            /** signed integer */
 			MMS_INTEGER = 4,
+            /** unsigned integer */
 			MMS_UNSIGNED = 5,
+            /** floating point value (32 or 64 bit) */
 			MMS_FLOAT = 6,
+            /** octet string */
 			MMS_OCTET_STRING = 7,
+            /** visible string - ANSI string */
 			MMS_VISIBLE_STRING = 8,
+            /** Generalized time */
 			MMS_GENERALIZED_TIME = 9,
+            /** Binary time */
 			MMS_BINARY_TIME = 10,
+            /** Binary coded decimal (BCD) - not used */
 			MMS_BCD = 11,
+            /** object ID - not used */
 			MMS_OBJ_ID = 12,
+            /** Unicode string */
 			MMS_STRING = 13,
+            /** UTC time */
 			MMS_UTC_TIME = 14,
+            /** will be returned in case of an error (contains error code) */
 			MMS_DATA_ACCESS_ERROR = 15
 		}
 

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 
 using IEC61850.Client;
+using IEC61850.Common;
 
 namespace datasets
 {

@@ -67,7 +67,10 @@ struct sControlObject
     char* name;
 
     int state;
+
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     Semaphore stateLock;
+#endif
 
     MmsValue* mmsValue;
     MmsVariableSpecification* typeSpec;
@@ -98,7 +101,7 @@ struct sControlObject
     uint64_t operateTime;
 
     bool operateOnce;
-    MmsServerConnection* clientConnection;
+    MmsServerConnection* mmsConnection;
 
     MmsValue* emptyString;
 
@@ -111,8 +114,8 @@ struct sControlObject
 
     uint32_t operateInvokeId;
 
-    ControlHandler listener;
-    void* listenerParameter;
+    ControlHandler operateHandler;
+    void* operateHandlerParameter;
 
     ControlPerformCheckHandler checkHandler;
     void* checkHandlerParameter;
@@ -135,18 +138,31 @@ Control_readAccessControlObject(MmsMapping* self, MmsDomain* domain, char* varia
 static void
 setState(ControlObject* self, int newState)
 {
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     Semaphore_wait(self->stateLock);
+#endif
+
     self->state = newState;
+
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     Semaphore_post(self->stateLock);
+#endif
 }
 
 static int
 getState(ControlObject* self)
 {
     int state;
+
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     Semaphore_wait(self->stateLock);
+#endif
+
     state = self->state;
+
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     Semaphore_post(self->stateLock);
+#endif
 
     return state;
 }
@@ -257,19 +273,7 @@ isSboClassOperateOnce(ControlObject* self)
         return true; /* default is operate-once ! */
 }
 
-static void
-abortControlOperation(ControlObject* self)
-{
-    if ((self->ctlModel == 2) || (self->ctlModel == 4)) {
 
-        if (isSboClassOperateOnce(self))
-            setState(self, STATE_UNSELECTED);
-        else
-            setState(self, STATE_READY);
-    }
-    else
-        setState(self, STATE_READY);
-}
 
 static MmsValue*
 getOperParameterOperTime(MmsValue* operParameters)
@@ -283,91 +287,154 @@ getOperParameterOperTime(MmsValue* operParameters)
     return NULL;
 }
 
-static void
-controlOperateThread(ControlObject* self)
+static bool
+initiateControlTask(ControlObject* self)
 {
-    bool checkOk = true;
-
-    bool isTimeActivatedControl = false;
-
     ClientConnection iedClientConnection =
-            private_IedServer_getClientConnectionByHandle(self->iedServer, self->clientConnection);
+            private_IedServer_getClientConnectionByHandle(self->iedServer, self->mmsConnection);
 
-    if (iedClientConnection == NULL) return;
+    if (iedClientConnection == NULL)
+        return false;
 
     private_ClientConnection_increaseTasksCount(iedClientConnection);
 
-    if (getState(self) == STATE_WAIT_FOR_ACTICATION_TIME)
-        isTimeActivatedControl = true;
+    return true;
+}
 
-    setState(self, STATE_WAIT_FOR_EXECUTION);
+static void
+exitControlTask(ControlObject* self)
+{
+    ClientConnection iedClientConnection =
+            private_IedServer_getClientConnectionByHandle(self->iedServer, self->mmsConnection);
 
-    if (self->waitForExecutionHandler != NULL) {
-        checkOk = self->waitForExecutionHandler(self->waitForExecutionHandlerParameter, self->ctlVal,
-                self->testMode, self->synchroCheck);
-    }
-
-    if (!checkOk) {
-
-        if (isTimeActivatedControl) {
-            ControlObject_sendLastApplError(self, self->clientConnection, "Oper",
-            CONTROL_ERROR_NO_ERROR, CONTROL_ADD_CAUSE_BLOCKED_BY_SYNCHROCHECK,
-                    self->ctlNum, self->origin, false);
-        }
-        else
-            MmsServerConnection_sendWriteResponse(self->clientConnection, self->operateInvokeId,
-                    DATA_ACCESS_ERROR_OBJECT_ACCESS_DENIED);
-
-        abortControlOperation(self);
-
-    }
-    else {
-        if (isTimeActivatedControl) {
-            ControlObject_sendCommandTerminationReq(self, self->clientConnection);
-
-            MmsValue* operTm = getOperParameterOperTime(self->oper);
-
-            MmsValue_setUtcTime(operTm, 0);
-
-        }
-        else
-            MmsServerConnection_sendWriteResponse(self->clientConnection, self->operateInvokeId,
-                    DATA_ACCESS_ERROR_SUCCESS);
-
-        uint64_t currentTime = Hal_getTimeInMs();
-
-        setState(self, STATE_OPERATE);
-
-        if (ControlObject_operate(self, self->ctlVal, currentTime, self->testMode)) {
-
-            if ((self->ctlModel == 4) || (self->ctlModel == 3)) {
-                ControlObject_sendCommandTerminationReq(self, self->clientConnection);
-            }
-        }
-        else {
-
-            if ((self->ctlModel == 4) || (self->ctlModel == 3)) {
-                if (DEBUG_IED_SERVER)
-                    printf("Oper: operate failed!\n");
-                ControlObject_sendLastApplError(self, self->clientConnection, "Oper",
-                CONTROL_ERROR_NO_ERROR, CONTROL_ADD_CAUSE_SELECT_FAILED,
-                        self->ctlNum, self->origin, false);
-            }
-        }
-
-        abortControlOperation(self);
-    }
+    if (iedClientConnection == NULL)
+        return;
 
     /* synchronize with connection management */
     private_ClientConnection_decreaseTasksCount(iedClientConnection);
 }
 
 static void
-startControlOperateThread(ControlObject* self)
+abortControlOperation(ControlObject* self)
 {
-    Thread thread = Thread_create((ThreadExecutionFunction) controlOperateThread, (void*) self, true);
+    if ((self->ctlModel == 2) || (self->ctlModel == 4)) {
 
-    Thread_start(thread);
+        if (isSboClassOperateOnce(self))
+            setState(self, STATE_UNSELECTED);
+        else
+            setState(self, STATE_READY);
+    }
+    else
+        setState(self, STATE_READY);
+
+    exitControlTask(self);
+}
+
+static ControlHandlerResult
+operateControl(ControlObject* self, MmsValue* value, uint64_t currentTime, bool testCondition)
+{
+    self->selectTime = currentTime;
+
+    if (self->operateHandler != NULL)
+        return self->operateHandler(self->operateHandlerParameter, value, testCondition);
+
+    return CONTROL_RESULT_OK;
+}
+
+static void
+executeControlTask(ControlObject* self)
+{
+    int state;
+
+ //   printf("enter executeControlTask\n", state);
+
+executeStateMachine:
+
+    state = getState(self);
+
+//    printf("executeControlTask (state=%i)\n", state);
+
+    switch (state) {
+
+    case STATE_WAIT_FOR_ACTICATION_TIME:
+    case STATE_WAIT_FOR_EXECUTION:
+    {
+        ControlHandlerResult dynamicCheckResult = CONTROL_RESULT_OK;
+        bool isTimeActivatedControl = false;
+
+        if (state == STATE_WAIT_FOR_ACTICATION_TIME)
+           isTimeActivatedControl = true;
+
+        if (self->waitForExecutionHandler != NULL) {
+            dynamicCheckResult = self->waitForExecutionHandler(self->waitForExecutionHandlerParameter, self->ctlVal,
+                    self->testMode, self->synchroCheck);
+        }
+
+        if (dynamicCheckResult == CONTROL_RESULT_FAILED) {
+            if (isTimeActivatedControl) {
+                ControlObject_sendLastApplError(self, self->mmsConnection, "Oper",
+                CONTROL_ERROR_NO_ERROR, CONTROL_ADD_CAUSE_BLOCKED_BY_SYNCHROCHECK,
+                        self->ctlNum, self->origin, false);
+            }
+            else
+                MmsServerConnection_sendWriteResponse(self->mmsConnection, self->operateInvokeId,
+                        DATA_ACCESS_ERROR_OBJECT_ACCESS_DENIED, true);
+
+            abortControlOperation(self);
+            exitControlTask(self);
+        }
+        else if (dynamicCheckResult == CONTROL_RESULT_OK) {
+            if (isTimeActivatedControl) {
+                ControlObject_sendCommandTerminationReq(self, self->mmsConnection);
+
+                MmsValue* operTm = getOperParameterOperTime(self->oper);
+
+                MmsValue_setUtcTime(operTm, 0);
+
+            }
+            else
+                MmsServerConnection_sendWriteResponse(self->mmsConnection, self->operateInvokeId,
+                        DATA_ACCESS_ERROR_SUCCESS, true);
+
+            setState(self, STATE_OPERATE);
+
+            goto executeStateMachine;
+        }
+    }
+    break;
+
+    case STATE_OPERATE:
+    {
+        uint64_t currentTime = Hal_getTimeInMs();
+
+        ControlHandlerResult result = operateControl(self, self->ctlVal, currentTime, self->testMode);
+
+        if (result != CONTROL_RESULT_WAITING) {
+
+            if (result == CONTROL_RESULT_OK) {
+
+                if ((self->ctlModel == 4) || (self->ctlModel == 3)) {
+                    ControlObject_sendCommandTerminationReq(self, self->mmsConnection);
+                }
+            }
+            else {
+
+                if ((self->ctlModel == 4) || (self->ctlModel == 3)) {
+                    if (DEBUG_IED_SERVER)
+                        printf("Oper: operate failed!\n");
+                    ControlObject_sendLastApplError(self, self->mmsConnection, "Oper",
+                    CONTROL_ERROR_NO_ERROR, CONTROL_ADD_CAUSE_SELECT_FAILED,
+                            self->ctlNum, self->origin, false);
+                }
+            }
+
+            abortControlOperation(self);
+            exitControlTask(self);
+        }
+    }
+    break;
+
+    }
 }
 
 ControlObject*
@@ -378,7 +445,9 @@ ControlObject_create(IedServer iedServer, MmsDomain* domain, char* lnName, char*
     if (DEBUG_IED_SERVER)
         printf("create control object for LD: %s, LN: %s, name: %s\n", domain->domainName, lnName, name);
 
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     self->stateLock = Semaphore_create(1);
+#endif
 
     self->name = copyString(name);
     self->lnName = lnName;
@@ -420,7 +489,9 @@ ControlObject_destroy(ControlObject* self)
 
     free(self->name);
 
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     Semaphore_destroy(self->stateLock);
+#endif
 
     free(self);
 }
@@ -527,7 +598,7 @@ selectObject(ControlObject* self, uint64_t selectTime, MmsServerConnection* conn
     updateSboTimeoutValue(self);
     self->selected = true;
     self->selectTime = selectTime;
-    self->clientConnection = connection;
+    self->mmsConnection = connection;
     setState(self, STATE_READY);
 }
 
@@ -551,7 +622,7 @@ checkSelectTimeout(ControlObject* self, uint64_t currentTime)
 bool
 ControlObject_unselect(ControlObject* self, MmsServerConnection* connection)
 {
-    if (self->clientConnection == connection) {
+    if (self->mmsConnection == connection) {
         abortControlOperation(self);
         return true;
     }
@@ -559,23 +630,11 @@ ControlObject_unselect(ControlObject* self, MmsServerConnection* connection)
         return false;
 }
 
-bool
-ControlObject_operate(ControlObject* self, MmsValue* value, uint64_t currentTime, bool testCondition)
-{
-    self->selectTime = currentTime;
-
-    if (self->listener != NULL) {
-        self->listener(self->listenerParameter, value, testCondition);
-    }
-
-    return true;
-}
-
 void
 ControlObject_installListener(ControlObject* self, ControlHandler listener, void* parameter)
 {
-    self->listener = listener;
-    self->listenerParameter = parameter;
+    self->operateHandler = listener;
+    self->operateHandlerParameter = parameter;
 }
 
 void
@@ -601,7 +660,7 @@ Control_processControlActions(MmsMapping* self, uint64_t currentTimeInMs)
     while (element != NULL) {
         ControlObject* controlObject = (ControlObject*) element->data;
 
-        if (controlObject->timeActivatedOperate) {
+        if (controlObject->state == STATE_WAIT_FOR_ACTICATION_TIME) {
 
             if (controlObject->operateTime <= currentTimeInMs) {
 
@@ -615,13 +674,14 @@ Control_processControlActions(MmsMapping* self, uint64_t currentTimeInMs)
                 if (controlObject->checkHandler != NULL) { /* perform operative tests */
                     checkOk = controlObject->checkHandler(
                             controlObject->checkHandlerParameter, controlObject->ctlVal, controlObject->testMode,
-                            controlObject->interlockCheck, (ClientConnection) controlObject->clientConnection);
+                            controlObject->interlockCheck, (ClientConnection) controlObject->mmsConnection);
                 }
 
-                if (checkOk)
-                    startControlOperateThread(controlObject);
+                if (checkOk) {
+                    executeControlTask(controlObject);
+                }
                 else {
-                    ControlObject_sendLastApplError(controlObject, controlObject->clientConnection, "Oper",
+                    ControlObject_sendLastApplError(controlObject, controlObject->mmsConnection, "Oper",
                     CONTROL_ERROR_NO_ERROR, CONTROL_ADD_CAUSE_BLOCKED_BY_INTERLOCKING,
                             controlObject->ctlNum, controlObject->origin, false);
 
@@ -629,6 +689,9 @@ Control_processControlActions(MmsMapping* self, uint64_t currentTimeInMs)
                 }
             }
 
+        } /* if (controlObject->state == STATE_WAIT_FOR_ACTICATION_TIME) */
+        else if (!((controlObject->state == STATE_UNSELECTED) || (controlObject->state == STATE_READY))) {
+            executeControlTask(controlObject);
         }
 
         element = LinkedList_getNext(element);
@@ -1138,7 +1201,7 @@ Control_writeAccessControlObject(MmsMapping* self, MmsDomain* domain, char* vari
                 if (state != STATE_UNSELECTED) {
                     indication = DATA_ACCESS_ERROR_TEMPORARILY_UNAVAILABLE;
 
-                    if (connection != controlObject->clientConnection)
+                    if (connection != controlObject->mmsConnection)
                         ControlObject_sendLastApplError(controlObject, connection, "SBOw", 0,
                         CONTROL_ADD_CAUSE_LOCKED_BY_OTHER_CLIENT, ctlNum, origin, true);
                     else
@@ -1240,7 +1303,7 @@ Control_writeAccessControlObject(MmsMapping* self, MmsDomain* domain, char* vari
             controlObject->testMode = testCondition;
 
             if ((controlObject->ctlModel == 2) || (controlObject->ctlModel == 4)) {
-                if (controlObject->clientConnection != connection) {
+                if (controlObject->mmsConnection != connection) {
                     indication = DATA_ACCESS_ERROR_TEMPORARILY_UNAVAILABLE;
                     if (DEBUG_IED_SERVER)
                         printf("Oper: operate from wrong client connection!\n");
@@ -1274,7 +1337,9 @@ Control_writeAccessControlObject(MmsMapping* self, MmsDomain* domain, char* vari
                     controlObject->timeActivatedOperate = true;
                     controlObject->synchroCheck = synchroCheck;
                     controlObject->interlockCheck = interlockCheck;
-                    controlObject->clientConnection = connection;
+                    controlObject->mmsConnection = connection;
+
+                    initiateControlTask(controlObject);
 
                     setState(controlObject, STATE_WAIT_FOR_ACTICATION_TIME);
 
@@ -1291,8 +1356,6 @@ Control_writeAccessControlObject(MmsMapping* self, MmsDomain* domain, char* vari
 
                 CheckHandlerResult checkResult = CONTROL_ACCEPTED;
 
-                setState(controlObject, STATE_PERFORM_TEST);
-
                 if (controlObject->checkHandler != NULL) { /* perform operative tests */
 
                     ClientConnection clientConnection = private_IedServer_getClientConnectionByHandle(self->iedServer,
@@ -1307,10 +1370,19 @@ Control_writeAccessControlObject(MmsMapping* self, MmsDomain* domain, char* vari
                 if (checkResult == CONTROL_ACCEPTED) {
                     indication = DATA_ACCESS_ERROR_NO_RESPONSE;
 
-                    controlObject->clientConnection = connection;
+                    controlObject->mmsConnection = connection;
 
                     controlObject->operateInvokeId = MmsServerConnection_getLastInvokeId(connection);
-                    startControlOperateThread(controlObject);
+
+                    setState(controlObject, STATE_WAIT_FOR_EXECUTION);
+
+                    initiateControlTask(controlObject);
+
+#if (CONFIG_MMS_THREADLESS_STACK == 1)
+                    //TODO call this in single threaded version to increase response time!?
+                    //executeControlTask(controlObject);
+#endif
+
                 }
                 else {
                     if (checkResult == CONTROL_HARDWARE_FAULT)
@@ -1357,7 +1429,7 @@ Control_writeAccessControlObject(MmsMapping* self, MmsDomain* domain, char* vari
 
         if ((controlObject->ctlModel == 2) || (controlObject->ctlModel == 4)) {
             if (state != STATE_UNSELECTED) {
-                if (controlObject->clientConnection == connection) {
+                if (controlObject->mmsConnection == connection) {
                     indication = DATA_ACCESS_ERROR_SUCCESS;
                     setState(controlObject, STATE_UNSELECTED);
                     goto free_and_return;

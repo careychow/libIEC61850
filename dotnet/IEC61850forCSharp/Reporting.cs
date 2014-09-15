@@ -23,6 +23,8 @@
 using System;
 using System.Runtime.InteropServices;
 
+using IEC61850.Common;
+
 namespace IEC61850
 {
 	namespace Client
@@ -59,6 +61,9 @@ namespace IEC61850
 			REASON_UNKNOWN = 6
 		}
 
+        /// <summary>
+        /// A class to hold the contents of a received report
+        /// </summary>
 		public class Report
 		{
 
@@ -85,11 +90,23 @@ namespace IEC61850
 				this.self = self;
 			}
 
+            /// <summary>
+            /// Determines whether the report has a timestamp.
+            /// </summary>
+            /// <returns>
+            /// <c>true</c> if this report has a timestamp; otherwise, <c>false</c>.
+            /// </returns>
 			public bool HasTimestamp ()
 			{
 				return ClientReport_hasTimestamp (self);
 			}
 
+            /// <summary>
+            /// Gets the timestamp.
+            /// </summary>
+            /// <returns>
+            /// The timestamp as milliseconds since 1.1.1970 UTC 00:00 or 0 if no timestamp is present.
+            /// </returns>
 			public UInt64 GetTimestamp ()
 			{
 				if (HasTimestamp ())
@@ -98,6 +115,12 @@ namespace IEC61850
 					return 0;
 			}
 
+            /// <summary>
+            /// Gets the data set values as MMS_ARRAY instance.
+            /// </summary>
+            /// <returns>
+            /// The data set values.
+            /// </returns>
 			public MmsValue GetDataSetValues ()
 			{
 				if (dataSetValues == IntPtr.Zero) {
@@ -112,6 +135,15 @@ namespace IEC61850
 				return values;
 			}
 
+            /// <summary>
+            /// Gets the reason for inclusion of data set member with the given index
+            /// </summary>
+            /// <returns>
+            /// The reason for inclusion.
+            /// </returns>
+            /// <param name='index'>
+            /// index of the data set member in the data set
+            /// </param>
 			public ReasonForInclusion GetReasonForInclusion (int index)
 			{
 				if (values == null) {

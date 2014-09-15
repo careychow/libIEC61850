@@ -30,10 +30,15 @@ namespace IEC61850
 	{
 
 		public enum AcseAuthenticationMechanism {
+            /** don't use authentication */
 			ACSE_AUTH_NONE = 0,
+            /** use password authentication */
     		ACSE_AUTH_PASSWORD = 1
 		}
 
+        /// <summary>
+        /// Connection parameters associated with the ISO protocol layers (transport, session, presentation, ACSE)
+        /// </summary>
 		public class IsoConnectionParameters
 		{
 			[DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
@@ -83,26 +88,74 @@ namespace IEC61850
 				IsoConnectionParameters_destroy(self);
 			}
 
+            /// <summary>
+            /// Sets the remote ap title related parameters
+            /// </summary>
+            /// <param name='apTitle'>
+            /// remote AP title.
+            /// </param>
+            /// <param name='aeQualifier'>
+            /// remote AE qualifier.
+            /// </param>
 			public void SetRemoteApTitle(string apTitle, int aeQualifier)
 			{
 				IsoConnectionParameters_setRemoteApTitle(self, apTitle, aeQualifier);
 			}
 
+            /// <summary>
+            /// Sets the remote addresses for ISO layers (transport, session, presentation)
+            /// </summary>
+            /// <param name='pSelector'>
+            /// presentation layer address
+            /// </param>
+            /// <param name='sSelector'>
+            /// session layer address
+            /// </param>
+            /// <param name='tSelector'>
+            /// ISO COTP transport layer address
+            /// </param>
 			public void SetRemoteAddresses (UInt32 pSelector, UInt16 sSelector, UInt16 tSelector)
 			{
 				IsoConnectionParameters_setRemoteAddresses(self, pSelector, sSelector, tSelector);
 			}
 
+            /// <summary>
+            /// Sets the local ap title related parameters
+            /// </summary>
+            /// <param name='apTitle'>
+            /// local AP title.
+            /// </param>
+            /// <param name='aeQualifier'>
+            /// local AE qualifier.
+            /// </param>
 			public void SetLocalApTitle (string apTitle, int aeQualifier)
 			{
 				IsoConnectionParameters_setLocalApTitle(self, apTitle, aeQualifier);
 			}
 
+            /// <summary>
+            /// Sets the local addresses for ISO layers (transport, session, presentation)
+            /// </summary>
+            /// <param name='pSelector'>
+            /// presentation layer address
+            /// </param>
+            /// <param name='sSelector'>
+            /// session layer address
+            /// </param>
+            /// <param name='tSelector'>
+            /// ISO COTP transport layer address
+            /// </param>
 			public void SetLocalAddresses (UInt32 pSelector, UInt16 sSelector, UInt16 tSelector)
 			{
 				IsoConnectionParameters_setLocalAddresses(self, pSelector, sSelector, tSelector);
 			}
 
+            /// <summary>
+            /// Instruct ACSE layer to use password authentication.
+            /// </summary>
+            /// <param name='password'>
+            /// Password that will be used to authenticate the client
+            /// </param>
 			public void UsePasswordAuthentication (string password)
 			{
 				if (authParameter == IntPtr.Zero) {

@@ -91,9 +91,6 @@ ControlObject_select(ControlObject* self, MmsServerConnection* connection);
 bool
 ControlObject_unselect(ControlObject* self, MmsServerConnection* connection);
 
-bool
-ControlObject_operate(ControlObject* self, MmsValue* value, uint64_t currentTime, bool testCondition);
-
 void
 ControlObject_installListener(ControlObject* self, ControlHandler listener, void* parameter);
 

@@ -31,7 +31,11 @@
 #include "ied_server_private.h"
 
 struct sClientConnection {
+
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     Semaphore tasksCountMutex;
+#endif
+
     int tasksCount;
     void* serverConnectionHandle;
 };
@@ -41,7 +45,10 @@ private_ClientConnection_create(void* serverConnectionHandle)
 {
     ClientConnection self = (ClientConnection) malloc(sizeof(struct sClientConnection));
 
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     self->tasksCountMutex = Semaphore_create(1);
+#endif
+
     self->tasksCount = 0;
     self->serverConnectionHandle = serverConnectionHandle;
 
@@ -51,7 +58,10 @@ private_ClientConnection_create(void* serverConnectionHandle)
 void
 private_ClientConnection_destroy(ClientConnection self)
 {
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     Semaphore_destroy(self->tasksCountMutex);
+#endif
+
     free(self);
 }
 
@@ -60,9 +70,15 @@ private_ClientConnection_getTasksCount(ClientConnection self)
 {
     int tasksCount;
 
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     Semaphore_wait(self->tasksCountMutex);
+#endif
+
     tasksCount = self->tasksCount;
+
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     Semaphore_post(self->tasksCountMutex);
+#endif
 
     return tasksCount;
 }
@@ -70,17 +86,29 @@ private_ClientConnection_getTasksCount(ClientConnection self)
 void
 private_ClientConnection_increaseTasksCount(ClientConnection self)
 {
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     Semaphore_wait(self->tasksCountMutex);
+#endif
+
     self->tasksCount++;
+
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     Semaphore_post(self->tasksCountMutex);
+#endif
 }
 
 void
 private_ClientConnection_decreaseTasksCount(ClientConnection self)
 {
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     Semaphore_wait(self->tasksCountMutex);
+#endif
+
     self->tasksCount--;
+
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     Semaphore_post(self->tasksCountMutex);
+#endif
 }
 
 void*

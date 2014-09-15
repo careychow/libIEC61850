@@ -10,8 +10,8 @@ endif()
 project(libiec61850)
 
 set(LIB_VERSION_MAJOR "0")
-set(LIB_VERSION_MINOR "7")
-set(LIB_VERSION_PATCH "8")
+set(LIB_VERSION_MINOR "8")
+set(LIB_VERSION_PATCH "0")
 
 # feature checks
 include(CheckLibraryExists)
@@ -26,6 +26,9 @@ set(CONFIG_MAXIMUM_TCP_CLIENT_CONNECTIONS 5 CACHE STRING "Configure the maximum 
 
 option(BUILD_EXAMPLES "Build the examples" ON)
 
+option(CONFIG_MMS_SINGLE_THREADED "Compile for single threaded version" OFF)
+option(CONFIG_MMS_THREADLESS_STACK "Optimize stack for threadless operation (warning: single- or multi-threaded server will not work!)" OFF)
+
 # choose the library features which shall be included
 option(CONFIG_INCLUDE_GOOSE_SUPPORT "Build with GOOSE support" ON)
 
@@ -39,6 +42,7 @@ set(CONFIG_REPORTING_DEFAULT_REPORT_BUFFER_SIZE "8000" CACHE STRING "Default buf
 
 # advanced options
 option(DEBUG "Enable debugging mode (include assertions)" OFF)
+option(DEBUG_SOCKET "Enable printf debugging for socket layer" OFF)
 option(DEBUG_COTP "Enable COTP printf debugging" OFF)
 option(DEBUG_ISO_SERVER "Enable ISO SERVER printf debugging" OFF)
 option(DEBUG_ISO_CLIENT "Enable ISO CLIENT printf debugging" OFF)

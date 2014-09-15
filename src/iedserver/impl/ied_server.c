@@ -23,6 +23,7 @@
 
 #include "iec61850_server.h"
 #include "mms_mapping.h"
+#include "mms_mapping_internal.h"
 #include "control.h"
 #include "stack_config.h"
 #include "ied_server_private.h"
@@ -370,8 +371,6 @@ IedServer_create(IedModel* iedModel)
 void
 IedServer_destroy(IedServer self)
 {
-    //TODO wait for control and other threads to finish??
-
     MmsServer_destroy(self->mmsServer);
     IsoServer_destroy(self->isoServer);
     MmsMapping_destroy(self->mmsMapping);
@@ -398,12 +397,56 @@ IedServer_getIsoServer(IedServer self)
     return self->isoServer;
 }
 
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
+#if (CONFIG_MMS_SINGLE_THREADED == 1)
+static void
+singleThreadedServerThread(void* parameter)
+{
+    IedServer self = (IedServer) parameter;
+
+    MmsMapping* mmsMapping = self->mmsMapping;
+
+    bool running = true;
+
+    mmsMapping->reportThreadFinished = false;
+    mmsMapping->reportThreadRunning = true;
+
+    if (DEBUG_IED_SERVER)
+        printf("IED_SERVER: server thread started!\n");
+
+    while (running) {
+        MmsServer_handleIncomingMessages(self->mmsServer);
+        IedServer_performPeriodicTasks(self);
+        Thread_sleep(1);
+
+        running = mmsMapping->reportThreadRunning;
+    }
+
+    if (DEBUG_IED_SERVER)
+        printf("IED_SERVER: server thread finished!\n");
+
+    mmsMapping->reportThreadFinished = true;
+}
+#endif /* (CONFIG_MMS_SINGLE_THREADED == 1) */
+#endif /* (CONFIG_MMS_THREADLESS_STACK != 1) */
+
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
 void
 IedServer_start(IedServer self, int tcpPort)
 {
+#if (CONFIG_MMS_SINGLE_THREADED == 1)
+    MmsServer_startListeningThreadless(self->mmsServer, tcpPort);
+
+    Thread serverThread = Thread_create((ThreadExecutionFunction) singleThreadedServerThread, (void*) self, true);
+
+    Thread_start(serverThread);
+#else
+
     MmsServer_startListening(self->mmsServer, tcpPort);
     MmsMapping_startEventWorkerThread(self->mmsMapping);
+#endif
 }
+#endif
 
 bool
 IedServer_isRunning(IedServer self)
@@ -420,12 +463,37 @@ IedServer_getDataModel(IedServer self)
     return self->model;
 }
 
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
 void
 IedServer_stop(IedServer self)
 {
     MmsMapping_stopEventWorkerThread(self->mmsMapping);
 
+#if (CONFIG_MMS_SINGLE_THREADED == 1)
+    MmsServer_stopListeningThreadless(self->mmsServer);
+#else
     MmsServer_stopListening(self->mmsServer);
+#endif
+}
+#endif /* (CONFIG_MMS_THREADLESS_STACK != 1) */
+
+
+void
+IedServer_startThreadless(IedServer self, int tcpPort)
+{
+    MmsServer_startListeningThreadless(self->mmsServer, tcpPort);
+}
+
+void
+IedServer_processIncomingData(IedServer self)
+{
+    MmsServer_handleIncomingMessages(self->mmsServer);
+}
+
+void
+IedServer_stopThreadless(IedServer self)
+{
+    MmsServer_stopListeningThreadless(self->mmsServer);
 }
 
 void

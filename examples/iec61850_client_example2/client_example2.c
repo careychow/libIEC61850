@@ -70,7 +70,10 @@ main(int argc, char** argv)
         printf("Get logical device list...\n");
         LinkedList deviceList = IedConnection_getLogicalDeviceList(con, &error);
 
-        printf("error: %i\n", error);
+        if (error != IED_ERROR_OK) {
+            printf("Failed to read device list (error code: %i)\n", error);
+            goto cleanup_and_exit;
+        }
 
         LinkedList device = LinkedList_getNext(deviceList);
 
@@ -190,6 +193,8 @@ main(int argc, char** argv)
     else {
         printf("Connection failed!\n");
     }
+
+cleanup_and_exit:
 
     IedConnection_destroy(con);
 }

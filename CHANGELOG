@@ -1,3 +1,12 @@
+Changes to version 0.8
+-----------------------
+- HAL: socket layer. Some changes. read and accept are now non-blocking. Changes the standard implementations (Linux/POSIX, WIN32, BSD) accordingly
+- server stack: added single-threaded and threadless operation modes to better fit to resource constraint devices (added new configuration option CONFIG_MMS_SINGLE_THREADED)
+- some small changes in server side control model handling (ControlHandler return values and behaviour) to enable threadless and single-threaded operation.
+- C# client API extended and XML documentation completed
+- some smaller bug fixes and extensions
+
+
 Changes to version 0.7.8
 ------------------------
 - IED client: added client side support for Ed.1 compliant control (client side automatically detects if a control is ed1 or ed2 compliant)

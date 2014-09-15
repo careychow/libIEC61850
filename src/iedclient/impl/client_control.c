@@ -261,7 +261,7 @@ ControlObjectClient_getControlModel(ControlObjectClient self)
 }
 
 void
-ControlObjectClient_setOrigin(ControlObjectClient self, char* orIdent, int orCat)
+ControlObjectClient_setOrigin(ControlObjectClient self, const char* orIdent, int orCat)
 {
     if (self->orIdent != NULL)
         free(self->orIdent);

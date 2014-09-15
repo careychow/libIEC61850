@@ -60,7 +60,8 @@ LinkedList /* <char*> */
 MmsVariableSpecification_getStructureElements(MmsVariableSpecification* self);
 
 /**
- * \brief returns the number of elements if the type is a complex type (structure, array)
+ * \brief returns the number of elements if the type is a complex type (structure, array) or the
+ * bit size of integers, unsigned integers, floats, bit strings, visible and MMS strings and octet strings.
  *
  * \param self the MmsVariableSpecification object
  * \return the number of elements or -1 if not applicable

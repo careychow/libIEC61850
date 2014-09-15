@@ -291,7 +291,7 @@ createReadRequest (MmsPdu_t* mmsPdu)
 
 
 int
-mmsClient_createReadNamedVariableListRequest(uint32_t invokeId, char* domainId, char* itemId,
+mmsClient_createReadNamedVariableListRequest(uint32_t invokeId, const char* domainId, const char* itemId,
 		ByteBuffer* writeBuffer, bool specWithResult)
 {
 	MmsPdu_t* mmsPdu = mmsClient_createConfirmedRequestPdu(invokeId);
@@ -330,7 +330,7 @@ mmsClient_createReadNamedVariableListRequest(uint32_t invokeId, char* domainId, 
 int
 mmsClient_createReadAssociationSpecificNamedVariableListRequest(
 		uint32_t invokeId,
-		char* itemId,
+		const char* itemId,
 		ByteBuffer* writeBuffer,
 		bool specWithResult)
 {
@@ -368,7 +368,7 @@ mmsClient_createReadAssociationSpecificNamedVariableListRequest(
  * Request a single value
  */
 int
-mmsClient_createReadRequest(uint32_t invokeId, char* domainId, char* itemId, ByteBuffer* writeBuffer)
+mmsClient_createReadRequest(uint32_t invokeId, const char* domainId, const char* itemId, ByteBuffer* writeBuffer)
 {
 	MmsPdu_t* mmsPdu = mmsClient_createConfirmedRequestPdu(invokeId);
 
@@ -458,7 +458,7 @@ createAlternateAccess(uint32_t index, uint32_t elementCount)
 }
 
 static ListOfVariableSeq_t*
-createVariableIdentifier(char* domainId, char* itemId)
+createVariableIdentifier(const char* domainId, const char* itemId)
 {
 	ListOfVariableSeq_t* variableIdentifier = (ListOfVariableSeq_t*) calloc(1, sizeof(ListOfVariableSeq_t));
 
@@ -473,7 +473,7 @@ createVariableIdentifier(char* domainId, char* itemId)
 }
 
 int
-mmsClient_createReadRequestAlternateAccessIndex(uint32_t invokeId, char* domainId, char* itemId,
+mmsClient_createReadRequestAlternateAccessIndex(uint32_t invokeId, const char* domainId, const char* itemId,
 		uint32_t index, uint32_t elementCount, ByteBuffer* writeBuffer)
 {
 	MmsPdu_t* mmsPdu = mmsClient_createConfirmedRequestPdu(invokeId);
@@ -523,7 +523,7 @@ createListOfVariables(ReadRequest_t* readRequest, int valuesCount) {
  * Request multiple values of a single domain
  */
 int
-mmsClient_createReadRequestMultipleValues(uint32_t invokeId, char* domainId, LinkedList items,
+mmsClient_createReadRequestMultipleValues(uint32_t invokeId, const char* domainId, LinkedList items,
 		ByteBuffer* writeBuffer)
 {
 	MmsPdu_t* mmsPdu = mmsClient_createConfirmedRequestPdu(invokeId);

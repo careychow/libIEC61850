@@ -93,6 +93,18 @@ IedServer_start(IedServer self, int tcpPort);
 void
 IedServer_stop(IedServer self);
 
+void
+IedServer_startThreadless(IedServer self, int tcpPort);
+
+void
+IedServer_processIncomingData(IedServer self);
+
+void
+IedServer_performPeriodicTasks(IedServer self);
+
+void
+IedServer_stopThreadless(IedServer self);
+
 /**
  * \brief Return the data model of the server
  *
@@ -477,8 +489,6 @@ IedServer_updateQuality(IedServer self, DataAttribute* dataAttribute, Quality qu
  * @{
  */
 
-
-
 /**
  * \brief result code for ControlPerformCheckHandler
  */
@@ -489,6 +499,15 @@ typedef enum {
     CONTROL_OBJECT_ACCESS_DENIED = 3, /** check failed due to access control reason - access denied for this client or state */
     CONTROL_OBJECT_UNDEFINED = 4 /** object not visible in this security context ??? */
 } CheckHandlerResult;
+
+/**
+ * \brief result codes for control handler (ControlWaitForExecutionHandler and ControlHandler)
+ */
+typedef enum {
+    CONTROL_RESULT_FAILED = 0, /** check or operation failed */
+    CONTROL_RESULT_OK = 1,     /** check or operation was successful */
+    CONTROL_RESULT_WAITING = 2 /** check or operation is in progress */
+} ControlHandlerResult;
 
 /**
  * \brief Control model callback to perform the static tests (optional).
@@ -516,15 +535,19 @@ typedef CheckHandlerResult (*ControlPerformCheckHandler) (void* parameter, MmsVa
  * a control operation has been invoked by the client. This callback function is
  * intended to perform the dynamic tests. It should check if the synchronization conditions
  * are met if the synchroCheck parameter is set to true.
+ * NOTE: Since version 0.7.9 this function is intended to return immediately. If the operation
+ * cannot be performed immediately the function SHOULD return CONTROL_RESULT_WAITING and the
+ * handler will be invoked again later.
  *
  * \param parameter the parameter that was specified when setting the control handler
  * \param ctlVal the control value of the control operation.
  * \param test indicates if the operate request is a test operation
  * \param synchroCheck the synchroCheck parameter provided by the client
  *
- * \return true if the dynamic tests had been successful, false otherwise
+ * \return CONTROL_RESULT_OK if the dynamic tests had been successful, CONTROL_RESULT_FAILED otherwise,
+ *         CONTROL_RESULT_WAITING if the test is not yet finished
  */
-typedef bool (*ControlWaitForExecutionHandler) (void* parameter, MmsValue* ctlVal, bool test, bool synchroCheck);
+typedef ControlHandlerResult (*ControlWaitForExecutionHandler) (void* parameter, MmsValue* ctlVal, bool test, bool synchroCheck);
 
 /**
  * \brief Control model callback to actually perform the control operation.
@@ -532,14 +555,18 @@ typedef bool (*ControlWaitForExecutionHandler) (void* parameter, MmsValue* ctlVa
  * User provided callback function for the control model. It will be invoked when
  * a control operation happens (Oper). Here the user should perform the control operation
  * (e.g. by setting an digital output or switching a relay).
+ * NOTE: Since version 0.7.9 this function is intended to return immediately. If the operation
+ * cannot be performed immediately the function SHOULD return CONTROL_RESULT_WAITING and the
+ * handler will be invoked again later.
  *
  * \param parameter the parameter that was specified when setting the control handler
  * \param ctlVal the control value of the control operation.
  * \param test indicates if the operate request is a test operation
  *
- * \return true if the control action bas been successful, false otherwise
+ * \return CONTROL_RESULT_OK if the control action bas been successful, CONTROL_RESULT_FAILED otherwise,
+ *         CONTROL_RESULT_WAITING if the test is not yet finished
  */
-typedef bool (*ControlHandler) (void* parameter, MmsValue* ctlVal, bool test);
+typedef ControlHandlerResult (*ControlHandler) (void* parameter, MmsValue* ctlVal, bool test);
 
 /**
  * \brief Set control handler for controllable data object

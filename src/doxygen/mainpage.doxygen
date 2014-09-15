@@ -55,10 +55,6 @@
  * consists of the three files <code>hal/hal.h</code>, <code>hal/socket/socket.h</code> and
  * <code>hal/thread/thread.h</code>.
  *
- * <img src="libIEC61850_server.png" width=640 />
- * <center>Figure 1: Overview of the server stack.</center>
- * <br/> 
- *
  * \section examples Building the library and the examples
  *
  * To build the library you can simply execute <code>make</code> in the main folder of the

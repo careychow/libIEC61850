@@ -44,7 +44,7 @@ int
 BerEncoder_encodeBoolean(uint8_t tag, bool value, uint8_t* buffer, int bufPos);
 
 int
-BerEncoder_encodeStringWithTag(uint8_t tag, char* string, uint8_t* buffer, int bufPos);
+BerEncoder_encodeStringWithTag(uint8_t tag, const char* string, uint8_t* buffer, int bufPos);
 
 int
 BerEncoder_encodeOctetString(uint8_t tag, uint8_t* octetString, uint32_t octetStringSize, uint8_t* buffer, int bufPos);
@@ -79,7 +79,7 @@ int
 BerEncoder_determineLengthSize(uint32_t length);
 
 int
-BerEncoder_determineEncodedStringSize(char* string);
+BerEncoder_determineEncodedStringSize(const char* string);
 
 int
 BerEncoder_determineEncodedBitStringSize(int bitStringSize);
@@ -89,7 +89,7 @@ BerEncoder_determineEncodedBitStringSize(int bitStringSize);
  */
 
 int
-BerEncoder_encodeOIDToBuffer(char* oidString, uint8_t* buffer, int maxBufLen);
+BerEncoder_encodeOIDToBuffer(const char* oidString, uint8_t* buffer, int maxBufLen);
 
 void
 BerEncoder_revertByteOrder(uint8_t* octets, const int size);

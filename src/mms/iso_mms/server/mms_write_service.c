@@ -72,13 +72,13 @@ mmsServer_createMmsWriteResponse(MmsServerConnection* connection,
 
 
 void
-MmsServerConnection_sendWriteResponse(MmsServerConnection* self, uint32_t invokeId, MmsDataAccessError indication)
+MmsServerConnection_sendWriteResponse(MmsServerConnection* self, uint32_t invokeId, MmsDataAccessError indication, bool handlerMode)
 {
     ByteBuffer* response = ByteBuffer_create(NULL, self->maxPduSize);
 
     mmsServer_createMmsWriteResponse(self, invokeId, response, 1, &indication);
 
-    IsoConnection_sendMessage(self->isoConnection, response, false);
+    IsoConnection_sendMessage(self->isoConnection, response, handlerMode);
 
     ByteBuffer_destroy(response);
 }

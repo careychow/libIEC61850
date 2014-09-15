@@ -57,7 +57,10 @@ struct sIsoServer {
     AcseAuthenticator authenticator;
     void* authenticatorParameter;
 
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     Thread serverThread;
+#endif
+
     Socket serverSocket;
     int tcpPort;
     char* localIpAddress;
@@ -68,9 +71,11 @@ struct sIsoServer {
     IsoConnection* openClientConnections;
 #endif
 
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     Semaphore userLock;
 
     Semaphore connectionCounterMutex;
+#endif
     int connectionCounter;
 };
 
@@ -86,6 +91,10 @@ addClientConnection(IsoServer self, IsoConnection connection)
     for (i = 0; i < CONFIG_MAXIMUM_TCP_CLIENT_CONNECTIONS; i++) {
         if (self->openClientConnections[i] == NULL) {
             self->openClientConnections[i] = connection;
+
+            if (DEBUG_ISO_SERVER)
+                printf("ISO_SERVER: added connection (%p) index:%i\n", connection, i);
+
             break;
         }
     }
@@ -102,6 +111,10 @@ removeClientConnection(IsoServer self, IsoConnection connection)
 
     for (i = 0; i < CONFIG_MAXIMUM_TCP_CLIENT_CONNECTIONS; i++) {
         if (self->openClientConnections[i] == connection) {
+
+            if (DEBUG_ISO_SERVER)
+                printf("ISO_SERVER: removed connection (%p) index:%i\n", connection, i);
+
             self->openClientConnections[i] = NULL;
             break;
         }
@@ -130,27 +143,68 @@ closeAllOpenClientConnections(IsoServer self)
 
             IsoConnection_close(self->openClientConnections[i]);
 
-            break;
+#if (CONFIG_MMS_SINGLE_THREADED == 1)
+            /* if CONFIG_MMS_SINGLE_THREADED == 0 connection instance will be destroyed by connection thread. */
+            IsoConnection_destroy(self->openClientConnections[i]);
+#endif
+
         }
     }
 #endif
 }
 
 static void
-isoServerThread(void* isoServerParam)
+handleClientConnections(IsoServer self)
 {
-    IsoServer self = (IsoServer) isoServerParam;
+#if (CONFIG_MAXIMUM_TCP_CLIENT_CONNECTIONS == -1)
+    LinkedList openConnection = LinkedList_getNext(self->openClientConnections);
+    LinkedList lastConnection = self->openClientConnections;
 
-    if (DEBUG_ISO_SERVER)
-        printf("ISO_SERVER: isoServerThread %p started\n", &isoServerParam);
+    while (openConnection != NULL) {
+        IsoConnection isoConnection = (IsoConnection) openConnection->data;
 
-    Socket connectionSocket;
+        if (IsoConnection_isRunning(isoConnection))
+            IsoConnection_handleTcpConnection(isoConnection);
+        else {
+            IsoConnection_destroy(isoConnection);
 
+            lastConnection->next = openConnection->next;
+
+            free(openConnection);
+        }
+
+        openConnection = LinkedList_getNext(openConnection);
+    }
+#else
+
+
+    int i;
+
+    for (i = 0; i < CONFIG_MAXIMUM_TCP_CLIENT_CONNECTIONS; i++) {
+        if (self->openClientConnections[i] != NULL) {
+            if (IsoConnection_isRunning(self->openClientConnections[i])) {
+
+                IsoConnection_handleTcpConnection(self->openClientConnections[i]);
+            }
+            else {
+                IsoConnection_destroy(self->openClientConnections[i]);
+
+                self->openClientConnections[i] = NULL;
+            }
+
+        }
+    }
+#endif /* (CONFIG_MAXIMUM_TCP_CLIENT_CONNECTIONS == -1) */
+}
+
+static bool
+setupIsoServer(IsoServer self)
+{
     self->serverSocket = (Socket) TcpServerSocket_create(self->localIpAddress, self->tcpPort);
 
     if (self->serverSocket == NULL) {
         self->state = ISO_SVR_STATE_ERROR;
-        goto cleanUp;
+        return false;
     }
 
     ServerSocket_setBacklog((ServerSocket) self->serverSocket, BACKLOG);
@@ -159,36 +213,113 @@ isoServerThread(void* isoServerParam)
 
     self->state = ISO_SVR_STATE_RUNNING;
 
-    while (self->state == ISO_SVR_STATE_RUNNING)
-    {
-
-        if ((connectionSocket = ServerSocket_accept((ServerSocket) self->serverSocket)) == NULL) {
-            break;
-        }
-        else {
-
 #if (CONFIG_MAXIMUM_TCP_CLIENT_CONNECTIONS != -1)
-            if (private_IsoServer_getConnectionCounter(self) >= CONFIG_MAXIMUM_TCP_CLIENT_CONNECTIONS) {
-                if (DEBUG_ISO_SERVER)
-                    printf("ISO_SERVER: maximum number of connections reached -> reject connection attempt.\n");
-
-                Socket_destroy(connectionSocket);
-                continue;
-            }
+    if (DEBUG_ISO_SERVER)
+        printf("ISO_SERVER: server is limited to %i client connections.\n", (int) CONFIG_MAXIMUM_TCP_CLIENT_CONNECTIONS);
 #endif
 
-            IsoConnection isoConnection = IsoConnection_create(connectionSocket, self);
-
-            private_IsoServer_increaseConnectionCounter(self);
-
-            addClientConnection(self, isoConnection);
+    return true;
+}
 
 
-            self->connectionHandler(ISO_CONNECTION_OPENED, self->connectionHandlerParameter,
-                    isoConnection);
+#if (CONFIG_MMS_THREADLESS_STACK == 0)
+// used by single and multi-threaded versions
+static void
+handleIsoConnections(IsoServer self)
+{
+    Socket connectionSocket;
 
+    if ((connectionSocket = ServerSocket_accept((ServerSocket) self->serverSocket)) != NULL) {
+
+#if (CONFIG_MAXIMUM_TCP_CLIENT_CONNECTIONS != -1)
+        if (private_IsoServer_getConnectionCounter(self) >= CONFIG_MAXIMUM_TCP_CLIENT_CONNECTIONS) {
+            if (DEBUG_ISO_SERVER)
+                printf("ISO_SERVER: maximum number of connections reached -> reject connection attempt.\n");
+
+            Socket_destroy(connectionSocket);
+
+#if (CONFIG_MMS_SINGLE_THREADED == 1)
+            handleClientConnections(self);
+#endif
+
+            return;
         }
+#endif
 
+        IsoConnection isoConnection = IsoConnection_create(connectionSocket, self);
+
+        private_IsoServer_increaseConnectionCounter(self);
+
+        addClientConnection(self, isoConnection);
+
+        self->connectionHandler(ISO_CONNECTION_OPENED, self->connectionHandlerParameter,
+                isoConnection);
+
+    }
+
+#if (CONFIG_MMS_SINGLE_THREADED == 1)
+    handleClientConnections(self);
+#endif
+}
+#endif /* (CONFIG_MMS_THREADLESS_STACK == 0) */
+
+// used by threadless version
+static void
+handleIsoConnectionsThreadless(IsoServer self)
+{
+    Socket connectionSocket;
+
+    if ((connectionSocket = ServerSocket_accept((ServerSocket) self->serverSocket)) != NULL) {
+
+#if (CONFIG_MAXIMUM_TCP_CLIENT_CONNECTIONS != -1)
+        if (private_IsoServer_getConnectionCounter(self) >= CONFIG_MAXIMUM_TCP_CLIENT_CONNECTIONS) {
+            if (DEBUG_ISO_SERVER)
+                printf("ISO_SERVER: maximum number of connections reached -> reject connection attempt.\n");
+
+            Socket_destroy(connectionSocket);
+
+            handleClientConnections(self);
+
+            return;
+        }
+#endif
+
+        IsoConnection isoConnection = IsoConnection_create(connectionSocket, self);
+
+        private_IsoServer_increaseConnectionCounter(self);
+
+        addClientConnection(self, isoConnection);
+
+        self->connectionHandler(ISO_CONNECTION_OPENED, self->connectionHandlerParameter,
+                isoConnection);
+
+    }
+
+    handleClientConnections(self);
+}
+
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
+// only required for multi-threaded server!
+static void
+isoServerThread(void* isoServerParam)
+{
+    IsoServer self = (IsoServer) isoServerParam;
+
+    if (!setupIsoServer(self)) {
+        if (DEBUG_ISO_SERVER)
+            printf("ISO_SERVER: starting server failed!\n");
+
+        goto cleanUp;
+    }
+
+    if (DEBUG_ISO_SERVER)
+        printf("ISO_SERVER: isoServerThread %p started\n", &isoServerParam);
+
+    while (self->state == ISO_SVR_STATE_RUNNING)
+    {
+        handleIsoConnections(self);
+
+        Thread_sleep(1);
     }
 
     self->state = ISO_SVR_STATE_STOPPED;
@@ -200,6 +331,7 @@ isoServerThread(void* isoServerParam)
            printf("ISO_SERVER: isoServerThread %p stopped\n", &isoServerParam);
 
 }
+#endif
 
 IsoServer
 IsoServer_create()
@@ -216,7 +348,10 @@ IsoServer_create()
             calloc(CONFIG_MAXIMUM_TCP_CLIENT_CONNECTIONS, sizeof(IsoConnection));
 #endif
 
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     self->connectionCounterMutex = Semaphore_create(1);
+#endif
+
     self->connectionCounter = 0;
 
     return self;
@@ -259,6 +394,7 @@ IsoServer_getAuthenticatorParameter(IsoServer self)
     return self->authenticatorParameter;
 }
 
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
 void
 IsoServer_startListening(IsoServer self)
 {
@@ -266,22 +402,65 @@ IsoServer_startListening(IsoServer self)
 
     Thread_start(self->serverThread);
 
+    /* wait until server is up */
     while (self->state == ISO_SVR_STATE_IDLE)
         Thread_sleep(1);
 
     if (DEBUG_ISO_SERVER)
         printf("ISO_SERVER: new iso server thread started\n");
 }
+#endif
 
 void
-IsoServer_stopListening(IsoServer self)
+IsoServer_startListeningThreadless(IsoServer self)
+{
+    if (!setupIsoServer(self)) {
+        if (DEBUG_ISO_SERVER)
+            printf("ISO_SERVER: starting server failed!\n");
+
+        self->serverSocket = NULL;
+    }
+    else {
+        self->state = ISO_SVR_STATE_RUNNING;
+
+        if (DEBUG_ISO_SERVER)
+            printf("ISO_SERVER: new iso server (threadless) started\n");
+    }
+}
+
+void
+IsoServer_processIncomingMessages(IsoServer self)
+{
+    if (self->state == ISO_SVR_STATE_RUNNING)
+        handleIsoConnectionsThreadless(self);
+}
+
+static void
+stopListening(IsoServer self)
 {
     self->state = ISO_SVR_STATE_STOPPED;
-
     if (self->serverSocket != NULL) {
         ServerSocket_destroy((ServerSocket) self->serverSocket);
         self->serverSocket = NULL;
     }
+}
+
+void
+IsoServer_stopListeningThreadless(IsoServer self)
+{
+    stopListening(self);
+
+    closeAllOpenClientConnections(self);
+
+    if (DEBUG_ISO_SERVER)
+        printf("ISO_SERVER: IsoServer_stopListeningThreadless finished!\n");
+}
+
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
+void
+IsoServer_stopListening(IsoServer self)
+{
+    stopListening(self);
 
     if (self->serverThread != NULL)
         Thread_destroy(self->serverThread);
@@ -295,6 +474,7 @@ IsoServer_stopListening(IsoServer self)
     if (DEBUG_ISO_SERVER)
         printf("ISO_SERVER: IsoServer_stopListening finished!\n");
 }
+#endif
 
 void
 IsoServer_closeConnection(IsoServer self, IsoConnection isoConnection)
@@ -318,8 +498,11 @@ IsoServer_setConnectionHandler(IsoServer self, ConnectionIndicationHandler handl
 void
 IsoServer_destroy(IsoServer self)
 {
+
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     if (self->state == ISO_SVR_STATE_RUNNING)
         IsoServer_stopListening(self);
+#endif
 
 #if (CONFIG_MAXIMUM_TCP_CLIENT_CONNECTIONS == -1)
     LinkedList_destroy(self->openClientConnections);
@@ -327,7 +510,9 @@ IsoServer_destroy(IsoServer self)
     free(self->openClientConnections);
 #endif
 
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     Semaphore_destroy(self->connectionCounterMutex);
+#endif
 
     free(self);
 }
@@ -335,23 +520,34 @@ IsoServer_destroy(IsoServer self)
 void
 private_IsoServer_increaseConnectionCounter(IsoServer self)
 {
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     Semaphore_wait(self->connectionCounterMutex);
+#endif
+
     self->connectionCounter++;
     if (DEBUG_ISO_SERVER)
         printf("IsoServer: increase connection counter to %i!\n", self->connectionCounter);
+
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     Semaphore_post(self->connectionCounterMutex);
+#endif
 }
 
 void
 private_IsoServer_decreaseConnectionCounter(IsoServer self)
 {
-
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     Semaphore_wait(self->connectionCounterMutex);
+#endif
+
     self->connectionCounter--;
 
     if (DEBUG_ISO_SERVER)
         printf("IsoServer: decrease connection counter to %i!\n", self->connectionCounter);
+
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     Semaphore_post(self->connectionCounterMutex);
+#endif
 }
 
 int
@@ -359,13 +555,20 @@ private_IsoServer_getConnectionCounter(IsoServer self)
 {
     int connectionCounter;
 
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     Semaphore_wait(self->connectionCounterMutex);
+#endif
+
     connectionCounter = self->connectionCounter;
+
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     Semaphore_post(self->connectionCounterMutex);
+#endif
 
     return connectionCounter;
 }
 
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
 void
 IsoServer_setUserLock(IsoServer self, Semaphore userLock)
 {
@@ -385,3 +588,4 @@ IsoServer_userUnlock(IsoServer self)
     if (self->userLock != NULL)
         Semaphore_post(self->userLock);
 }
+#endif

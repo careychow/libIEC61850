@@ -119,6 +119,20 @@ IsoServer_startListening(IsoServer self);
 void
 IsoServer_stopListening(IsoServer self);
 
+
+void
+IsoServer_startListeningThreadless(IsoServer self);
+
+/**
+ * for threadless operation
+ */
+void
+IsoServer_processIncomingMessages(IsoServer self);
+
+void
+IsoServer_stopListeningThreadless(IsoServer self);
+
+
 void
 IsoServer_closeConnection(IsoServer self, IsoConnection isoConnection);
 

@@ -27,10 +27,10 @@
 #include "libiec61850_platform_includes.h"
 
 char*
-copyString(char* string);
+copyString(const char* string);
 
 char*
-copyStringToBuffer(char* string, char* buffer);
+copyStringToBuffer(const char* string, char* buffer);
 
 char*
 copySubString(char* startPos, char* endPos);

@@ -10,7 +10,6 @@ set (lib_common_SRCS
 ./common/conversions.c
 ./common/mem_alloc_linked_list.c
 ./common/simple_allocator.c
-./common/byte_stream.c
 ./mms/iso_server/iso_connection.c
 ./mms/iso_server/iso_server.c
 ./mms/iso_acse/acse.c

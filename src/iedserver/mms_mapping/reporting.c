@@ -90,7 +90,11 @@ ReportControl_create(bool buffered, LogicalNode* parentLN)
     self->timeOfEntry = NULL;
     self->reservationTimeout = 0;
     self->triggerOps = 0;
+
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     self->createNotificationsMutex = Semaphore_create(1);
+#endif
+
     self->bufferedDataSetValues = NULL;
     self->valueReferences = NULL;
     self->lastEntryId = 0;
@@ -105,13 +109,17 @@ ReportControl_create(bool buffered, LogicalNode* parentLN)
 static void
 ReportControl_lockNotify(ReportControl* self)
 {
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     Semaphore_wait(self->createNotificationsMutex);
+#endif
 }
 
 static void
 ReportControl_unlockNotify(ReportControl* self)
 {
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     Semaphore_post(self->createNotificationsMutex);
+#endif
 }
 
 
@@ -162,7 +170,9 @@ ReportControl_destroy(ReportControl* self)
     if (self->buffered)
         ReportBuffer_destroy(self->reportBuffer);
 
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     Semaphore_destroy(self->createNotificationsMutex);
+#endif
 
     free(self->name);
 

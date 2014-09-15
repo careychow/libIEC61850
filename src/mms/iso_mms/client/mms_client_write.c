@@ -172,7 +172,7 @@ mmsClient_parseWriteResponse(ByteBuffer* message, int32_t bufPos, MmsError* mmsE
 }
 
 static VariableSpecification_t*
-createNewDomainVariableSpecification(char* domainId, char* itemId)
+createNewDomainVariableSpecification(const char* domainId, const char* itemId)
 {
 	VariableSpecification_t* varSpec = (VariableSpecification_t*) calloc(1, sizeof(ListOfVariableSeq_t));
 
@@ -229,7 +229,7 @@ deleteDataElement(Data_t* dataElement)
 }
 
 int
-mmsClient_createWriteMultipleItemsRequest(uint32_t invokeId, char* domainId, LinkedList itemIds, LinkedList values,
+mmsClient_createWriteMultipleItemsRequest(uint32_t invokeId, const char* domainId, LinkedList itemIds, LinkedList values,
         ByteBuffer* writeBuffer)
 {
     MmsPdu_t* mmsPdu = mmsClient_createConfirmedRequestPdu(invokeId);
@@ -302,7 +302,7 @@ mmsClient_createWriteMultipleItemsRequest(uint32_t invokeId, char* domainId, Lin
 }
 
 int
-mmsClient_createWriteRequest(uint32_t invokeId, char* domainId, char* itemId, MmsValue* value,
+mmsClient_createWriteRequest(uint32_t invokeId, const char* domainId, const char* itemId, MmsValue* value,
 		ByteBuffer* writeBuffer)
 {
 	MmsPdu_t* mmsPdu = mmsClient_createConfirmedRequestPdu(invokeId);

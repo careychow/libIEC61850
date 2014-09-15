@@ -74,7 +74,10 @@ typedef struct {
 
     int triggerOps;
 
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     Semaphore createNotificationsMutex;  /* { covered by mutex } */
+#endif
+
     ReportInclusionFlag* inclusionFlags; /* { covered by mutex } */
     bool triggered;                      /* { covered by mutex } */
     uint64_t reportTime;                 /* { covered by mutex } */

@@ -163,7 +163,7 @@ MmsConnection_destroy(MmsConnection self);
  * \return true on success. false if the connection attempt failed.
  */
 bool
-MmsConnection_connect(MmsConnection self, MmsError* mmsError, char* serverName, int serverPort);
+MmsConnection_connect(MmsConnection self, MmsError* mmsError, const char* serverName, int serverPort);
 
 /**
  * \brief Uses the MMS/ACSE abort service to close the connection to the server
@@ -233,7 +233,7 @@ MmsConnection_getDomainNames(MmsConnection self, MmsError* mmsError);
  * \return the of domain specific variable names or NULL if the request failed.
  */
 LinkedList /* <char*> */
-MmsConnection_getDomainVariableNames(MmsConnection self, MmsError* mmsError, char* domainId);
+MmsConnection_getDomainVariableNames(MmsConnection self, MmsError* mmsError, const char* domainId);
 
 /**
  * \brief Get the names of all named variable lists present in a MMS domain of the server.
@@ -247,7 +247,7 @@ MmsConnection_getDomainVariableNames(MmsConnection self, MmsError* mmsError, cha
  * \return the domain specific named variable list names or NULL if the request failed.
  */
 LinkedList /* <char*> */
-MmsConnection_getDomainVariableListNames(MmsConnection self, MmsError* mmsError, char* domainId);
+MmsConnection_getDomainVariableListNames(MmsConnection self, MmsError* mmsError, const char* domainId);
 
 /**
  * \brief Get the names of all named variable lists associated with this client connection.
@@ -275,7 +275,7 @@ MmsConnection_getVariableListNamesAssociationSpecific(MmsConnection self, MmsErr
  * either be a simple value or a complex value or array.
  */
 MmsValue*
-MmsConnection_readVariable(MmsConnection self, MmsError* mmsError, char* domainId, char* itemId);
+MmsConnection_readVariable(MmsConnection self, MmsError* mmsError, const char* domainId, const char* itemId);
 
 /**
  * \brief Read an element of a single array variable from the server.
@@ -292,7 +292,7 @@ MmsConnection_readVariable(MmsConnection self, MmsError* mmsError, char* domainI
  * array elements of numberOfElements > 0.
  */
 MmsValue*
-MmsConnection_readArrayElements(MmsConnection self, MmsError* mmsError, char* domainId, char* itemId,
+MmsConnection_readArrayElements(MmsConnection self, MmsError* mmsError, const char* domainId, const char* itemId,
 		uint32_t startIndex, uint32_t numberOfElements);
 
 /**
@@ -308,7 +308,7 @@ MmsConnection_readArrayElements(MmsConnection self, MmsError* mmsError, char* do
  * in the order as they appeared in the item ID list.
  */
 MmsValue*
-MmsConnection_readMultipleVariables(MmsConnection self, MmsError* mmsError, char* domainId,
+MmsConnection_readMultipleVariables(MmsConnection self, MmsError* mmsError, const char* domainId,
 		LinkedList /*<char*>*/ items);
 
 /**
@@ -322,7 +322,7 @@ MmsConnection_readMultipleVariables(MmsConnection self, MmsError* mmsError, char
  */
 void
 MmsConnection_writeVariable(MmsConnection self, MmsError* mmsError,
-        char* domainId, char* itemId, MmsValue* value);
+        const char* domainId, const char* itemId, MmsValue* value);
 
 /**
  * \brief Write multiple variables at the server  (NOT YET IMPLEMENTED).
@@ -342,7 +342,7 @@ MmsConnection_writeVariable(MmsConnection self, MmsError* mmsError,
  *        write.
  */
 void
-MmsConnection_writeMultipleVariables(MmsConnection self, MmsError* mmsError, char* domainId,
+MmsConnection_writeMultipleVariables(MmsConnection self, MmsError* mmsError, const char* domainId,
         LinkedList /*<char*>*/ items, LinkedList /* <MmsValue*> */ values,
         LinkedList* /* <MmsValue*> */ accessResults);
 
@@ -358,7 +358,7 @@ MmsConnection_writeMultipleVariables(MmsConnection self, MmsError* mmsError, cha
  */
 MmsVariableSpecification*
 MmsConnection_getVariableAccessAttributes(MmsConnection self, MmsError* mmsError,
-		char* domainId, char* itemId);
+        const char* domainId, const char* itemId);
 
 /**
  * \brief Read the values of a domain specific named variable list
@@ -374,8 +374,8 @@ MmsConnection_getVariableAccessAttributes(MmsConnection self, MmsError* mmsError
  * in the order as they appeared in named variable list definition.
  */
 MmsValue*
-MmsConnection_readNamedVariableListValues(MmsConnection self, MmsError* mmsError, char* domainId,
-        char* listName,	bool specWithResult);
+MmsConnection_readNamedVariableListValues(MmsConnection self, MmsError* mmsError, const char* domainId,
+        const char* listName,	bool specWithResult);
 
 
 /**
@@ -392,7 +392,7 @@ MmsConnection_readNamedVariableListValues(MmsConnection self, MmsError* mmsError
  */
 MmsValue*
 MmsConnection_readNamedVariableListValuesAssociationSpecific(MmsConnection self, MmsError* mmsError,
-        char* listName,	bool specWithResult);
+        const char* listName,	bool specWithResult);
 
 /**
  * \brief Define a new named variable list at the server.
@@ -405,8 +405,8 @@ MmsConnection_readNamedVariableListValuesAssociationSpecific(MmsConnection self,
  *        elements have to be of type MmsVariableAccessSpecification*.
  */
 void
-MmsConnection_defineNamedVariableList(MmsConnection self, MmsError* mmsError, char* domainId,
-        char* listName,	LinkedList variableSpecs);
+MmsConnection_defineNamedVariableList(MmsConnection self, MmsError* mmsError, const char* domainId,
+        const char* listName,	LinkedList variableSpecs);
 
 
 /**
@@ -420,7 +420,7 @@ MmsConnection_defineNamedVariableList(MmsConnection self, MmsError* mmsError, ch
  */
 void
 MmsConnection_defineNamedVariableListAssociationSpecific(MmsConnection self, MmsError* mmsError,
-        char* listName,	LinkedList variableSpecs);
+        const char* listName,	LinkedList variableSpecs);
 
 /**
  * \brief Read the entry list of a named variable list at the server.
@@ -436,7 +436,7 @@ MmsConnection_defineNamedVariableListAssociationSpecific(MmsConnection self, Mms
  */
 LinkedList /* <MmsVariableAccessSpecification*> */
 MmsConnection_readNamedVariableListDirectory(MmsConnection self, MmsError* mmsError,
-        char* domainId, char* listName, bool* deletable);
+        const char* domainId, const char* listName, bool* deletable);
 
 
 
@@ -451,7 +451,7 @@ MmsConnection_readNamedVariableListDirectory(MmsConnection self, MmsError* mmsEr
  */
 LinkedList /* <MmsVariableAccessSpecification*> */
 MmsConnection_readNamedVariableListDirectoryAssociationSpecific(MmsConnection self, MmsError* mmsError,
-        char* listName, bool* deletable);
+        const char* listName, bool* deletable);
 
 /**
  * \brief Delete a named variable list at the server.
@@ -462,7 +462,7 @@ MmsConnection_readNamedVariableListDirectoryAssociationSpecific(MmsConnection se
  * \param listName the name of the named variable list
  */
 void
-MmsConnection_deleteNamedVariableList(MmsConnection self, MmsError* mmsError, char* domainId, char* listName);
+MmsConnection_deleteNamedVariableList(MmsConnection self, MmsError* mmsError, const char* domainId, const char* listName);
 
 /**
  * \brief Delete an association specific named variable list at the server.
@@ -473,7 +473,7 @@ MmsConnection_deleteNamedVariableList(MmsConnection self, MmsError* mmsError, ch
  */
 void
 MmsConnection_deleteAssociationSpecificNamedVariableList(MmsConnection self, MmsError* mmsError,
-        char* listName);
+        const char* listName);
 
 /**
  * \brief Create a new MmsVariableSpecification that can be used to define named variable lists.
@@ -579,7 +579,7 @@ typedef void
  * \return the FRSM ID (file read state machine) handle of the opened file
  */
 int32_t
-MmsConnection_fileOpen(MmsConnection self, MmsError* mmsError, char* filename, uint32_t initialPosition,
+MmsConnection_fileOpen(MmsConnection self, MmsError* mmsError, const char* filename, uint32_t initialPosition,
         uint32_t* fileSize, uint64_t* lastModified);
 
 /**
@@ -614,7 +614,7 @@ MmsConnection_fileClose(MmsConnection self, MmsError* mmsError, int32_t frsmId);
  * \param fileName name of the file to delete
  */
 void
-MmsConnection_fileDelete(MmsConnection self, MmsError* mmsError, char* fileName);
+MmsConnection_fileDelete(MmsConnection self, MmsError* mmsError, const char* fileName);
 
 /**
  * \brief rename the file with the specified name
@@ -625,7 +625,7 @@ MmsConnection_fileDelete(MmsConnection self, MmsError* mmsError, char* fileName)
  * \param newFileName new name of the file
  */
 void
-MmsConnection_fileRename(MmsConnection self, MmsError* mmsError, char* currentFileName, char* newFileName);
+MmsConnection_fileRename(MmsConnection self, MmsError* mmsError, const char* currentFileName, const char* newFileName);
 
 /**
  * \brief get the file directory of the server.
@@ -644,7 +644,7 @@ MmsConnection_fileRename(MmsConnection self, MmsError* mmsError, char* currentFi
  * \return (more follows) true if more data is available
  */
 bool
-MmsConnection_getFileDirectory(MmsConnection self, MmsError* mmsError, char* fileSpecification, char* continueAfter,
+MmsConnection_getFileDirectory(MmsConnection self, MmsError* mmsError, const char* fileSpecification, const char* continueAfter,
         MmsFileDirectoryHandler handler, void* handlerParameter);
 
 

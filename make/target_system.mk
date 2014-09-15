@@ -126,7 +126,7 @@ LIB_OBJS_DIR = $(LIBIEC_HOME)/build
 endif
 
 CFLAGS += -g 
-CFLAGS += -Os
+#CFLAGS += -Os
 
 DYNLIB_LDFLAGS=-lpthread
 endif

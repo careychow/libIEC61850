@@ -164,7 +164,7 @@ mmsClient_parseGetVariableAccessAttributesResponse(ByteBuffer* message, uint32_t
 int
 mmsClient_createGetVariableAccessAttributesRequest(
         uint32_t invokeId,
-		char* domainId, char* itemId,
+		const char* domainId, const char* itemId,
 		ByteBuffer* writeBuffer)
 {
 	MmsPdu_t* mmsPdu = mmsClient_createConfirmedRequestPdu(invokeId);

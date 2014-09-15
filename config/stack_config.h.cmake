@@ -19,6 +19,7 @@
 #cmakedefine01 DEBUG
 
 /* print debugging information with printf if set to 1 */
+#cmakedefine01 DEBUG_SOCKET
 #cmakedefine01 DEBUG_COTP
 #cmakedefine01 DEBUG_ISO_SERVER
 #cmakedefine01 DEBUG_ISO_CLIENT
@@ -26,6 +27,15 @@
 #cmakedefine01 DEBUG_IED_CLIENT
 #cmakedefine01 DEBUG_MMS_CLIENT
 #cmakedefine01 DEBUG_MMS_SERVER
+
+/* 1 ==> server runs in single threaded mode (one dedicated thread for the server)
+ * 0 ==> server runs in multi threaded mode (one thread for each connection and
+ * one server background thread )
+ */
+#cmakedefine01 CONFIG_MMS_SINGLE_THREADED
+
+/* Optimize stack for threadless operation - don't use semaphores */
+#cmakedefine01 CONFIG_MMS_THREADLESS_STACK
 
 /* Maximum MMS PDU SIZE - default is 65000 */
 #cmakedefine CONFIG_MMS_MAXIMUM_PDU_SIZE @CONFIG_MMS_MAXIMUM_PDU_SIZE@
@@ -52,9 +62,9 @@
 #define CONFIG_TCP_READ_TIMEOUT_MS 1000
 
 /* Ethernet interface ID for GOOSE and SV */
-//#define CONFIG_ETHERNET_INTERFACE_ID "eth0"
+#define CONFIG_ETHERNET_INTERFACE_ID "eth0"
 //#define CONFIG_ETHERNET_INTERFACE_ID "vboxnet0"
-#define CONFIG_ETHERNET_INTERFACE_ID "en0"  // OS X uses enX in place of ethX as ethernet NIC names.
+//#define CONFIG_ETHERNET_INTERFACE_ID "en0"  // OS X uses enX in place of ethX as ethernet NIC names.
 
 /* Set to 1 to include GOOSE support in the build. Otherwise set to 0 */
 #cmakedefine01 CONFIG_INCLUDE_GOOSE_SUPPORT

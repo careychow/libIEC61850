@@ -288,8 +288,8 @@ IsoSession_createConnectSpdu(IsoSession* self, IsoConnectionParameters isoParame
     lengthOffset = offset;
     offset++; /* Skip byte for length - fill it later */
 
-    self->calledSessionSelector = isoParameters->remotePSelector;
-    self->callingSessionSelector = isoParameters->localPSelector;
+    self->calledSessionSelector = isoParameters->remoteSSelector;
+    self->callingSessionSelector = isoParameters->localSSelector;
 
     offset = encodeConnectAcceptItem(buf, offset, 0);
 

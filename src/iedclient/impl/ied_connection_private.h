@@ -38,6 +38,7 @@ struct sIedConnection
     LinkedList logicalDevices;
     LinkedList clientControls;
     LastApplError lastApplError;
+
     Semaphore stateMutex;
 
     IedConnectionClosedHandler connectionCloseHandler;

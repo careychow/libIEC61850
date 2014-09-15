@@ -87,11 +87,11 @@ IedModel_getLogicalDeviceCount(IedModel* iedModel)
 }
 
 DataSet*
-IedModel_lookupDataSet(IedModel* model, char* dataSetReference  /* e.g. ied1Inverter/LLN0$dataset1 */)
+IedModel_lookupDataSet(IedModel* model, const char* dataSetReference  /* e.g. ied1Inverter/LLN0$dataset1 */)
 {
 	DataSet* dataSet = model->dataSets;
 
-	char* separator = strchr(dataSetReference, '/');
+	const char* separator = strchr(dataSetReference, '/');
 
 	if (separator == NULL)
 		return NULL;
@@ -112,7 +112,7 @@ IedModel_lookupDataSet(IedModel* model, char* dataSetReference  /* e.g. ied1Inve
 }
 
 LogicalDevice*
-IedModel_getDevice(IedModel* model, char* deviceName)
+IedModel_getDevice(IedModel* model, const char* deviceName)
 {
     LogicalDevice* device = model->firstChild;
 
@@ -230,7 +230,7 @@ IedModel_getModelNodeByShortAddress(IedModel* model, uint32_t sAddr)
 }
 
 ModelNode*
-IedModel_getModelNodeByObjectReference(IedModel* model, char* objectReference)
+IedModel_getModelNodeByObjectReference(IedModel* model, const char* objectReference)
 {
     assert(strlen(objectReference) < 129);
 
@@ -254,7 +254,7 @@ IedModel_getModelNodeByObjectReference(IedModel* model, char* objectReference)
 }
 
 ModelNode*
-IedModel_getModelNodeByShortObjectReference(IedModel* model, char* objectReference)
+IedModel_getModelNodeByShortObjectReference(IedModel* model, const char* objectReference)
 {
     assert((strlen(model->name) + strlen(objectReference)) < 130);
 
@@ -404,10 +404,10 @@ ModelNode_getChildCount(ModelNode* modelNode) {
 
 
 ModelNode*
-ModelNode_getChild(ModelNode* self, char* name)
+ModelNode_getChild(ModelNode* self, const char* name)
 {
     // check for separator
-   char* separator = strchr(name, '.');
+   const char* separator = strchr(name, '.');
 
    int nameElementLength = 0;
 
@@ -443,7 +443,7 @@ ModelNode_getChild(ModelNode* self, char* name)
 
 inline
 LogicalNode*
-LogicalDevice_getLogicalNode(LogicalDevice* device, char* nodeName)
+LogicalDevice_getLogicalNode(LogicalDevice* device, const char* nodeName)
 {
     return (LogicalNode*) ModelNode_getChild((ModelNode*) device, nodeName);
 }
