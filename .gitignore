@@ -213,3 +213,9 @@ pip-log.txt
 
 #Mr Developer
 .mr.developer.cfg
+
+third_party/
+doxydoc/
+vs/
+build_win32/
+.install/
