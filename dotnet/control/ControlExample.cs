@@ -6,11 +6,11 @@ using IEC61850.Client;
 
 namespace control
 {
-    class ControlExample
+    internal class ControlExample
     {
-        public static void Main (string[] args)
+        public static void Main(string[] args)
         {
-            IedConnection con = new IedConnection ();
+            IedConnection con = new IedConnection();
 
             string hostname;
 
@@ -21,30 +21,28 @@ namespace control
 
             Console.WriteLine("Connect to " + hostname);
 
-			try
+            try
             {
                 con.Connect(hostname, 102);
 
-				string objectReference = "IEDM1CPUBHKW/DRCC1.DERStr";
+                string objectReference = "IEDM1CPUBHKW/DRCC1.DERStr";
 
-				ControlObject control = con.CreateControlObject(objectReference);
+                ControlObject control = con.CreateControlObject(objectReference);
 
-				ControlModel controlModel = control.GetControlModel();
+                ControlModel controlModel = control.GetControlModel();
 
-				Console.WriteLine(objectReference + " has control model " + controlModel.ToString());
+                Console.WriteLine(objectReference + " has control model " + controlModel.ToString());
 
-				if (!control.Operate(true))
-					Console.WriteLine("operate failed!");
-
+                if (!control.Operate(true))
+                    Console.WriteLine("operate failed!");
 
 
                 con.Abort();
             }
             catch (IedConnectionException e)
             {
-				Console.WriteLine(e.Message);
-           }
-
+                Console.WriteLine(e.Message);
+            }
         }
     }
 }

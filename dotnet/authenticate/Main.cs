@@ -1,16 +1,15 @@
 using System;
 using System.Collections.Generic;
-
 using IEC61850.Client;
 using IEC61850.Common;
 
 namespace authenticate
 {
-    class MainClass
+    internal class MainClass
     {
-        public static void Main (string[] args)
+        public static void Main(string[] args)
         {
-            IedConnection con = new IedConnection ();
+            IedConnection con = new IedConnection();
 
             string hostname;
 
@@ -24,9 +23,9 @@ namespace authenticate
 
             try
             {
-				IsoConnectionParameters parameters = con.GetConnectionParameters();
+                IsoConnectionParameters parameters = con.GetConnectionParameters();
 
-				parameters.UsePasswordAuthentication("top secret");
+                parameters.UsePasswordAuthentication("top secret");
 
                 con.Connect(hostname, 102);
 
@@ -37,11 +36,11 @@ namespace authenticate
                     Console.WriteLine("LD: " + entry);
                 }
 
-				con.Release();
+                con.Release();
             }
             catch (IedConnectionException e)
             {
-				Console.WriteLine(e.Message);
+                Console.WriteLine(e.Message);
             }
         }
     }

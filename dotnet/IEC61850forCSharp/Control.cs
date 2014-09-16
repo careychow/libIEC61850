@@ -23,32 +23,32 @@
 
 using System;
 using System.Runtime.InteropServices;
-
 using IEC61850.Common;
 
 namespace IEC61850
 {
-
     /// <summary>
     /// IEC 61850 common API parts (used by client and server API)
     /// </summary>
-	namespace Common {
-
+    namespace Common
+    {
         /// <summary>
         /// Control model
         /// </summary>
-		public enum ControlModel {
-			CONTROL_MODEL_STATUS_ONLY = 0,
-			CONTROL_MODEL_DIRECT_NORMAL = 1,
-			CONTROL_MODEL_SBO_NORMAL = 2,
-			CONTROL_MODEL_DIRECT_ENHANCED = 3,
-			CONTROL_MODEL_SBO_ENHANCED = 4
-		}
+        public enum ControlModel
+        {
+            CONTROL_MODEL_STATUS_ONLY = 0,
+            CONTROL_MODEL_DIRECT_NORMAL = 1,
+            CONTROL_MODEL_SBO_NORMAL = 2,
+            CONTROL_MODEL_DIRECT_ENHANCED = 3,
+            CONTROL_MODEL_SBO_ENHANCED = 4
+        }
 
         /// <summary>
         /// Originator category
         /// </summary>
-        public enum OrCat {
+        public enum OrCat
+        {
             /** Not supported - should not be used */
             NOT_SUPPORTED = 0,
             /** Control operation issued from an operator using a client located at bay level */
@@ -68,26 +68,26 @@ namespace IEC61850
             /** Status change occurred without control action (for example external trip of a circuit breaker or failure inside the breaker) */
             PROCESS = 8
         }
-	}
+    }
 
-	namespace Client {
-
+    namespace Client
+    {
         /// <summary>
         /// Control object.
         /// </summary>
-		public class ControlObject
-		{
-			[DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
-			private static extern IntPtr ControlObjectClient_create(string objectReference, IntPtr connection);
+        public class ControlObject
+        {
+            [DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
+            private static extern IntPtr ControlObjectClient_create(string objectReference, IntPtr connection);
 
-			[DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
-			private static extern void ControlObjectClient_destroy(IntPtr self);
+            [DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
+            private static extern void ControlObjectClient_destroy(IntPtr self);
 
-			[DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
-			private static extern int ControlObjectClient_getControlModel(IntPtr self);
+            [DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int ControlObjectClient_getControlModel(IntPtr self);
 
-			[DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
-			private static extern bool ControlObjectClient_operate(IntPtr self, IntPtr ctlVal, UInt64 operTime);
+            [DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
+            private static extern bool ControlObjectClient_operate(IntPtr self, IntPtr ctlVal, UInt64 operTime);
 
             [DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
             private static extern bool ControlObjectClient_select(IntPtr self);
@@ -107,20 +107,20 @@ namespace IEC61850
             [DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
             private static extern void ControlObjectClient_enableSynchroCheck(IntPtr self);
 
-			private IntPtr controlObject;
+            private IntPtr controlObject;
 
-			internal ControlObject (string objectReference, IntPtr connection)
-			{
-				this.controlObject = ControlObjectClient_create(objectReference, connection);
+            internal ControlObject(string objectReference, IntPtr connection)
+            {
+                this.controlObject = ControlObjectClient_create(objectReference, connection);
 
-				if (this.controlObject == System.IntPtr.Zero)
-					throw new IedConnectionException("Control object not found", 0);
-			}
+                if (this.controlObject == System.IntPtr.Zero)
+                    throw new IedConnectionException("Control object not found", 0);
+            }
 
-			~ControlObject ()
-			{
-				ControlObjectClient_destroy(controlObject);
-			}
+            ~ControlObject()
+            {
+                ControlObjectClient_destroy(controlObject);
+            }
 
             /// <summary>
             /// Gets the control model.
@@ -128,12 +128,12 @@ namespace IEC61850
             /// <returns>
             /// The control model.
             /// </returns>
-			public ControlModel GetControlModel ()
-			{
-				ControlModel controlModel = (ControlModel) ControlObjectClient_getControlModel(controlObject);
+            public ControlModel GetControlModel()
+            {
+                ControlModel controlModel = (ControlModel) ControlObjectClient_getControlModel(controlObject);
 
-				return controlModel;
-			}
+                return controlModel;
+            }
 
             /// <summary>
             /// Sets the origin parameter used by control commands.
@@ -144,7 +144,7 @@ namespace IEC61850
             /// <param name='originatorCategory'>
             /// Originator category.
             /// </param>
-            public void SetOrigin (string originator, OrCat originatorCategory)
+            public void SetOrigin(string originator, OrCat originatorCategory)
             {
                 ControlObjectClient_setOrigin(controlObject, originator, (int) originatorCategory);
             }
@@ -154,10 +154,10 @@ namespace IEC61850
             /// </summary>
             /// <param name='ctlVal'>the new value of the control</param>
             /// <returns>true when the operation has been successful, false otherwise</returns>
-			public bool Operate (bool ctlVal)
-			{
-				return Operate (ctlVal, 0);
-			}
+            public bool Operate(bool ctlVal)
+            {
+                return Operate(ctlVal, 0);
+            }
 
             /// <summary>
             /// Operate the control with the specified control value (time activated control).
@@ -165,22 +165,22 @@ namespace IEC61850
             /// <param name='ctlVal'>the new value of the control</param>
             /// <param name='operTime'>the time when the operation will be executed</param>
             /// <returns>true when the operation has been successful, false otherwise</returns>
-			public bool Operate (bool ctlVal, UInt64 operTime)
-			{
-				MmsValue value = new MmsValue(ctlVal);
+            public bool Operate(bool ctlVal, UInt64 operTime)
+            {
+                MmsValue value = new MmsValue(ctlVal);
 
-				return Operate (value, operTime);
-			}
+                return Operate(value, operTime);
+            }
 
             /// <summary>
             /// Operate the control with the specified control value.
             /// </summary>
             /// <param name='ctlVal'>the new value of the control</param>
             /// <returns>true when the operation has been successful, false otherwise</returns>
-			public bool Operate (float ctlVal)
-			{
-				return Operate (ctlVal, 0);
-			}
+            public bool Operate(float ctlVal)
+            {
+                return Operate(ctlVal, 0);
+            }
 
             /// <summary>
             /// Operate the control with the specified control value (time activated control).
@@ -188,22 +188,22 @@ namespace IEC61850
             /// <param name='ctlVal'>the new value of the control</param>
             /// <param name='operTime'>the time when the operation will be executed</param>
             /// <returns>true when the operation has been successful, false otherwise</returns>
-			public bool Operate (float ctlVal, UInt64 operTime)
-			{
-				MmsValue value = new MmsValue(ctlVal);
+            public bool Operate(float ctlVal, UInt64 operTime)
+            {
+                MmsValue value = new MmsValue(ctlVal);
 
-				return Operate (value, operTime);
-			}
+                return Operate(value, operTime);
+            }
 
             /// <summary>
             /// Operate the control with the specified control value.
             /// </summary>
             /// <param name='ctlVal'>the new value of the control</param>
             /// <returns>true when the operation has been successful, false otherwise</returns>
-			public bool Operate (int ctlVal)
-			{
-				return Operate (ctlVal, 0);
-			}
+            public bool Operate(int ctlVal)
+            {
+                return Operate(ctlVal, 0);
+            }
 
             /// <summary>
             /// Operate the control with the specified control value (time activated control).
@@ -211,22 +211,22 @@ namespace IEC61850
             /// <param name='ctlVal'>the new value of the control</param>
             /// <param name='operTime'>the time when the operation will be executed</param>
             /// <returns>true when the operation has been successful, false otherwise</returns>
-			public bool Operate (int ctlVal, UInt64 operTime)
-			{
-				MmsValue value = new MmsValue(ctlVal);
+            public bool Operate(int ctlVal, UInt64 operTime)
+            {
+                MmsValue value = new MmsValue(ctlVal);
 
-				return Operate (value, operTime);
-			}
+                return Operate(value, operTime);
+            }
 
             /// <summary>
             /// Operate the control with the specified control value.
             /// </summary>
             /// <param name='ctlVal'>the new value of the control</param>
             /// <returns>true when the operation has been successful, false otherwise</returns>
-			public bool Operate (MmsValue ctlVal)
-			{
-				return Operate (ctlVal, 0);
-			}
+            public bool Operate(MmsValue ctlVal)
+            {
+                return Operate(ctlVal, 0);
+            }
 
             /// <summary>
             /// Operate the control with the specified control value (time activated control).
@@ -234,16 +234,16 @@ namespace IEC61850
             /// <param name='ctlVal'>the new value of the control</param>
             /// <param name='operTime'>the time when the operation will be executed</param>
             /// <returns>true when the operation has been successful, false otherwise</returns>
-			public bool Operate (MmsValue ctlVal, UInt64 operTime)
-			{
-				return ControlObjectClient_operate(controlObject, ctlVal.valueReference, operTime);
-			}
+            public bool Operate(MmsValue ctlVal, UInt64 operTime)
+            {
+                return ControlObjectClient_operate(controlObject, ctlVal.valueReference, operTime);
+            }
 
             /// <summary>
             /// Select the control object.
             /// </summary>
             /// <returns>true when the selection has been successful, false otherwise</returns>
-            public bool Select ()
+            public bool Select()
             {
                 return ControlObjectClient_select(controlObject);
             }
@@ -256,7 +256,7 @@ namespace IEC61850
             /// the value to be checked.
             /// </param>
             /// <returns>true when the selection has been successful, false otherwise</returns>
-            public bool SelectWithValue (MmsValue ctlVal)
+            public bool SelectWithValue(MmsValue ctlVal)
             {
                 return ControlObjectClient_selectWithValue(controlObject, ctlVal.valueReference);
             }
@@ -268,7 +268,7 @@ namespace IEC61850
             /// the value to be checked.
             /// </param>
             /// <returns>true when the selection has been successful, false otherwise</returns>
-            public bool SelectWithValue (bool ctlVal)
+            public bool SelectWithValue(bool ctlVal)
             {
                 return SelectWithValue(new MmsValue(ctlVal));
             }
@@ -280,7 +280,7 @@ namespace IEC61850
             /// the value to be checked.
             /// </param>
             /// <returns>true when the selection has been successful, false otherwise</returns>
-            public bool SelectWithValue (int ctlVal)
+            public bool SelectWithValue(int ctlVal)
             {
                 return SelectWithValue(new MmsValue(ctlVal));
             }
@@ -292,7 +292,7 @@ namespace IEC61850
             /// the value to be checked.
             /// </param>
             /// <returns>true when the selection has been successful, false otherwise</returns>
-            public bool SelectWithValue (float ctlVal)
+            public bool SelectWithValue(float ctlVal)
             {
                 return SelectWithValue(new MmsValue(ctlVal));
             }
@@ -301,7 +301,7 @@ namespace IEC61850
             /// Cancel a selection or time activated operation
             /// </summary>
             /// <returns>true when the cancelation has been successful, false otherwise</returns>
-            public bool Cancel () 
+            public bool Cancel()
             {
                 return ControlObjectClient_cancel(controlObject);
             }
@@ -309,7 +309,7 @@ namespace IEC61850
             /// <summary>
             /// Enables the synchro check for operate commands
             /// </summary>
-            public void EnableSynchroCheck ()
+            public void EnableSynchroCheck()
             {
                 ControlObjectClient_enableSynchroCheck(controlObject);
             }
@@ -317,14 +317,10 @@ namespace IEC61850
             /// <summary>
             /// Enables the interlock check for operate and select commands
             /// </summary>
-            public void EnableInterlockCheck ()
+            public void EnableInterlockCheck()
             {
                 ControlObjectClient_enableInterlockCheck(controlObject);
             }
-
-		}
-
-	}
-
+        }
+    }
 }
-

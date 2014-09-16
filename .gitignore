@@ -219,3 +219,4 @@ doxydoc/
 vs/
 build_win32/
 .install/
+dotnet/Help/

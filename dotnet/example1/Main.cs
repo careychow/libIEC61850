@@ -1,16 +1,15 @@
 using System;
 using System.Collections.Generic;
-
 using IEC61850.Client;
 using IEC61850.Common;
 
 namespace example1
 {
-    class MainClass
+    internal class MainClass
     {
-        public static void Main (string[] args)
+        public static void Main(string[] args)
         {
-            IedConnection con = new IedConnection ();
+            IedConnection con = new IedConnection();
 
             string hostname;
 
@@ -34,15 +33,16 @@ namespace example1
                 }
 
 
-				List<string> lnDirectory = con.GetLogicalNodeDirectory("simpleIOGenericIO/LLN0", ACSIClass.ACSI_CLASS_DATA_SET);
+                List<string> lnDirectory = con.GetLogicalNodeDirectory("simpleIOGenericIO/LLN0",
+                    ACSIClass.ACSI_CLASS_DATA_SET);
 
                 foreach (string entry in lnDirectory)
                 {
                     Console.WriteLine("Dataset: " + entry);
                 }
 
-				string vendor = con.ReadStringValue ("simpleIOGenericIO/LLN0.NamPlt.vendor", FunctionalConstraint.DC);
-                Console.WriteLine ("Vendor: " + vendor);
+                string vendor = con.ReadStringValue("simpleIOGenericIO/LLN0.NamPlt.vendor", FunctionalConstraint.DC);
+                Console.WriteLine("Vendor: " + vendor);
 
                 /* read FCDO */
                 MmsValue value = con.ReadValue("simpleIOGenericIO/GGIO1.AnIn1", FunctionalConstraint.MX);
@@ -69,7 +69,7 @@ namespace example1
             }
             catch (IedConnectionException e)
             {
-				Console.WriteLine(e.Message);
+                Console.WriteLine(e.Message);
             }
 
             System.Threading.Thread.Sleep(2000);

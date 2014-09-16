@@ -20,17 +20,18 @@
  *
  *  See COPYING file for the complete license text.
  */
+
 using System;
 using System.Text;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using System.Collections;
-
 using IEC61850.Common;
 
 /// <summary>
 /// IEC 61850 API for the libiec61850 .NET wrapper library
 /// </summary>
+
 namespace IEC61850
 {
     /// <summary>
@@ -38,7 +39,6 @@ namespace IEC61850
     /// </summary>
     namespace Client
     {
-
         /// <summary>
         /// This class acts as the entry point for the IEC 61850 client API. It represents a single
         /// (MMS) connection to a server.
@@ -48,36 +48,37 @@ namespace IEC61850
             /*************
             * MmsValue
             *************/
-            [DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
-            static extern IntPtr MmsValue_toString(IntPtr self);
 
             [DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
-            static extern float MmsValue_toFloat(IntPtr self);
+            private static extern IntPtr MmsValue_toString(IntPtr self);
 
             [DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
-            static extern bool MmsValue_getBoolean(IntPtr self);
+            private static extern float MmsValue_toFloat(IntPtr self);
 
             [DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
-            static extern UInt32 MmsValue_getBitStringAsInteger(IntPtr self);
+            private static extern bool MmsValue_getBoolean(IntPtr self);
 
             [DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
-            static extern int MmsValue_getType(IntPtr self);
+            private static extern UInt32 MmsValue_getBitStringAsInteger(IntPtr self);
 
             [DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
-            static extern void MmsValue_delete(IntPtr self);
+            private static extern int MmsValue_getType(IntPtr self);
+
+            [DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
+            private static extern void MmsValue_delete(IntPtr self);
 
             /****************
             * IedConnection
             ***************/
 
             [DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
-            static extern IntPtr IedConnection_create();
+            private static extern IntPtr IedConnection_create();
 
             [DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
-            static extern void IedConnection_connect(IntPtr self, out int error, string hostname, int tcpPort);
+            private static extern void IedConnection_connect(IntPtr self, out int error, string hostname, int tcpPort);
 
             [DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
-            static extern void IedConnection_abort(IntPtr self, out int error);
+            private static extern void IedConnection_abort(IntPtr self, out int error);
 
             [DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
             private static extern void IedConnection_release(IntPtr self, out int error);
@@ -86,71 +87,82 @@ namespace IEC61850
             private static extern void IedConnection_close(IntPtr self);
 
             [DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
-            static extern IntPtr IedConnection_readObject(IntPtr self, out int error, string objectReference, int fc);
+            private static extern IntPtr IedConnection_readObject(IntPtr self, out int error, string objectReference,
+                int fc);
 
             [DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
-            static extern void IedConnection_writeObject(IntPtr self, out int error, string dataAttributeReference, int fc, IntPtr value);
+            private static extern void IedConnection_writeObject(IntPtr self, out int error,
+                string dataAttributeReference, int fc, IntPtr value);
 
             [DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
-            static extern IntPtr IedConnection_getDataDirectory(IntPtr self, out int error, string dataReference);
+            private static extern IntPtr IedConnection_getDataDirectory(IntPtr self, out int error, string dataReference);
 
             [DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
-            static extern IntPtr IedConnection_getDataDirectoryFC(IntPtr self, out int error, string dataReference);
+            private static extern IntPtr IedConnection_getDataDirectoryFC(IntPtr self, out int error,
+                string dataReference);
 
             [DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
-            static extern IntPtr IedConnection_getLogicalNodeDirectory(IntPtr self, out int error, string logicalNodeReference, int acsiClass);
+            private static extern IntPtr IedConnection_getLogicalNodeDirectory(IntPtr self, out int error,
+                string logicalNodeReference, int acsiClass);
 
             [DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
-            static extern IntPtr IedConnection_getServerDirectory(IntPtr self, out int error, bool getFileNames);
+            private static extern IntPtr IedConnection_getServerDirectory(IntPtr self, out int error, bool getFileNames);
 
             [DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
-            static extern IntPtr IedConnection_getLogicalDeviceDirectory(IntPtr self, out int error, string logicalDeviceName);
+            private static extern IntPtr IedConnection_getLogicalDeviceDirectory(IntPtr self, out int error,
+                string logicalDeviceName);
 
             [DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
-            static extern IntPtr IedConnection_getVariableSpecification(IntPtr self, out int error, string objectReference, int fc);
+            private static extern IntPtr IedConnection_getVariableSpecification(IntPtr self, out int error,
+                string objectReference, int fc);
 
             private delegate void InternalConnectionClosedHandler(IntPtr parameter, IntPtr Iedconnection);
 
             public delegate void ConnectionClosedHandler(IedConnection connection);
 
             [DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
-            static extern void IedConnection_installConnectionClosedHandler(IntPtr self, InternalConnectionClosedHandler handler, IntPtr parameter);
+            private static extern void IedConnection_installConnectionClosedHandler(IntPtr self,
+                InternalConnectionClosedHandler handler, IntPtr parameter);
 
             [DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
-            static extern IntPtr IedConnection_readDataSetValues(IntPtr self, out int error, string dataSetReference, IntPtr dataSet);
+            private static extern IntPtr IedConnection_readDataSetValues(IntPtr self, out int error,
+                string dataSetReference, IntPtr dataSet);
 
             [DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
-            static extern IntPtr IedConnection_createDataSet(IntPtr self, out int error, string dataSetReference, IntPtr dataSet);
+            private static extern IntPtr IedConnection_createDataSet(IntPtr self, out int error, string dataSetReference,
+                IntPtr dataSet);
 
             [DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
-            static extern void IedConnection_deleteDataSet(IntPtr self, out int error, string dataSetReference);
+            private static extern void IedConnection_deleteDataSet(IntPtr self, out int error, string dataSetReference);
 
             [DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
-            static extern IntPtr IedConnection_getDataSetDirectory(IntPtr self, out int error, string dataSetReference, out bool isDeletable);
+            private static extern IntPtr IedConnection_getDataSetDirectory(IntPtr self, out int error,
+                string dataSetReference, out bool isDeletable);
 
             [DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
-            static extern IntPtr IedConnection_getMmsConnection(IntPtr self);
+            private static extern IntPtr IedConnection_getMmsConnection(IntPtr self);
 
             [DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
-            static extern IntPtr MmsConnection_getIsoConnectionParameters(IntPtr mmsConnection);
+            private static extern IntPtr MmsConnection_getIsoConnectionParameters(IntPtr mmsConnection);
 
             /****************
             * LinkedList
             ***************/
-            [DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
-            static extern IntPtr LinkedList_getNext(IntPtr self);
 
             [DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
-            static extern IntPtr LinkedList_getData(IntPtr self);
+            private static extern IntPtr LinkedList_getNext(IntPtr self);
 
             [DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
-            static extern void LinkedList_destroy(IntPtr self);
+            private static extern IntPtr LinkedList_getData(IntPtr self);
 
             [DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
-            static extern IntPtr LinkedList_create();
+            private static extern void LinkedList_destroy(IntPtr self);
 
             [DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
-            static extern void LinkedList_add(IntPtr self, IntPtr data);
+            private static extern IntPtr LinkedList_create();
+
+            [DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
+            private static extern void LinkedList_add(IntPtr self, IntPtr data);
 
             private IntPtr connection;
             private InternalConnectionClosedHandler connectionClosedHandler;
@@ -264,7 +276,8 @@ namespace IEC61850
             {
                 int error;
 
-                IntPtr linkedList = IedConnection_getLogicalNodeDirectory(connection, out error, logicalNodeName, (int)acsiClass);
+                IntPtr linkedList = IedConnection_getLogicalNodeDirectory(connection, out error, logicalNodeName,
+                    (int) acsiClass);
 
                 if (error != 0)
                     throw new IedConnectionException("GetLogicalNodeDirectory failed", error);
@@ -358,7 +371,8 @@ namespace IEC61850
             {
                 int error;
 
-                IntPtr varSpecPtr = IedConnection_getVariableSpecification(connection, out error, objectReference, (int)fc);
+                IntPtr varSpecPtr = IedConnection_getVariableSpecification(connection, out error, objectReference,
+                    (int) fc);
 
                 if (error != 0)
                     throw new IedConnectionException("GetVariableSpecification failed", error);
@@ -370,7 +384,7 @@ namespace IEC61850
             {
                 int error;
 
-                IntPtr mmsValue = IedConnection_readObject(connection, out error, objectReference, (int)fc);
+                IntPtr mmsValue = IedConnection_readObject(connection, out error, objectReference, (int) fc);
 
                 if (error != 0)
                     throw new IedConnectionException("Reading value failed", error);
@@ -416,7 +430,7 @@ namespace IEC61850
             {
                 IntPtr mmsValue = readObjectInternal(objectReference, fc);
 
-                if (MmsValue_getType(mmsValue) != (int)MmsType.MMS_FLOAT)
+                if (MmsValue_getType(mmsValue) != (int) MmsType.MMS_FLOAT)
                     throw new IedConnectionException("Result is not of type float", 0);
 
                 float value = MmsValue_toFloat(mmsValue);
@@ -434,7 +448,9 @@ namespace IEC61850
             {
                 IntPtr mmsValue = readObjectInternal(objectReference, fc);
 
-                if (!((MmsValue_getType(mmsValue) == (int)MmsType.MMS_VISIBLE_STRING) || (MmsValue_getType(mmsValue) == (int)MmsType.MMS_STRING)))
+                if (
+                    !((MmsValue_getType(mmsValue) == (int) MmsType.MMS_VISIBLE_STRING) ||
+                      (MmsValue_getType(mmsValue) == (int) MmsType.MMS_STRING)))
                 {
                     MmsValue_delete(mmsValue);
                     throw new IedConnectionException("Result is not of type string", 0);
@@ -457,9 +473,9 @@ namespace IEC61850
             {
                 IntPtr mmsValue = readObjectInternal(objectReference, fc);
 
-                if (MmsValue_getType(mmsValue) == (int)MmsType.MMS_BIT_STRING)
+                if (MmsValue_getType(mmsValue) == (int) MmsType.MMS_BIT_STRING)
                 {
-                    int bitStringValue = (int)MmsValue_getBitStringAsInteger(mmsValue);
+                    int bitStringValue = (int) MmsValue_getBitStringAsInteger(mmsValue);
 
                     MmsValue_delete(mmsValue);
                     return new Quality(bitStringValue);
@@ -516,7 +532,7 @@ namespace IEC61850
             {
                 int error;
 
-                IedConnection_writeObject(connection, out error, objectReference, (int)fc, value.valueReference);
+                IedConnection_writeObject(connection, out error, objectReference, (int) fc, value.valueReference);
 
                 if (error != 0)
                     throw new IedConnectionException("Write value failed", error);
@@ -607,7 +623,8 @@ namespace IEC61850
 
                 int error;
 
-                nativeClientDataSet = IedConnection_readDataSetValues(connection, out error, dataSetReference, nativeClientDataSet);
+                nativeClientDataSet = IedConnection_readDataSetValues(connection, out error, dataSetReference,
+                    nativeClientDataSet);
 
                 if (error != 0)
                     throw new IedConnectionException("Reading data set failed", error);
@@ -645,7 +662,6 @@ namespace IEC61850
 
                 if (error != 0)
                     throw new IedConnectionException("Failed to create data set", error);
-
             }
 
             /// <summary>
@@ -671,7 +687,8 @@ namespace IEC61850
                 int error;
                 bool isDeletable;
 
-                IntPtr linkedList = IedConnection_getDataSetDirectory(connection, out error, dataSetReference, out isDeletable);
+                IntPtr linkedList = IedConnection_getDataSetDirectory(connection, out error, dataSetReference,
+                    out isDeletable);
 
                 if (error != 0)
                     throw new IedConnectionException("getDataSetDirectory failed", error);
@@ -697,7 +714,6 @@ namespace IEC61850
 
         public class IedConnectionException : Exception
         {
-
             private int errorCode;
 
             public IedConnectionException(string message, int errorCode)
@@ -719,7 +735,7 @@ namespace IEC61850
 
             public IedClientError GetIedClientError()
             {
-                return (IedClientError)this.errorCode;
+                return (IedClientError) this.errorCode;
             }
         }
 
@@ -782,7 +798,6 @@ namespace IEC61850
 
     namespace Common
     {
-
         [Flags]
         public enum TriggerOptions
         {
@@ -826,12 +841,11 @@ namespace IEC61850
         /// </summary>
         public class Quality
         {
-
             private UInt16 value;
 
             public Quality(int bitStringValue)
             {
-                value = (UInt16)bitStringValue;
+                value = (UInt16) bitStringValue;
             }
 
             public Quality()
@@ -843,14 +857,14 @@ namespace IEC61850
             {
                 int qualityVal = value & 0x3;
 
-                return (Validity)qualityVal;
+                return (Validity) qualityVal;
             }
 
             public void SetValidity(Validity validity)
             {
-                value = (UInt16)(value & 0xfffc);
+                value = (UInt16) (value & 0xfffc);
 
-                value += (ushort)validity;
+                value += (ushort) validity;
             }
         }
 
@@ -917,7 +931,6 @@ namespace IEC61850
         /// </summary>
         public static class ObjectReference
         {
-
             /// <summary>
             /// Get the name part of an object reference with appended FC
             /// </summary>
@@ -957,7 +970,7 @@ namespace IEC61850
 
                 try
                 {
-                    return (FunctionalConstraint)Enum.Parse(typeof(FunctionalConstraint), fcString);
+                    return (FunctionalConstraint) Enum.Parse(typeof (FunctionalConstraint), fcString);
                 }
                 catch (ArgumentException)
                 {
@@ -965,6 +978,5 @@ namespace IEC61850
                 }
             }
         }
-
     }
 }

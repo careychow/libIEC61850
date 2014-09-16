@@ -5,11 +5,11 @@ using IEC61850.Common;
 
 namespace example2
 {
-    class WriteValueExample
+    internal class WriteValueExample
     {
-        public static void Main (string[] args)
+        public static void Main(string[] args)
         {
-            IedConnection con = new IedConnection ();
+            IedConnection con = new IedConnection();
 
             string hostname;
 
@@ -24,13 +24,13 @@ namespace example2
             {
                 con.Connect(hostname, 102);
 
-				float setMagF = con.ReadFloatValue("ied1Inverter/ZINV1.OutWSet.setMag.f", FunctionalConstraint.SP);
+                float setMagF = con.ReadFloatValue("ied1Inverter/ZINV1.OutWSet.setMag.f", FunctionalConstraint.SP);
 
-				Console.WriteLine("ied1Inverter/ZINV1.OutWSet.setMag.f: " + setMagF);
+                Console.WriteLine("ied1Inverter/ZINV1.OutWSet.setMag.f: " + setMagF);
 
-				setMagF += 1.0f;
+                setMagF += 1.0f;
 
-				con.WriteValue("ied1Inverter/ZINV1.OutWSet.setMag.f", FunctionalConstraint.SP, new MmsValue(setMagF));
+                con.WriteValue("ied1Inverter/ZINV1.OutWSet.setMag.f", FunctionalConstraint.SP, new MmsValue(setMagF));
 
                 con.Abort();
             }
@@ -38,7 +38,6 @@ namespace example2
             {
                 Console.WriteLine("IED connection excepion: " + e.Message);
             }
-
         }
     }
 }
