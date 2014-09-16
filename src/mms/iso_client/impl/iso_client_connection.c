@@ -70,6 +70,9 @@ struct sIsoClientConnection
     ByteBuffer* receivePayloadBuffer;
     Semaphore receiveBufferMutex;
 
+    bool handlingThreadRunning;
+    bool stopHandlingThread;
+
     Thread thread;
 };
 
@@ -80,19 +83,47 @@ connectionHandlingThread(void* threadParameter)
 
     IsoSessionIndication sessionIndication;
 
+    self->handlingThreadRunning = true;
+    self->stopHandlingThread = false;
+
     if (DEBUG_ISO_CLIENT)
         printf("ISO_CLIENT_CONNECTION: new connection\n");
 
     Semaphore_wait(self->receiveBufferMutex);
 
-    while (CotpConnection_parseIncomingMessage(self->cotpConnection) == DATA_INDICATION) {
+    CotpConnection_resetPayload(self->cotpConnection);
+
+    while (true) {
+
+        TpktState packetState;
+
+        while ((packetState = CotpConnection_readToTpktBuffer(self->cotpConnection)) == TPKT_WAITING)
+        {
+            Thread_sleep(1);
+
+            if (self->stopHandlingThread) {
+                packetState = TPKT_ERROR;
+                break;
+            }
+        }
+
+        if (packetState == TPKT_ERROR)
+            break;
+
+        CotpIndication cotpIndication = CotpConnection_parseIncomingMessage(self->cotpConnection);
+
+        if (cotpIndication == COTP_MORE_FRAGMENTS_FOLLOW)
+            continue;
+
+        if (cotpIndication != COTP_DATA_INDICATION)
+            break;
+
+        if (DEBUG_ISO_CLIENT)
+            printf("ISO_CLIENT_CONNECTION: parse message\n");
 
         sessionIndication =
                 IsoSession_parseMessage(self->session,
                         CotpConnection_getPayload(self->cotpConnection));
-
-        if (DEBUG_ISO_CLIENT)
-            printf("ISO_CLIENT_CONNECTION: parse message\n");
 
         if (sessionIndication != SESSION_DATA) {
             if (DEBUG_ISO_CLIENT)
@@ -111,12 +142,16 @@ connectionHandlingThread(void* threadParameter)
 
         /* wait for user to release the buffer */
         Semaphore_wait(self->receiveBufferMutex);
+
+        CotpConnection_resetPayload(self->cotpConnection);
     }
 
     self->callback(ISO_IND_CLOSED, self->callbackParameter, NULL);
 
     if (DEBUG_ISO_CLIENT)
         printf("ISO_CLIENT_CONNECTION: exit connection\n");
+
+    self->handlingThreadRunning = false;
 
     return NULL;
 }
@@ -172,7 +207,7 @@ IsoClientConnection_sendMessage(IsoClientConnection self, ByteBuffer* payloadBuf
     /* release transmit buffer for use by API client */
     Semaphore_post(self->transmitBufferMutex);
 
-    if (indication != OK)
+    if (indication != COTP_OK)
         if (DEBUG_ISO_CLIENT)
             printf("ISO_CLIENT: IsoClientConnection_sendMessage: send message failed!\n");
 }
@@ -182,6 +217,11 @@ IsoClientConnection_close(IsoClientConnection self)
 {
     if (DEBUG_ISO_CLIENT)
         printf("ISO_CLIENT: IsoClientConnection_close\n");
+
+    if (self->handlingThreadRunning) {
+        self->stopHandlingThread = true;
+        while (self->handlingThreadRunning);
+    }
 
     if (self->socket != NULL) {
         if (DEBUG_ISO_CLIENT)
@@ -325,9 +365,18 @@ IsoClientConnection_associate(IsoClientConnection self, IsoConnectionParameters 
     CotpIndication cotpIndication =
             CotpConnection_sendConnectionRequestMessage(self->cotpConnection, params);
 
+
+    //TODO add timeout
+    TpktState packetState;
+
+    while ((packetState = CotpConnection_readToTpktBuffer(self->cotpConnection)) == TPKT_WAITING)
+    {
+        Thread_sleep(1);
+    }
+
     cotpIndication = CotpConnection_parseIncomingMessage(self->cotpConnection);
 
-    if (cotpIndication != CONNECT_INDICATION)
+    if (cotpIndication != COTP_CONNECT_INDICATION)
         goto returnError;
 
     /* Upper layers handshake */
@@ -379,9 +428,14 @@ IsoClientConnection_associate(IsoClientConnection self, IsoConnectionParameters 
 
     Semaphore_post(self->transmitBufferMutex);
 
+    while ((packetState = CotpConnection_readToTpktBuffer(self->cotpConnection)) == TPKT_WAITING)
+    {
+        Thread_sleep(1);
+    }
+
     cotpIndication = CotpConnection_parseIncomingMessage(self->cotpConnection);
 
-    if (cotpIndication != DATA_INDICATION)
+    if (cotpIndication != COTP_DATA_INDICATION)
         goto returnError;
 
     IsoSessionIndication sessionIndication;
@@ -426,7 +480,7 @@ IsoClientConnection_associate(IsoClientConnection self, IsoConnectionParameters 
 
     return;
 
-    returnError:
+returnError:
     self->callback(ISO_IND_ASSOCIATION_FAILED, self->callbackParameter, NULL);
 
     self->state = STATE_ERROR;

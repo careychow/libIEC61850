@@ -237,7 +237,7 @@ public class DynamicModelGenerator {
 
     private void exportDataObject(PrintStream output, DataObject dataObject) {
         for (DataObject subDataObject : dataObject.getSubDataObjects()) {
-            output.print("DO(" + subDataObject.getName() + " " + dataObject.getCount() + "){\n");
+            output.print("DO(" + subDataObject.getName() + " " + subDataObject.getCount() + "){\n");
 
             exportDataObject(output, subDataObject);
 

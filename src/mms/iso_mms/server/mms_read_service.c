@@ -366,98 +366,98 @@ encodeVariableAccessSpecification(VarAccessSpec* accessSpec, uint8_t* buffer, in
 
 static void
 encodeReadResponse(MmsServerConnection* connection,
-		uint32_t invokeId, ByteBuffer* response, LinkedList values,
-		VarAccessSpec* accessSpec)
+        uint32_t invokeId, ByteBuffer* response, LinkedList values,
+        VarAccessSpec* accessSpec)
 {
-	int i;
+    int i;
 
-	int variableCount = LinkedList_size(values);
+    int variableCount = LinkedList_size(values);
 
-	int varAccessSpecSize = 0;
+    int varAccessSpecSize = 0;
 
-	if (accessSpec != NULL) {
-		varAccessSpecSize = encodeVariableAccessSpecification(accessSpec, NULL, 0, false);
-	}
+    if (accessSpec != NULL) {
+        varAccessSpecSize = encodeVariableAccessSpecification(accessSpec, NULL, 0, false);
+    }
 
-	/* determine BER encoded message sizes */
-	int accessResultSize = 0;
+    /* determine BER encoded message sizes */
+    int accessResultSize = 0;
 
-	/* iterate values list to determine encoded size  */
-	LinkedList value = LinkedList_getNext(values);
+    /* iterate values list to determine encoded size  */
+    LinkedList value = LinkedList_getNext(values);
 
-	for (i = 0; i < variableCount; i++) {
+    for (i = 0; i < variableCount; i++) {
 
-	   MmsValue* data = (MmsValue*) value->data;
+        MmsValue* data = (MmsValue*) value->data;
 
-	   accessResultSize += mmsServer_encodeAccessResult(data, NULL, 0, false);
+        accessResultSize += mmsServer_encodeAccessResult(data, NULL, 0, false);
 
-		value = LinkedList_getNext(value);
-	}
+        value = LinkedList_getNext(value);
+    }
 
-	int listOfAccessResultsLength = 1 +
-									BerEncoder_determineLengthSize(accessResultSize) +
-									accessResultSize;
+    int listOfAccessResultsLength = 1 +
+            BerEncoder_determineLengthSize(accessResultSize) +
+            accessResultSize;
 
-	int confirmedServiceResponseContentLength = listOfAccessResultsLength  + varAccessSpecSize;
+    int confirmedServiceResponseContentLength = listOfAccessResultsLength + varAccessSpecSize;
 
-	int confirmedServiceResponseLength = 1 +
-						BerEncoder_determineLengthSize(confirmedServiceResponseContentLength) +
-						confirmedServiceResponseContentLength;
+    int confirmedServiceResponseLength = 1 +
+            BerEncoder_determineLengthSize(confirmedServiceResponseContentLength) +
+            confirmedServiceResponseContentLength;
 
-	int invokeIdSize = BerEncoder_UInt32determineEncodedSize(invokeId) + 2;
+    int invokeIdSize = BerEncoder_UInt32determineEncodedSize(invokeId) + 2;
 
-	int confirmedResponseContentSize = confirmedServiceResponseLength + invokeIdSize;
+    int confirmedResponseContentSize = confirmedServiceResponseLength + invokeIdSize;
 
-	int mmsPduSize = 1 + BerEncoder_determineLengthSize(confirmedResponseContentSize) +
-			confirmedResponseContentSize;
+    int mmsPduSize = 1 + BerEncoder_determineLengthSize(confirmedResponseContentSize) +
+            confirmedResponseContentSize;
 
-	/* Check if message would fit in the MMS PDU */
-	if (mmsPduSize > connection->maxPduSize) {
-		if (DEBUG_MMS_SERVER)
-			printf("MMS read: message to large! send error PDU!\n");
+    /* Check if message would fit in the MMS PDU */
+    if (mmsPduSize > connection->maxPduSize) {
+        if (DEBUG_MMS_SERVER)
+            printf("MMS read: message to large! send error PDU!\n");
 
-		mmsServer_createConfirmedErrorPdu(invokeId, response,
-					  MMS_ERROR_SERVICE_OTHER);
-		return;
-	}
+        mmsServer_createConfirmedErrorPdu(invokeId, response,
+                MMS_ERROR_SERVICE_OTHER);
+        return;
+    }
 
-	/* encode message */
+    /* encode message */
 
-	uint8_t* buffer = response->buffer;
-	int bufPos = 0;
+    uint8_t* buffer = response->buffer;
+    int bufPos = 0;
 
-	/* confirmed response PDU */
-	bufPos = BerEncoder_encodeTL(0xa1, confirmedResponseContentSize, buffer, bufPos);
+    /* confirmed response PDU */
+    bufPos = BerEncoder_encodeTL(0xa1, confirmedResponseContentSize, buffer, bufPos);
 
-	/* invoke id */
-	bufPos = BerEncoder_encodeTL(0x02, invokeIdSize - 2, buffer, bufPos);
-	bufPos = BerEncoder_encodeUInt32(invokeId, buffer, bufPos);
+    /* invoke id */
+    bufPos = BerEncoder_encodeTL(0x02, invokeIdSize - 2, buffer, bufPos);
+    bufPos = BerEncoder_encodeUInt32(invokeId, buffer, bufPos);
 
-	/* confirmed-service-response read */
-	bufPos = BerEncoder_encodeTL(0xa4, confirmedServiceResponseContentLength, buffer, bufPos);
+    /* confirmed-service-response read */
+    bufPos = BerEncoder_encodeTL(0xa4, confirmedServiceResponseContentLength, buffer, bufPos);
 
-	/* encode variable access specification */
-	if (accessSpec != NULL)
-		bufPos = encodeVariableAccessSpecification(accessSpec, buffer, bufPos, true);
+    /* encode variable access specification */
+    if (accessSpec != NULL)
+        bufPos = encodeVariableAccessSpecification(accessSpec, buffer, bufPos, true);
 
-	/* encode list of access results */
-	bufPos = BerEncoder_encodeTL(0xa1, accessResultSize, buffer, bufPos);
+    /* encode list of access results */
+    bufPos = BerEncoder_encodeTL(0xa1, accessResultSize, buffer, bufPos);
 
-	/* encode access results */
-	value = LinkedList_getNext(values);
+    /* encode access results */
+    value = LinkedList_getNext(values);
 
-	for (i = 0; i < variableCount; i++) {
-		MmsValue* data = (MmsValue*) value->data;
+    for (i = 0; i < variableCount; i++) {
+        MmsValue* data = (MmsValue*) value->data;
 
-		bufPos = mmsServer_encodeAccessResult(data, buffer, bufPos, true);
+        bufPos = mmsServer_encodeAccessResult(data, buffer, bufPos, true);
 
-		value = LinkedList_getNext(value);
-	}
+        value = LinkedList_getNext(value);
+    }
 
-	response->size = bufPos;
+    response->size = bufPos;
 
-	if (DEBUG_MMS_SERVER)
-		printf("MMS read: sent message for request with id %u (size = %i)\n", invokeId, bufPos);
+    if (DEBUG_MMS_SERVER)
+        printf("MMS read: sent message for request with id %u (size = %i)\n", invokeId, bufPos);
 
 }
 
@@ -500,11 +500,11 @@ handleReadListOfVariablesRequest(
 				MmsDomain* domain = MmsDevice_getDomain(MmsServer_getDevice(connection->server), domainIdStr);
 
 				if (DEBUG_MMS_SERVER)
-				    printf("MMS READ: domainId: (%s) nameId: (%s)\n", domainIdStr, nameIdStr);
+				    printf("MMS_SERVER: READ domainId: (%s) nameId: (%s)\n", domainIdStr, nameIdStr);
 
 				if (domain == NULL) {
 					if (DEBUG_MMS_SERVER)
-					    printf("MMS read: domain %s not found!\n", domainIdStr);
+					    printf("MMS_SERVER: READ domain %s not found!\n", domainIdStr);
 
 					appendErrorToResultList(values, 10 /* object-non-existent*/);
 				}
@@ -518,14 +518,35 @@ handleReadListOfVariablesRequest(
                             values, connection, alternateAccess);
 				}
 			}
+#if (CONFIG_MMS_SUPPORT_VMD_SCOPE_NAMED_VARIABLES == 1)
+
+			else if (varSpec.choice.name.present == ObjectName_PR_vmdspecific) {
+			    char nameIdStr[65];
+
+			    mmsMsg_copyAsn1IdentifierToStringBuffer(varSpec.choice.name.choice.vmdspecific, nameIdStr, 65);
+
+			    if (DEBUG_MMS_SERVER)
+			        printf("MMS_SERVER: READ vmd-specific nameId:%s\n", nameIdStr);
+
+			    MmsVariableSpecification* namedVariable = MmsDevice_getNamedVariable(MmsServer_getDevice(connection->server), nameIdStr);
+
+                if (namedVariable == NULL)
+                    appendErrorToResultList(values, 10 /* object-non-existent*/);
+                else
+                    addNamedVariableToResultList(namedVariable, (MmsDomain*) MmsServer_getDevice(connection->server), nameIdStr,
+                            values, connection, alternateAccess);
+
+			}
+#endif /* (CONFIG_MMS_SUPPORT_VMD_SCOPE_NAMED_VARIABLES == 1) */
+
 			else {
                 appendErrorToResultList(values, 10 /* object-non-existent*/);
 
-				if (DEBUG_MMS_SERVER) printf("MMS read: object name type not supported!\n");
+				if (DEBUG_MMS_SERVER) printf("MMS_SERVER: READ object name type not supported!\n");
 			}
 		}
 		else {
-			if (DEBUG_MMS_SERVER) printf("MMS read: varspec type not supported!\n");
+			if (DEBUG_MMS_SERVER) printf("MMS_SERVER: READ varspec type not supported!\n");
 			mmsServer_writeMmsRejectPdu(&invokeId, MMS_ERROR_REJECT_REQUEST_INVALID_ARGUMENT, response);
 			goto exit;
 		}

@@ -119,6 +119,58 @@ MmsVariableSpecification_getStructureElements(MmsVariableSpecification* self)
     return elementNames;
 }
 
+MmsVariableSpecification*
+MmsVariableSpecification_getNamedVariableRecursive(MmsVariableSpecification* variable, char* nameId)
+{
+    char* separator = strchr(nameId, '$');
+
+    int i;
+
+    if (separator == NULL) {
+
+        i = 0;
+
+        if (variable->type == MMS_STRUCTURE) {
+            for (i = 0; i < variable->typeSpec.structure.elementCount; i++) {
+                if (strcmp(variable->typeSpec.structure.elements[i]->name, nameId) == 0) {
+                    return variable->typeSpec.structure.elements[i];
+                }
+            }
+        }
+
+        return NULL;
+    }
+    else {
+        MmsVariableSpecification* namedVariable = NULL;
+        i = 0;
+
+        for (i = 0; i < variable->typeSpec.structure.elementCount; i++) {
+
+            if (strlen(variable->typeSpec.structure.elements[i]->name) == (unsigned) (separator - nameId)) {
+
+                if (strncmp(variable->typeSpec.structure.elements[i]->name, nameId, separator - nameId) == 0) {
+                    namedVariable = variable->typeSpec.structure.elements[i];
+                    break;
+                }
+
+            }
+        }
+
+        if (namedVariable != NULL) {
+            if (namedVariable->type == MMS_STRUCTURE) {
+                namedVariable = MmsVariableSpecification_getNamedVariableRecursive(namedVariable, separator + 1);
+            }
+            else if (namedVariable->type == MMS_ARRAY) {
+                namedVariable = namedVariable->typeSpec.array.elementTypeSpec;
+
+                namedVariable = MmsVariableSpecification_getNamedVariableRecursive(namedVariable, separator + 1);
+            }
+        }
+
+        return namedVariable;
+    }
+}
+
 int
 MmsVariableSpecification_getSize(MmsVariableSpecification* self)
 {

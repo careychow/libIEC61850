@@ -24,13 +24,11 @@ void sigint_handler(int signalId)
 void
 reportCallbackFunction(void* parameter, ClientReport report)
 {
-    ClientDataSet dataSet = ClientReport_getDataSet(report);
-
     LinkedList dataSetDirectory = (LinkedList) parameter;
 
-    MmsValue* dataSetValues = ClientDataSet_getValues(dataSet);
+    MmsValue* dataSetValues = ClientReport_getDataSetValues(report);
 
-    printf("received report for %s\n", ClientReport_getRcbReference(report));
+    printf("received report for %s with rptId %s\n", ClientReport_getRcbReference(report), ClientReport_getRptId(report));
 
     if (ClientReport_hasTimestamp(report)) {
         time_t unixTime = ClientReport_getTimestamp(report) / 1000;
@@ -120,8 +118,8 @@ int main(int argc, char** argv) {
         ClientReportControlBlock_setRptEna(rcb, true);
 
         /* Configure the report receiver */
-        IedConnection_installReportHandler(con, "simpleIOGenericIO/LLN0.RP.EventsRCB", reportCallbackFunction,
-                (void*) dataSetDirectory, clientDataSet);
+        IedConnection_installReportHandler(con, "simpleIOGenericIO/LLN0.RP.EventsRCB", ClientReportControlBlock_getRptId(rcb), reportCallbackFunction,
+                (void*) dataSetDirectory);
 
         /* Write RCB parameters and enable report */
         IedConnection_setRCBValues(con, &error, rcb, RCB_ELEMENT_RESV | RCB_ELEMENT_DATSET | RCB_ELEMENT_RPT_ENA, true);
@@ -152,7 +150,9 @@ int main(int argc, char** argv) {
 
         exit_error:
 
-        IedConnection_disableReporting(con, &error, "simpleIOGenericIO/LLN0.RP.EventsRCB");
+        /* disable reporting */
+        ClientReportControlBlock_setRptEna(rcb, false);
+        IedConnection_setRCBValues(con, &error, rcb, RCB_ELEMENT_RPT_ENA, true);
 
         ClientDataSet_destroy(clientDataSet);
 

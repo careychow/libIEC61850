@@ -95,8 +95,6 @@ INTEGER_encode_der(asn_TYPE_descriptor_t *td, void *sptr,
 	return der_encode_primitive(td, sptr, tag_mode, tag, cb, app_key);
 }
 
-static const asn_INTEGER_enum_map_t *INTEGER_map_enum2value(asn_INTEGER_specifics_t *specs, const char *lstart, const char *lstop);
-
 #if 0
 /*
  * INTEGER specific human-readable output.
@@ -220,6 +218,7 @@ INTEGER_print(asn_TYPE_descriptor_t *td, const void *sptr, int ilevel,
 }
 #endif
 
+#if 0
 struct e2v_key {
 	const char *start;
 	const char *stop;
@@ -244,6 +243,7 @@ INTEGER__compar_enum2value(const void *kp, const void *am) {
 	}
 	return name[0] ? -1 : 0;
 }
+
 
 static const asn_INTEGER_enum_map_t *
 INTEGER_map_enum2value(asn_INTEGER_specifics_t *specs, const char *lstart, const char *lstop) {
@@ -282,6 +282,7 @@ INTEGER_map_enum2value(asn_INTEGER_specifics_t *specs, const char *lstart, const
 	}
 	return el_found;
 }
+#endif
 
 static int
 INTEGER__compar_value2enum(const void *kp, const void *am) {
@@ -302,6 +303,7 @@ INTEGER_map_value2enum(asn_INTEGER_specifics_t *specs, long value) {
 		INTEGER__compar_value2enum);
 }
 
+#if 0
 static int
 INTEGER_st_prealloc(INTEGER_t *st, int min_size) {
 	void *p = MALLOC(min_size + 1);
@@ -315,6 +317,7 @@ INTEGER_st_prealloc(INTEGER_t *st, int min_size) {
 		return -1;
 	}
 }
+#endif
 
 #if 0
 /*

@@ -60,6 +60,15 @@ struct sGooseSubscriber {
     char* interfaceId;
 };
 
+static void
+createNewStringFromBufferElement(MmsValue* value, uint8_t* bufferSrc, int elementLength)
+{
+    value->value.visibleString.buf = (char*) malloc(elementLength + 1);
+    memcpy(value->value.visibleString.buf, bufferSrc, elementLength);
+    value->value.visibleString.buf[elementLength] = 0;
+    value->value.visibleString.size = elementLength;
+}
+
 static int
 parseAllData(uint8_t* buffer, int allDataLength, MmsValue* dataSetValues)
 {
@@ -165,23 +174,20 @@ parseAllData(uint8_t* buffer, int allDataLength, MmsValue* dataSetValues)
         	break;
         case 0x8a: /* visible string */
         	if (MmsValue_getType(value) == MMS_VISIBLE_STRING) {
-        		if (value->value.visibleString != NULL) {
-        			if ((int32_t) strlen(value->value.visibleString) >= elementLength) {
-        				memcpy(value->value.visibleString, buffer + bufPos, elementLength);
-						value->value.visibleString[elementLength] = 0;
+
+        		if (value->value.visibleString.buf != NULL) {
+        			if ((int32_t) value->value.visibleString.size >= elementLength) {
+        				memcpy(value->value.visibleString.buf, buffer + bufPos, elementLength);
+						value->value.visibleString.buf[elementLength] = 0;
         			}
         			else {
-        				free(value->value.visibleString);
-        				value->value.visibleString = (char*) malloc(elementLength + 1);
-						memcpy(value->value.visibleString, buffer + bufPos, elementLength);
-						value->value.visibleString[elementLength] = 0;
+        				free(value->value.visibleString.buf);
+
+        				createNewStringFromBufferElement(value, buffer + bufPos, elementLength);
         			}
         		}
-        		else {
-        			value->value.visibleString = (char*) malloc(elementLength + 1);
-        			memcpy(value->value.visibleString, buffer + bufPos, elementLength);
-        			value->value.visibleString[elementLength] = 0;
-        		}
+        		else
+        		    createNewStringFromBufferElement(value, buffer + bufPos, elementLength);
 
         	}
         	break;
@@ -459,7 +465,7 @@ parseGoosePayload(uint8_t* buffer, int apduLength, GooseSubscriber self)
 
             case 0x84:
                 MmsValue_setUtcTimeByBuffer(self->timestamp, buffer + bufPos);
-                if (DEBUG) printf("  Found timestamp t: %lu\n", MmsValue_getUtcTimeInMs(self->timestamp));
+                if (DEBUG) printf("  Found timestamp t: %" PRIu64 "\n", MmsValue_getUtcTimeInMs(self->timestamp));
                 break;
 
             case 0x85:

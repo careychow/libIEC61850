@@ -26,7 +26,6 @@
 
 #include "libiec61850_platform_includes.h"
 #include "byte_buffer.h"
-#include "byte_stream.h"
 #include "buffer_chain.h"
 #include "socket.h"
 #include "iso_connection_parameters.h"
@@ -46,12 +45,25 @@ typedef struct {
     CotpOptions options;
     bool isLastDataUnit;
     ByteBuffer* payload;
-    ByteBuffer* writeBuffer;
+    ByteBuffer* writeBuffer;  /* buffer to store TPKT packet to send */
+    ByteBuffer* readBuffer;   /* buffer to store received TPKT packet */
+    uint16_t packetSize;           /* size of the packet currently received */
 } CotpConnection;
 
 typedef enum {
-    OK, ERROR, CONNECT_INDICATION, DATA_INDICATION, DISCONNECT_INDICATION
+    COTP_OK,
+    COTP_ERROR,
+    COTP_CONNECT_INDICATION,
+    COTP_DATA_INDICATION,
+    COTP_DISCONNECT_INDICATION,
+    COTP_MORE_FRAGMENTS_FOLLOW
 } CotpIndication;
+
+typedef enum {
+    TPKT_PACKET_COMPLETE = 0,
+    TPKT_WAITING = 1,
+    TPKT_ERROR = 2
+} TpktState;
 
 int /* in byte */
 CotpConnection_getTpduSize(CotpConnection* self);
@@ -67,6 +79,12 @@ CotpConnection_destroy(CotpConnection* self);
 
 CotpIndication
 CotpConnection_parseIncomingMessage(CotpConnection* self);
+
+void
+CotpConnection_resetPayload(CotpConnection* self);
+
+TpktState
+CotpConnection_readToTpktBuffer(CotpConnection* self);
 
 CotpIndication
 CotpConnection_sendConnectionRequestMessage(CotpConnection* self, IsoConnectionParameters isoParameters);

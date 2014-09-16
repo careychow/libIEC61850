@@ -169,7 +169,7 @@ ClientReportControlBlock_setDataSetReference(ClientReportControlBlock self, char
 }
 
 uint32_t
-ClientReportControlBlock_getConvRev(ClientReportControlBlock self)
+ClientReportControlBlock_getConfRev(ClientReportControlBlock self)
 {
     if (self->confRev != NULL)
         return MmsValue_toUint32(self->confRev);
@@ -177,26 +177,19 @@ ClientReportControlBlock_getConvRev(ClientReportControlBlock self)
         return 0;
 }
 
-MmsValue*
+int
 ClientReportControlBlock_getOptFlds(ClientReportControlBlock self)
 {
-    return self->optFlds;
+    return MmsValue_getBitStringAsInteger(self->optFlds);
 }
 
 void
-ClientReportControlBlock_setOptFlds(ClientReportControlBlock self, MmsValue* optFlds)
+ClientReportControlBlock_setOptFlds(ClientReportControlBlock self, int optFlds)
 {
-    if (self->optFlds != NULL) {
-        MmsValue_update(self->optFlds, optFlds);
-    }
-    else {
-        if (MmsValue_getType(optFlds) != MMS_BIT_STRING) {
-            if (DEBUG_IED_CLIENT)
-                printf("IED_CLIENT: ClientReportControlBlock_setOptFlds invalid argument type\n");
-        }
-        else
-            self->optFlds = MmsValue_clone(optFlds);
-    }
+    if (self->optFlds == 0)
+        self->optFlds = MmsValue_newBitString(10);
+
+    MmsValue_setBitStringFromInteger(self->optFlds, optFlds * 2); /* bit 0 is reserved in MMS mapping */
 }
 
 uint32_t

@@ -63,9 +63,11 @@ public class StaticModelGenerator {
 
     private StringBuffer reportControlBlocks;
     private List<String> rcbVariableNames;
+    private int currentRcbVariableNumber = 0;
 
     private StringBuffer gseControlBlocks;
     private List<String> gseVariableNames;
+    private int currentGseVariableNumber = 0;
 
     private List<String> dataSetNames;
 
@@ -117,8 +119,6 @@ public class StaticModelGenerator {
         Server server = accessPoint.getServer();
 
         printForwardDeclarations(server);
-
-        System.out.println("\n");
 
         printDeviceModelDefinitions();
 
@@ -209,6 +209,10 @@ public class StaticModelGenerator {
         printDataSets();
 
         List<LogicalDevice> logicalDevices = accessPoint.getServer().getLogicalDevices();
+        
+        createReportVariableList(logicalDevices);
+        
+        createGooseVariableList(logicalDevices);
 
         for (int i = 0; i < logicalDevices.size(); i++) {
 
@@ -241,7 +245,16 @@ public class StaticModelGenerator {
             printLogicalNodeDefinitions(ldName, logicalDevice.getLogicalNodes());
         }
 
+        
+        for (String rcb : rcbVariableNames)
+        	cOut.println("extern ReportControlBlock " + rcb + ";");
+        
+        cOut.println();
+        
         cOut.println(reportControlBlocks);
+        
+        for (String gcb : gseVariableNames)
+        	cOut.println("extern GSEControlBlock " + gcb + ";");
 
         cOut.println(gseControlBlocks);
 
@@ -268,7 +281,52 @@ public class StaticModelGenerator {
         cOut.println("    initializeValues\n};");
     }
 
-    private void printLogicalNodeDefinitions(String ldName, List<LogicalNode> logicalNodes) {
+    private void createGooseVariableList(List<LogicalDevice> logicalDevices) {
+		for (LogicalDevice ld : logicalDevices) {
+			List<LogicalNode> lnodes = ld.getLogicalNodes();
+			
+			String ldName = ld.getInst();
+			
+			for (LogicalNode ln : lnodes) {
+				List<GSEControl> goCBs = ln.getGSEControlBlocks();
+				
+				int gseCount = 0;
+				
+				for (GSEControl gse : goCBs) {
+					String gcbVariableName = "iedModel_" + ldName + "_" + ln.getName() + "_gse" + gseCount;					
+					gseVariableNames.add(gcbVariableName);
+					gseCount++;
+				}
+			}
+		}
+	}
+
+	private void createReportVariableList(List<LogicalDevice> logicalDevices) {
+
+		for (LogicalDevice ld : logicalDevices) {
+			List<LogicalNode> lnodes = ld.getLogicalNodes();
+			
+			String ldName = ld.getInst();
+			
+			for (LogicalNode ln : lnodes) {
+				List<ReportControlBlock> rcbs = ln.getReportControlBlocks();
+				
+				int rcbCount = 0;
+				
+				for (ReportControlBlock rcb : rcbs) {
+					
+					for (int i = 0; i < rcb.getRptEna().getMaxInstances(); i++) {
+						String rcbVariableName = "iedModel_" + ldName + "_" + ln.getName() + "_report" + rcbCount;					
+						rcbVariableNames.add(rcbVariableName);
+						rcbCount++;
+					}
+					
+				}
+			}
+		}
+	}
+
+	private void printLogicalNodeDefinitions(String ldName, List<LogicalNode> logicalNodes) {
         for (int i = 0; i < logicalNodes.size(); i++) {
             LogicalNode logicalNode = logicalNodes.get(i);
 
@@ -560,22 +618,6 @@ public class StaticModelGenerator {
 
         int gseControlNumber = 0;
 
-        this.gseControlBlocks.append("\n");
-
-        for (GSEControl gseControlBlock : gseControlBlocks) {
-            String gseVariableName = lnPrefix + "_gse" + gseControlNumber;
-
-            this.gseControlBlocks.append("extern GSEControlBlock " + gseVariableName + ";\n");
-            
-            gseControlNumber++;
-        }
-
-        this.gseControlBlocks.append("\n");
-
-        int gseControlCount = gseControlNumber;
-
-        gseControlNumber = 0;
-
         for (GSEControl gseControlBlock : gseControlBlocks) {
 
             GSEAddress gseAddress = connectedAP.lookupGSEAddress(logicalDeviceName, gseControlBlock.getName());
@@ -587,7 +629,7 @@ public class StaticModelGenerator {
             if (gseAddress != null) {
                 phyComAddrName = lnPrefix + "_gse" + gseControlNumber + "_address";
 
-                gseString += "static PhyComAddress " + phyComAddrName + " = {\n";
+                gseString += "\nstatic PhyComAddress " + phyComAddrName + " = {\n";
                 gseString += "  " + gseAddress.getVlanPriority() + ",\n";
                 gseString += "  " + gseAddress.getVlanId() + ",\n";
                 gseString += "  " + gseAddress.getAppId() + ",\n";
@@ -633,16 +675,16 @@ public class StaticModelGenerator {
             else
                 gseString += "NULL, ";
 
-            if (gseControlNumber + 1 < gseControlCount)
-                gseString += "&" + lnPrefix + "_gse" + (gseControlNumber + 1);
+            currentGseVariableNumber++;
+            
+            if (currentGseVariableNumber < gseVariableNames.size())
+                gseString += "&" + gseVariableNames.get(currentGseVariableNumber);
             else
                 gseString += "NULL";
 
             gseString += "};\n";
 
             this.gseControlBlocks.append(gseString);
-
-            this.gseVariableNames.add(gseVariableName);
 
             gseControlNumber++;
         }
@@ -651,41 +693,9 @@ public class StaticModelGenerator {
     private void printReportControlBlocks(String lnPrefix, LogicalNode logicalNode) {
         List<ReportControlBlock> reportControlBlocks = logicalNode.getReportControlBlocks();
 
+        int reportsCount = reportControlBlocks.size();
+
         int reportNumber = 0;
-
-        this.reportControlBlocks.append("\n");
-
-        /* print forward declarations */
-        for (ReportControlBlock rcb : reportControlBlocks) {
-
-            if (rcb.isIndexed()) {
-
-                int maxInstances = 1;
-
-                if (rcb.getRptEna() != null)
-                    maxInstances = rcb.getRptEna().getMaxInstances();
-
-                for (int i = 0; i < maxInstances; i++) {
-
-                    String rcbVariableName = lnPrefix + "_report" + reportNumber;
-
-                    this.reportControlBlocks.append("extern ReportControlBlock " + rcbVariableName + ";\n");
-
-                    reportNumber++;
-                }
-            } else {
-                String rcbVariableName = lnPrefix + "_report" + reportNumber;
-                this.reportControlBlocks.append("extern ReportControlBlock " + rcbVariableName + ";\n");
-
-                reportNumber++;
-            }
-        }
-
-        this.reportControlBlocks.append("\n");
-
-        int reportsCount = reportNumber;
-
-        reportNumber = 0;
 
         for (ReportControlBlock rcb : reportControlBlocks) {
 
@@ -780,15 +790,18 @@ public class StaticModelGenerator {
         else
             rcbString += "0, ";
 
-        if (reportNumber + 1 < reportsCount) {
-            rcbString += "&" + lnPrefix + "_report" + (reportNumber + 1);
-        } else
+        currentRcbVariableNumber++;
+    
+        if (currentRcbVariableNumber < rcbVariableNames.size())
+        	rcbString += "&" + rcbVariableNames.get(currentRcbVariableNumber);
+        else
             rcbString += "NULL";
 
         rcbString += "};\n";
+        
+        System.out.println("RCB: " + rcbString);
 
         this.reportControlBlocks.append(rcbString);
-        this.rcbVariableNames.add(rcbVariableName);
     }
 
     private static String toMmsString(String iecString) {
@@ -909,9 +922,7 @@ public class StaticModelGenerator {
                     cOut.println("  \"" + logicalNode.getName() + "$" + dataSet.getName() + "\",");
                     cOut.println("  " + dataSet.getFcda().size() + ",");
                     cOut.println("  &" + dataSetVariableName + "_fcda0,");
-                    
-                   
-                    
+                                        
                     if (dataSetNameListIndex < dataSetNames.size()) {
                     	 String nextDataSetVariableName = dataSetNames.get(dataSetNameListIndex);
                     	cOut.println("  &" + nextDataSetVariableName);

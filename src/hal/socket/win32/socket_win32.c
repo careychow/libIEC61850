@@ -65,13 +65,24 @@ activateKeepAlive(SOCKET s)
 	 if (WSAIoctl(s, SIO_KEEPALIVE_VALS, &keepalive, sizeof(keepalive),
 	            NULL, 0, &retVal, NULL, NULL) == SOCKET_ERROR)
 	 {
-	        printf("WSAIotcl(SIO_KEEPALIVE_VALS) failed; %d\n",
-	            WSAGetLastError());
+	     if (DEBUG_SOCKET)
+                printf("WIN32_SOCKET: WSAIotcl(SIO_KEEPALIVE_VALS) failed: %d\n",
+                    WSAGetLastError());
 	 }
 }
 
+static void
+setSocketNonBlocking(Socket self)
+{
+    unsigned long mode = 1;
+    if (ioctlsocket(self->fd, FIONBIO, &mode) != 0) {
+        if (DEBUG_SOCKET)
+            printf("WIN32_SOCKET: failed to set socket non-blocking!\n");
+    }
+}
+
 static bool
-prepareServerAddress(char* address, int port, struct sockaddr_in* sockaddr)
+prepareServerAddress(const char* address, int port, struct sockaddr_in* sockaddr)
 {
 
 	memset((char *) sockaddr , 0, sizeof(struct sockaddr_in));
@@ -94,7 +105,7 @@ prepareServerAddress(char* address, int port, struct sockaddr_in* sockaddr)
 }
 
 ServerSocket
-TcpServerSocket_create(char* address, int port)
+TcpServerSocket_create(const char* address, int port)
 {
 	ServerSocket serverSocket = NULL;
 	int ec;
@@ -102,7 +113,8 @@ TcpServerSocket_create(char* address, int port)
 	SOCKET listen_socket = INVALID_SOCKET;
 
 	if ((ec = WSAStartup(MAKEWORD(2,0), &wsa)) != 0) {
-		printf("winsock error: code %i\n");
+	    if (DEBUG_SOCKET)
+	        printf("WIN32_SOCKET: winsock error: code %i\n", ec);
 		return NULL;
 	}
 
@@ -118,7 +130,8 @@ TcpServerSocket_create(char* address, int port)
 #endif
 
 	if (listen_socket == INVALID_SOCKET) {
-		printf("socket failed with error: %i\n", WSAGetLastError());
+	    if (DEBUG_SOCKET)
+	        printf("WIN32_SOCKET: socket failed with error: %i\n", WSAGetLastError());
 		WSACleanup();
 		return NULL;
 	}
@@ -129,7 +142,8 @@ TcpServerSocket_create(char* address, int port)
 	ec = bind(listen_socket, (struct sockaddr*)&server_addr, sizeof(server_addr));
 
 	if (ec == SOCKET_ERROR) {
-		printf("bind failed with error:%i\n", WSAGetLastError());
+	    if (DEBUG_SOCKET)
+	        printf("WIN32_SOCKET: bind failed with error:%i\n", WSAGetLastError());
 		closesocket(listen_socket);
 		WSACleanup();
 		return NULL;
@@ -139,6 +153,8 @@ TcpServerSocket_create(char* address, int port)
 
 	serverSocket->fd = listen_socket;
 	serverSocket->backLog = 10;
+
+    setSocketNonBlocking((Socket) serverSocket);
 
 	return serverSocket;
 }
@@ -161,6 +177,8 @@ ServerSocket_accept(ServerSocket self)
 	if (fd >= 0) {
 		conSocket = TcpSocket_create();
 		conSocket->fd = fd;
+
+	    setSocketNonBlocking(conSocket);
 	}
 
 	return conSocket;
@@ -185,25 +203,26 @@ TcpSocket_create()
 {
 	Socket self = (Socket) malloc(sizeof(struct sSocket));
 
-	self->fd = -1;
+	self->fd = INVALID_SOCKET;
 
 	return self;
 }
 
-int
-Socket_connect(Socket self, char* address, int port)
+bool
+Socket_connect(Socket self, const char* address, int port)
 {
-	struct hostent *server;
 	struct sockaddr_in serverAddress;
 	WSADATA wsa;
+	int ec;
 
-	if (WSAStartup(MAKEWORD(2,0), &wsa) != 0) {
-		printf("winsock error: code %i\n");
-		return 0;
+	if ((ec = WSAStartup(MAKEWORD(2,0), &wsa)) != 0) {
+	    if (DEBUG_SOCKET)
+	        printf("WIN32_SOCKET: winsock error: code %i\n", ec);
+		return false;
 	}
 
 	if (!prepareServerAddress(address, port, &serverAddress))
-	    return 0;
+	    return false;
 
 	self->fd = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -212,11 +231,14 @@ Socket_connect(Socket self, char* address, int port)
 #endif
 
 	if (connect(self->fd, (struct sockaddr *) &serverAddress,sizeof(serverAddress)) < 0) {
-		printf("Socket failed connecting!\n");
-		return 0;
+	    if (DEBUG_SOCKET)
+	        printf("WIN32_SOCKET: Socket failed connecting!\n");
+		return false;
 	}
-	else
-		return 1;
+	else {
+	    setSocketNonBlocking(self);
+	    return true;
+	}
 }
 
 char*
@@ -265,7 +287,14 @@ Socket_getPeerAddress(Socket self)
 int
 Socket_read(Socket self, uint8_t* buf, int size)
 {
-	return recv(self->fd, (char*) buf, size, 0);
+    int bytes_read = recv(self->fd, (char*) buf, size, 0);
+
+    if (bytes_read == SOCKET_ERROR) {
+        if (WSAGetLastError() == WSAEWOULDBLOCK)
+            return 0;
+    }
+
+	return bytes_read;
 }
 
 int
@@ -277,7 +306,7 @@ Socket_write(Socket self, uint8_t* buf, int size)
 void
 Socket_destroy(Socket self)
 {
-	if (self->fd != -1) {
+	if (self->fd != INVALID_SOCKET) {
 		closesocket(self->fd);
 	}
 

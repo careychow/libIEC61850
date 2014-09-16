@@ -46,7 +46,7 @@ createNullResponseExtendedTag(uint32_t invokeId, ByteBuffer* response, uint8_t t
     bufPos = BerEncoder_encodeTL(0x02, invokeIdSize - 2, buffer, bufPos);
     bufPos = BerEncoder_encodeUInt32(invokeId, buffer, bufPos);
 
-    buffer[bufPos++] = 0xbf;
+    buffer[bufPos++] = 0x9f; /* Context specific / primitive / extended */
     bufPos = BerEncoder_encodeTL(tag, 0, buffer, bufPos);
 
     response->size = bufPos;

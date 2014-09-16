@@ -28,6 +28,10 @@
  *  @{
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "mms_device_model.h"
 #include "mms_value.h"
 
@@ -88,6 +92,9 @@ MmsServer
 MmsServer_create(IsoServer isoServer, MmsDevice* device);
 
 void
+MmsServer_destroy(MmsServer self);
+
+void
 MmsServer_installReadHandler(MmsServer self, ReadVariableHandler,
 		void* parameter);
 
@@ -144,17 +151,58 @@ MmsServer_insertIntoCache(MmsServer self, MmsDomain* domain, char* itemId,
 void
 MmsServer_setDevice(MmsServer self, MmsDevice* device);
 
-/* Start a new server thread and listen for incoming connections */
+/***************************************************
+ * Functions for multi-threaded operation mode
+ ***************************************************/
+
+/**
+ * \brief Start a new server thread and listen for incoming connections
+ *
+ * \param self the MmsServer instance to operate on
+ * \param tcpPort the TCP port the server is listening on.
+ */
 void
 MmsServer_startListening(MmsServer self, int tcpPort);
 
-/* Stop server thread an all open connection threads */
+/**
+ * \brief Stop server thread an all open connection threads
+ *
+ * \param self the MmsServer instance to operate on
+ */
 void
 MmsServer_stopListening(MmsServer self);
 
-void
-MmsServer_destroy(MmsServer self);
+/***************************************************
+ * Functions for threadless operation mode
+ ***************************************************/
 
+/**
+ * \brief Start a new server in threadless operation mode
+ *
+ * \param self the MmsServer instance to operate on
+ * \param tcpPort the TCP port the server is listening on.
+ */
+void
+MmsServer_startListeningThreadless(MmsServer self, int tcpPort);
+
+/**
+ * \brief Handle client connections (for threadless operation mode)
+ *
+ * This function is listening for new client connections and handles incoming
+ * requests for existing client connections.
+ *
+ * \param self the MmsServer instance to operate on
+ */
+void
+MmsServer_handleIncomingMessages(MmsServer self);
+
+/**
+ * \brief Stop the server (for threadless operation mode)
+ *
+ * \param self the MmsServer instance to operate on
+ */
+void
+MmsServer_stopListeningThreadless(MmsServer self);
 
 
 /***************************************************
@@ -270,5 +318,9 @@ void
 MmsServer_setStatusRequestListener(MmsServer self, MmsStatusRequestListener listener, void* parameter);
 
 /**@}*/
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* MMS_SERVER_H_ */

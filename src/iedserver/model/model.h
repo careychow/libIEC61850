@@ -26,6 +26,10 @@
 
 #include "iec61850_common.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** \addtogroup server_api_group
  *  @{
  */
@@ -245,7 +249,7 @@ ModelNode_getChildCount(ModelNode* modelNode);
  * \return  the model node instance or NULL if model node does not exist.
  */
 ModelNode*
-ModelNode_getChild(ModelNode* modelNode, char* name);
+ModelNode_getChild(ModelNode* modelNode, const char* name);
 
 /**
  * \brief Return the IEC 61850 object reference of a model node
@@ -272,7 +276,7 @@ ModelNode_getObjectReference(ModelNode* node, char* objectReference);
  * \return the model node instance or NULL if model node does not exist.
  */
 ModelNode*
-IedModel_getModelNodeByObjectReference(IedModel* model, char* objectReference);
+IedModel_getModelNodeByObjectReference(IedModel* model, const char* objectReference);
 
 /**
  * \brief Lookup a model node by its short (normalized) reference
@@ -287,7 +291,7 @@ IedModel_getModelNodeByObjectReference(IedModel* model, char* objectReference);
  * \return the model node instance or NULL if model node does not exist.
  */
 ModelNode*
-IedModel_getModelNodeByShortObjectReference(IedModel* model, char* objectReference);
+IedModel_getModelNodeByShortObjectReference(IedModel* model, const char* objectReference);
 
 /**
  * \brief Lookup a model node by its short address
@@ -304,7 +308,7 @@ ModelNode*
 IedModel_getModelNodeByShortAddress(IedModel* model, uint32_t shortAddress);
 
 LogicalNode*
-LogicalDevice_getLogicalNode(LogicalDevice* device, char* nodeName);
+LogicalDevice_getLogicalNode(LogicalDevice* device, const char* nodeName);
 
 /**@}*/
 
@@ -320,13 +324,13 @@ void
 IedModel_setAttributeValuesToNull(IedModel* iedModel);
 
 LogicalDevice*
-IedModel_getDevice(IedModel* model, char* deviceName);
+IedModel_getDevice(IedModel* model, const char* deviceName);
 
 /*
  *  \param dataSetReference MMS mapping object reference! e.g. ied1Inverter/LLN0$dataset1
  */
 DataSet*
-IedModel_lookupDataSet(IedModel* model, char* dataSetReference);
+IedModel_lookupDataSet(IedModel* model, const char* dataSetReference);
 
 int
 IedModel_getLogicalDeviceCount(IedModel* iedModel);
@@ -348,6 +352,10 @@ DataObject_hasFCData(DataObject* dataObject, FunctionalConstraint fc);
 
 DataAttribute*
 IedModel_lookupDataAttributeByMmsValue(IedModel* model, MmsValue* value);
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif /* MODEL_H_ */

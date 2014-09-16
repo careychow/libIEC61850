@@ -38,7 +38,7 @@ copySubString(char* startPos, char* endPos)
 }
 
 char*
-copyString(char* string)
+copyString(const char* string)
 {
 	int newStringLength = strlen(string) + 1;
 
@@ -50,7 +50,7 @@ copyString(char* string)
 }
 
 char*
-copyStringToBuffer(char* string, char* buffer)
+copyStringToBuffer(const char* string, char* buffer)
 {
     int newStringLength = strlen(string) + 1;
 

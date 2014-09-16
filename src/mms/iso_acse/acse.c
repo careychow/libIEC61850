@@ -26,6 +26,12 @@
 #include "ber_encoder.h"
 #include "ber_decode.h"
 
+#if ((DEBUG_ISO_CLIENT == 1) || (DEBUG_ISO_SERVER == 1))
+#define DEBUG_ACSE 1
+#else
+#define DEBUG_ACSE 0
+#endif
+
 static uint8_t appContextNameMms[] = { 0x28, 0xca, 0x22, 0x02, 0x03 };
 
 static uint8_t auth_mech_password_oid[] = { 0x52, 0x03, 0x01 };
@@ -35,13 +41,13 @@ static uint8_t requirements_authentication[] = { 0x80 };
 static AcseAuthenticationMechanism
 checkAuthMechanismName(uint8_t* authMechanism, int authMechLen)
 {
-    AcseAuthenticationMechanism authenticationMechanism = AUTH_NONE;
+    AcseAuthenticationMechanism authenticationMechanism = ACSE_AUTH_NONE;
 
     if (authMechanism != NULL ) {
 
         if (authMechLen == 3) {
             if (memcmp(auth_mech_password_oid, authMechanism, 3) == 0) {
-                authenticationMechanism = AUTH_PASSWORD;
+                authenticationMechanism = ACSE_AUTH_PASSWORD;
             }
         }
     }
@@ -58,7 +64,7 @@ authenticateClient(AcseConnection* self, AcseAuthenticationMechanism mechanism, 
 
     authParameter->mechanism = mechanism;
 
-    if (mechanism == AUTH_PASSWORD) {
+    if (mechanism == ACSE_AUTH_PASSWORD) {
         authParameter->value.password.octetString = authValue;
         authParameter->value.password.passwordLength = authValueLen;
     }
@@ -86,7 +92,7 @@ checkAuthentication(AcseConnection* self, uint8_t* authMechanism, int authMechLe
 static int
 parseUserInformation(AcseConnection* self, uint8_t* buffer, int bufPos, int maxBufPos, bool* userInfoValid)
 {
-	if (DEBUG) printf("ACSE: parseUserInformation %i %i\n", bufPos, maxBufPos);
+	if (DEBUG_ACSE) printf("ACSE: parseUserInformation %i %i\n", bufPos, maxBufPos);
 
 	bool hasindirectReference = false;
 	bool isDataValid = false;
@@ -121,7 +127,7 @@ parseUserInformation(AcseConnection* self, uint8_t* buffer, int bufPos, int maxB
 	}
 
 
-	if (DEBUG) {
+	if (DEBUG_ACSE) {
 		if (!hasindirectReference) printf("ACSE: User data has no indirect reference!\n");
 
 		if (!isDataValid) printf("ACSE: No valid user data\n");
@@ -138,7 +144,7 @@ parseUserInformation(AcseConnection* self, uint8_t* buffer, int bufPos, int maxB
 static AcseIndication
 parseAarePdu(AcseConnection* self, uint8_t* buffer, int bufPos, int maxBufPos)
 {
-	if (DEBUG) printf("ACSE: parse AARE PDU\n");
+	if (DEBUG_ACSE) printf("ACSE: parse AARE PDU\n");
 
 	bool userInfoValid = false;
 
@@ -170,7 +176,7 @@ parseAarePdu(AcseConnection* self, uint8_t* buffer, int bufPos, int maxBufPos)
 
 		case 0xbe: /* user information */
 			if (buffer[bufPos]  != 0x28) {
-				if (DEBUG) printf("ACSE: invalid user info\n");
+				if (DEBUG_ACSE) printf("ACSE: invalid user info\n");
 				bufPos += len;
 			}
 			else {
@@ -183,8 +189,8 @@ parseAarePdu(AcseConnection* self, uint8_t* buffer, int bufPos, int maxBufPos)
 			break;
 
 		default: /* ignore unknown tag */
-		    if (DEBUG)
-		        printf("parseAarePdu: unknown tag %02x\n", tag);
+		    if (DEBUG_ACSE)
+		        printf("ACSE: parseAarePdu: unknown tag %02x\n", tag);
 
 			bufPos += len;
 			break;
@@ -203,7 +209,7 @@ parseAarePdu(AcseConnection* self, uint8_t* buffer, int bufPos, int maxBufPos)
 static AcseIndication
 parseAarqPdu(AcseConnection* self, uint8_t* buffer, int bufPos, int maxBufPos)
 {
-	if (DEBUG) printf("ACSE: parse AARQ PDU\n");
+	if (DEBUG_ACSE) printf("ACSE: parse AARQ PDU\n");
 
 	uint8_t* authValue = NULL;
 	int authValueLen = 0;
@@ -218,8 +224,8 @@ parseAarqPdu(AcseConnection* self, uint8_t* buffer, int bufPos, int maxBufPos)
 		bufPos = BerDecoder_decodeLength(buffer, &len, bufPos, maxBufPos);
 
 		if (bufPos < 0) {
-		    if (DEBUG)
-	            printf("parseAarqPdu: user info invalid!\n");
+		    if (DEBUG_ACSE)
+	            printf("ACSE: parseAarqPdu: user info invalid!\n");
 	        return ACSE_ASSOCIATE_FAILED;
 		}
 
@@ -263,7 +269,7 @@ parseAarqPdu(AcseConnection* self, uint8_t* buffer, int bufPos, int maxBufPos)
 
 		case 0xbe: /* user information */
 			if (buffer[bufPos]  != 0x28) {
-				if (DEBUG) printf("ACSE: invalid user info\n");
+				if (DEBUG_ACSE) printf("ACSE: invalid user info\n");
 				bufPos += len;
 			}
 			else {
@@ -276,8 +282,8 @@ parseAarqPdu(AcseConnection* self, uint8_t* buffer, int bufPos, int maxBufPos)
 			break;
 
 		default: /* ignore unknown tag */
-		    if (DEBUG)
-		        printf("parseAarqPdu: unknown tag %02x\n", tag);
+		    if (DEBUG_ACSE)
+		        printf("ACSE: parseAarqPdu: unknown tag %02x\n", tag);
 
 			bufPos += len;
 			break;
@@ -285,15 +291,15 @@ parseAarqPdu(AcseConnection* self, uint8_t* buffer, int bufPos, int maxBufPos)
 	}
 
     if (checkAuthentication(self, authMechanism, authMechLen, authValue, authValueLen) == false) {
-        if (DEBUG)
-            printf("parseAarqPdu: check authentication failed!\n");
+        if (DEBUG_ACSE)
+            printf("ACSE: parseAarqPdu: check authentication failed!\n");
 
         return ACSE_ASSOCIATE_FAILED;
     }
 
     if (userInfoValid == false) {
-        if (DEBUG)
-            printf("parseAarqPdu: user info invalid!\n");
+        if (DEBUG_ACSE)
+            printf("ACSE: parseAarqPdu: user info invalid!\n");
 
     	return ACSE_ASSOCIATE_FAILED;
     }
@@ -335,8 +341,8 @@ AcseConnection_parseMessage(AcseConnection* self, ByteBuffer* message)
     bufPos = BerDecoder_decodeLength(buffer, &len, bufPos, messageSize);
 
     if (bufPos < 0) {
-        if (DEBUG)
-            printf("AcseConnection_parseMessage: invalid ACSE message!\n");
+        if (DEBUG_ACSE)
+            printf("ACSE: AcseConnection_parseMessage: invalid ACSE message!\n");
 
         return ACSE_ERROR;
     }
@@ -358,7 +364,7 @@ AcseConnection_parseMessage(AcseConnection* self, ByteBuffer* message)
         indication = ACSE_ABORT;
         break;
     default:
-    	if (DEBUG) printf("ACSE: Unknown ACSE message\n");
+    	if (DEBUG_ACSE) printf("ACSE: Unknown ACSE message\n");
     	indication = ACSE_ERROR;
     	break;
     }
@@ -517,7 +523,7 @@ AcseConnection_createAssociateRequestMessage(AcseConnection* self,
 		contentLength += 5;
 
 		/* authentication value */
-		if (authParameter->mechanism == AUTH_PASSWORD) {
+		if (authParameter->mechanism == ACSE_AUTH_PASSWORD) {
 			contentLength += 2;
 
 			//if (authParameter->value.password.passwordLength == 0)
@@ -605,7 +611,7 @@ AcseConnection_createAssociateRequestMessage(AcseConnection* self,
 		bufPos = BerEncoder_encodeTL(0x8a, 2, buffer, bufPos);
 		buffer[bufPos++] = 0x04;
 
-		if (authParameter->mechanism == AUTH_PASSWORD) {
+		if (authParameter->mechanism == ACSE_AUTH_PASSWORD) {
 		    buffer[bufPos++] = requirements_authentication[0];
 
 			bufPos = BerEncoder_encodeTL(0x8b, 3, buffer, bufPos);

@@ -37,9 +37,11 @@ struct sMmsMapping {
     LinkedList observedObjects;
     LinkedList attributeAccessHandlers;
 
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     bool reportThreadRunning;
     bool reportThreadFinished;
     Thread reportWorkerThread;
+#endif
 
     IedServer iedServer;
 

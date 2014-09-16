@@ -56,7 +56,10 @@ struct sMmsGooseControlBlock {
     LinkedList dataSetValues;
     uint64_t nextPublishTime;
     int retransmissionsLeft; /* number of retransmissions left for the last event */
+
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     Semaphore publisherMutex;
+#endif
 
     MmsMapping* mmsMapping;
 
@@ -70,7 +73,9 @@ MmsGooseControlBlock_create()
 {
 	MmsGooseControlBlock self = (MmsGooseControlBlock) calloc(1, sizeof(struct sMmsGooseControlBlock));
 
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     self->publisherMutex = Semaphore_create(1);
+#endif
 
     return self;
 }
@@ -78,7 +83,9 @@ MmsGooseControlBlock_create()
 void
 MmsGooseControlBlock_destroy(MmsGooseControlBlock self)
 {
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     Semaphore_destroy(self->publisherMutex);
+#endif
 
     if (self->publisher != NULL)
         GoosePublisher_destroy(self->publisher);
@@ -150,7 +157,9 @@ MmsGooseControlBlock_isEnabled(MmsGooseControlBlock self)
 void
 MmsGooseControlBlock_enable(MmsGooseControlBlock self)
 {
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     Semaphore_wait(self->publisherMutex);
+#endif
 
     if (!MmsGooseControlBlock_isEnabled(self)) {
 
@@ -240,7 +249,9 @@ MmsGooseControlBlock_enable(MmsGooseControlBlock self)
 
     }
 
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     Semaphore_post(self->publisherMutex);
+#endif
 }
 
 void
@@ -253,7 +264,9 @@ MmsGooseControlBlock_disable(MmsGooseControlBlock self)
 
         self->goEna = false;
 
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
         Semaphore_wait(self->publisherMutex);
+#endif
 
         if (self->publisher != NULL) {
             GoosePublisher_destroy(self->publisher);
@@ -262,7 +275,9 @@ MmsGooseControlBlock_disable(MmsGooseControlBlock self)
             self->dataSetValues = NULL;
         }
 
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
         Semaphore_post(self->publisherMutex);
+#endif
     }
 }
 
@@ -272,7 +287,9 @@ MmsGooseControlBlock_checkAndPublish(MmsGooseControlBlock self, uint64_t current
 {
     if (currentTime >= self->nextPublishTime) {
 
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
         Semaphore_wait(self->publisherMutex);
+#endif
 
         GoosePublisher_publish(self->publisher, self->dataSetValues);
 
@@ -297,14 +314,18 @@ MmsGooseControlBlock_checkAndPublish(MmsGooseControlBlock self, uint64_t current
                 CONFIG_GOOSE_STABLE_STATE_TRANSMISSION_INTERVAL;
         }
 
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
         Semaphore_post(self->publisherMutex);
+#endif
     }
 }
 
 void
 MmsGooseControlBlock_observedObjectChanged(MmsGooseControlBlock self)
 {
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     Semaphore_wait(self->publisherMutex);
+#endif
 
     uint64_t currentTime = GoosePublisher_increaseStNum(self->publisher);
 
@@ -327,7 +348,9 @@ MmsGooseControlBlock_observedObjectChanged(MmsGooseControlBlock self)
 
     GoosePublisher_publish(self->publisher, self->dataSetValues);
 
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     Semaphore_post(self->publisherMutex);
+#endif
 }
 
 static MmsVariableSpecification*

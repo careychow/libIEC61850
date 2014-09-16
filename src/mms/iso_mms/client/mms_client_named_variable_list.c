@@ -35,7 +35,7 @@
 
 void
 mmsClient_createDeleteNamedVariableListRequest(long invokeId, ByteBuffer* writeBuffer,
-		char* domainId, char* listNameId)
+		const char* domainId, const char* listNameId)
 {
 	MmsPdu_t* mmsPdu = mmsClient_createConfirmedRequestPdu(invokeId);
 
@@ -73,7 +73,7 @@ void
 mmsClient_createDeleteAssociationSpecificNamedVariableListRequest(
 		long invokeId,
 		ByteBuffer* writeBuffer,
-		char* listNameId)
+		const char* listNameId)
 {
 	MmsPdu_t* mmsPdu = mmsClient_createConfirmedRequestPdu(invokeId);
 
@@ -146,7 +146,7 @@ mmsClient_parseDeleteNamedVariableListResponse(ByteBuffer* message, uint32_t* in
 
 void
 mmsClient_createGetNamedVariableListAttributesRequest(uint32_t invokeId, ByteBuffer* writeBuffer,
-		char* domainId, char* listNameId)
+		const char* domainId, const char* listNameId)
 {
 	MmsPdu_t* mmsPdu = mmsClient_createConfirmedRequestPdu(invokeId);
 
@@ -172,7 +172,7 @@ mmsClient_createGetNamedVariableListAttributesRequest(uint32_t invokeId, ByteBuf
 
 void
 mmsClient_createGetNamedVariableListAttributesRequestAssociationSpecific(uint32_t invokeId,
-        ByteBuffer* writeBuffer, char* listNameId)
+        ByteBuffer* writeBuffer, const char* listNameId)
 {
     MmsPdu_t* mmsPdu = mmsClient_createConfirmedRequestPdu(invokeId);
 
@@ -257,8 +257,8 @@ void
 mmsClient_createDefineNamedVariableListRequest(
 		uint32_t invokeId,
 		ByteBuffer* writeBuffer,
-		char* domainId,
-		char* listNameId,
+		const char* domainId,
+		const char* listNameId,
 		LinkedList /*<MmsVariableSpecification*>*/ listOfVariables,
 		bool associationSpecific)
 {

@@ -27,6 +27,10 @@
 #include "byte_buffer.h"
 #include "iso_connection_parameters.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** \addtogroup mms_server_api_group
  *  @{
  */
@@ -115,12 +119,29 @@ IsoServer_startListening(IsoServer self);
 void
 IsoServer_stopListening(IsoServer self);
 
+
+void
+IsoServer_startListeningThreadless(IsoServer self);
+
+/**
+ * for threadless operation
+ */
+void
+IsoServer_processIncomingMessages(IsoServer self);
+
+void
+IsoServer_stopListeningThreadless(IsoServer self);
+
+
 void
 IsoServer_closeConnection(IsoServer self, IsoConnection isoConnection);
 
 void
 IsoServer_destroy(IsoServer self);
 
+#ifdef __cplusplus
+}
+#endif
 
 /**@}*/
 

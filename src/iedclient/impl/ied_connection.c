@@ -141,7 +141,7 @@ ICLogicalDevice_destroy(ICLogicalDevice* self)
 }
 
 static ClientDataSet
-ClientDataSet_create(char* dataSetReference)
+ClientDataSet_create(const char* dataSetReference)
 {
     ClientDataSet self = (ClientDataSet) calloc(1, sizeof(struct sClientDataSet));
 
@@ -314,7 +314,7 @@ doesReportMatchControlObject(char* domainName, char* itemName, char* objectRef)
     return true;
 }
 
-void
+static void
 handleLastApplErrorMessage(IedConnection self, MmsValue* value)
 {
     if (DEBUG_IED_CLIENT)
@@ -548,7 +548,7 @@ IedConnection_destroy(IedConnection self)
 }
 
 MmsVariableSpecification*
-IedConnection_getVariableSpecification(IedConnection self, IedClientError* error, char* objectReference,
+IedConnection_getVariableSpecification(IedConnection self, IedClientError* error, const char* objectReference,
         FunctionalConstraint fc)
 {
     char domainIdBuffer[65];
@@ -571,9 +571,8 @@ IedConnection_getVariableSpecification(IedConnection self, IedClientError* error
     varSpec =
             MmsConnection_getVariableAccessAttributes(self->connection, &mmsError, domainId, itemId);
 
-    if (varSpec != NULL) {
+    if (varSpec != NULL)
         *error = IED_ERROR_OK;
-    }
     else
         *error = iedConnection_mapMmsErrorToIedError(mmsError);
 
@@ -583,7 +582,7 @@ IedConnection_getVariableSpecification(IedConnection self, IedClientError* error
 }
 
 MmsValue*
-IedConnection_readObject(IedConnection self, IedClientError* error, char* objectReference,
+IedConnection_readObject(IedConnection self, IedClientError* error, const char* objectReference,
         FunctionalConstraint fc)
 {
     char domainIdBuffer[65];
@@ -605,9 +604,8 @@ IedConnection_readObject(IedConnection self, IedClientError* error, char* object
 
     value = MmsConnection_readVariable(self->connection, &mmsError, domainId, itemId);
 
-    if (value != NULL) {
+    if (value != NULL)
         *error = IED_ERROR_OK;
-    }
     else
         *error = iedConnection_mapMmsErrorToIedError(mmsError);
 
@@ -615,7 +613,7 @@ IedConnection_readObject(IedConnection self, IedClientError* error, char* object
 }
 
 bool
-IedConnection_readBooleanValue(IedConnection self, IedClientError* error, char* objectReference, FunctionalConstraint fc)
+IedConnection_readBooleanValue(IedConnection self, IedClientError* error, const char* objectReference, FunctionalConstraint fc)
 {
     MmsValue* value = IedConnection_readObject(self, error, objectReference, fc);
 
@@ -638,7 +636,7 @@ IedConnection_readBooleanValue(IedConnection self, IedClientError* error, char* 
 }
 
 float
-IedConnection_readFloatValue(IedConnection self, IedClientError* error, char* objectReference, FunctionalConstraint fc)
+IedConnection_readFloatValue(IedConnection self, IedClientError* error, const char* objectReference, FunctionalConstraint fc)
 {
     MmsValue* value = IedConnection_readObject(self, error, objectReference, fc);
 
@@ -661,7 +659,7 @@ IedConnection_readFloatValue(IedConnection self, IedClientError* error, char* ob
 }
 
 char*
-IedConnection_readStringValue(IedConnection self, IedClientError* error, char* objectReference, FunctionalConstraint fc)
+IedConnection_readStringValue(IedConnection self, IedClientError* error, const char* objectReference, FunctionalConstraint fc)
 {
     MmsValue* value = IedConnection_readObject(self, error, objectReference, fc);
 
@@ -684,7 +682,7 @@ IedConnection_readStringValue(IedConnection self, IedClientError* error, char* o
 }
 
 int32_t
-IedConnection_readInt32Value(IedConnection self, IedClientError* error, char* objectReference, FunctionalConstraint fc)
+IedConnection_readInt32Value(IedConnection self, IedClientError* error, const char* objectReference, FunctionalConstraint fc)
 {
     MmsValue* value = IedConnection_readObject(self, error, objectReference, fc);
 
@@ -707,7 +705,7 @@ IedConnection_readInt32Value(IedConnection self, IedClientError* error, char* ob
 }
 
 uint32_t
-IedConnection_readUnsigned32Value(IedConnection self, IedClientError* error, char* objectReference, FunctionalConstraint fc)
+IedConnection_readUnsigned32Value(IedConnection self, IedClientError* error, const char* objectReference, FunctionalConstraint fc)
 {
     MmsValue* value = IedConnection_readObject(self, error, objectReference, fc);
 
@@ -730,7 +728,7 @@ IedConnection_readUnsigned32Value(IedConnection self, IedClientError* error, cha
 }
 
 Timestamp*
-IedConnection_readTimestampValue(IedConnection self, IedClientError* error, char* objectReference, FunctionalConstraint fc,
+IedConnection_readTimestampValue(IedConnection self, IedClientError* error, const char* objectReference, FunctionalConstraint fc,
         Timestamp* timeStamp)
 {
     MmsValue* value = IedConnection_readObject(self, error, objectReference, fc);
@@ -759,7 +757,7 @@ IedConnection_readTimestampValue(IedConnection self, IedClientError* error, char
 }
 
 Quality
-IedConnection_readQualityValue(IedConnection self, IedClientError* error, char* objectReference, FunctionalConstraint fc)
+IedConnection_readQualityValue(IedConnection self, IedClientError* error, const char* objectReference, FunctionalConstraint fc)
 {
     MmsValue* value = IedConnection_readObject(self, error, objectReference, fc);
 
@@ -781,7 +779,7 @@ IedConnection_readQualityValue(IedConnection self, IedClientError* error, char* 
 }
 
 void
-IedConnection_writeObject(IedConnection self, IedClientError* error, char* objectReference,
+IedConnection_writeObject(IedConnection self, IedClientError* error, const char* objectReference,
         FunctionalConstraint fc, MmsValue* value)
 {
     char domainIdBuffer[65];
@@ -806,7 +804,7 @@ IedConnection_writeObject(IedConnection self, IedClientError* error, char* objec
 }
 
 void
-IedConnection_writeBooleanValue(IedConnection self, IedClientError* error, char* objectReference,
+IedConnection_writeBooleanValue(IedConnection self, IedClientError* error, const char* objectReference,
         FunctionalConstraint fc, bool value)
 {
     MmsValue mmsValue;
@@ -818,7 +816,7 @@ IedConnection_writeBooleanValue(IedConnection self, IedClientError* error, char*
 }
 
 void
-IedConnection_writeInt32Value(IedConnection self, IedClientError* error, char* objectReference,
+IedConnection_writeInt32Value(IedConnection self, IedClientError* error, const char* objectReference,
         FunctionalConstraint fc, int32_t value)
 {
     uint8_t valueBuffer[4];
@@ -840,7 +838,7 @@ IedConnection_writeInt32Value(IedConnection self, IedClientError* error, char* o
 
 
 void
-IedConnection_writeUnsigned32Value(IedConnection self, IedClientError* error, char* objectReference,
+IedConnection_writeUnsigned32Value(IedConnection self, IedClientError* error, const char* objectReference,
         FunctionalConstraint fc, uint32_t value)
 {
     uint8_t valueBuffer[4];
@@ -861,7 +859,7 @@ IedConnection_writeUnsigned32Value(IedConnection self, IedClientError* error, ch
 }
 
 void
-IedConnection_writeFloatValue(IedConnection self, IedClientError* error, char* objectReference,
+IedConnection_writeFloatValue(IedConnection self, IedClientError* error, const char* objectReference,
         FunctionalConstraint fc, float value)
 {
     MmsValue mmsValue;
@@ -874,7 +872,7 @@ IedConnection_writeFloatValue(IedConnection self, IedClientError* error, char* o
 }
 
 void
-IedConnection_writeOctetString(IedConnection self, IedClientError* error, char* objectReference,
+IedConnection_writeOctetString(IedConnection self, IedClientError* error, const char* objectReference,
         FunctionalConstraint fc, uint8_t* value, int valueLength)
 {
     MmsValue mmsValue;
@@ -887,13 +885,13 @@ IedConnection_writeOctetString(IedConnection self, IedClientError* error, char* 
 }
 
 void
-IedConnection_writeVisibleStringValue(IedConnection self, IedClientError* error, char* objectReference,
+IedConnection_writeVisibleStringValue(IedConnection self, IedClientError* error, const char* objectReference,
         FunctionalConstraint fc, char* value)
 {
     MmsValue mmsValue;
     mmsValue.deleteValue = 0;
     mmsValue.type = MMS_VISIBLE_STRING;
-    mmsValue.value.visibleString = value;
+    mmsValue.value.visibleString.buf = value;
 
     IedConnection_writeObject(self, error, objectReference, fc, &mmsValue);
 }
@@ -1004,7 +1002,7 @@ mmsFileDirectoryHandler(void* parameter, char* filename, uint32_t size, uint64_t
 }
 
 LinkedList /*<FileDirectoryEntry>*/
-IedConnection_getFileDirectory(IedConnection self, IedClientError* error, char* directoryName)
+IedConnection_getFileDirectory(IedConnection self, IedClientError* error, const char* directoryName)
 {
     *error = IED_ERROR_OK;
 
@@ -1016,7 +1014,6 @@ IedConnection_getFileDirectory(IedConnection self, IedClientError* error, char* 
 
     bool moreFollows = false;
 
-
     do {
         moreFollows =
                 MmsConnection_getFileDirectory(self->connection, &mmsError, directoryName, continueAfter,
@@ -1027,6 +1024,13 @@ IedConnection_getFileDirectory(IedConnection self, IedClientError* error, char* 
             LinkedList_destroyDeep(fileNames, (LinkedListValueDeleteFunction) FileDirectoryEntry_destroy);
 
             return NULL;
+        }
+
+        if (moreFollows) {
+            FileDirectoryEntry lastDirectoryEntry = (FileDirectoryEntry)
+                    LinkedList_getData(LinkedList_getLastElement(fileNames));
+
+            continueAfter = lastDirectoryEntry->fileName;
         }
 
     } while (moreFollows == true);
@@ -1054,7 +1058,7 @@ mmsFileReadHandler(void* parameter, int32_t frsmId, uint8_t* buffer, uint32_t by
 }
 
 uint32_t
-IedConnection_getFile(IedConnection self, IedClientError* error, char* fileName, IedClientGetFileHandler handler,
+IedConnection_getFile(IedConnection self, IedClientError* error, const char* fileName, IedClientGetFileHandler handler,
         void* handlerParameter)
 {
     *error = IED_ERROR_OK;
@@ -1106,7 +1110,7 @@ IedConnection_getFile(IedConnection self, IedClientError* error, char* fileName,
 }
 
 void
-IedConnection_deleteFile(IedConnection self, IedClientError* error, char* fileName)
+IedConnection_deleteFile(IedConnection self, IedClientError* error, const char* fileName)
 {
     *error = IED_ERROR_OK;
 
@@ -1129,7 +1133,7 @@ IedConnection_getServerDirectory(IedConnection self, IedClientError* error, bool
 
 LinkedList /*<char*>*/
 IedConnection_getLogicalDeviceDirectory(IedConnection self, IedClientError* error,
-        char* logicalDeviceName)
+        const char* logicalDeviceName)
 {
     if (self->logicalDevices == NULL)
         IedConnection_getDeviceModelFromServer(self, error);
@@ -1219,7 +1223,7 @@ addVariablesWithFc(char* fc, char* lnName, LinkedList variables, LinkedList lnDi
 
 LinkedList /*<char*>*/
 IedConnection_getLogicalNodeDirectory(IedConnection self, IedClientError* error,
-        char* logicalNodeReference, ACSIClass acsiClass)
+        const char* logicalNodeReference, ACSIClass acsiClass)
 {
     if (self->logicalDevices == NULL)
         IedConnection_getDeviceModelFromServer(self, error);
@@ -1366,7 +1370,7 @@ IedConnection_getLogicalNodeDirectory(IedConnection self, IedClientError* error,
 
 LinkedList /*<char*>*/
 IedConnection_getLogicalNodeVariables(IedConnection self, IedClientError* error,
-        char* logicalNodeReference)
+        const char* logicalNodeReference)
 {
     if (self->logicalDevices == NULL)
         IedConnection_getDeviceModelFromServer(self, error);
@@ -1437,7 +1441,7 @@ IedConnection_getLogicalNodeVariables(IedConnection self, IedClientError* error,
 
 static LinkedList
 getDataDirectory(IedConnection self, IedClientError* error,
-        char* dataReference, bool withFc)
+        const char* dataReference, bool withFc)
 {
     if (self->logicalDevices == NULL)
         IedConnection_getDeviceModelFromServer(self, error);
@@ -1576,35 +1580,34 @@ getDataDirectory(IedConnection self, IedClientError* error,
 }
 
 LinkedList
-IedConnection_getDataDirectory(IedConnection self, IedClientError* error,
-        char* dataReference)
+IedConnection_getDataDirectory(IedConnection self, IedClientError* error, const char* dataReference)
 {
     return getDataDirectory(self, error, dataReference, false);
 }
 
 LinkedList
-IedConnection_getDataDirectoryFC(IedConnection self, IedClientError* error,
-        char* dataReference)
+IedConnection_getDataDirectoryFC(IedConnection self, IedClientError* error, const char* dataReference)
 {
     return getDataDirectory(self, error, dataReference, true);
 }
 
 void
-IedConnection_createDataSet(IedConnection self, IedClientError* error, char* dataSetReference,
+IedConnection_createDataSet(IedConnection self, IedClientError* error, const char* dataSetReference,
         LinkedList /* <char*> */dataSetElements)
 {
 
     char domainIdBuffer[65];
     char itemIdBuffer[129];
 
-    char* domainId;
-    char* itemId;
+    const char* domainId;
+    const char* itemId;
     bool isAssociationSpecific = false;
 
     if (dataSetReference[0] != '@') {
         domainId = MmsMapping_getMmsDomainFromObjectReference(dataSetReference, domainIdBuffer);
-        itemId = copyStringToBuffer(dataSetReference + strlen(domainId) + 1, itemIdBuffer);
-        StringUtils_replace(itemId, '.', '$');
+        char* itemIdRef = copyStringToBuffer(dataSetReference + strlen(domainId) + 1, itemIdBuffer);
+        StringUtils_replace(itemIdRef, '.', '$');
+        itemId = itemIdRef;
     }
     else {
         itemId = dataSetReference;
@@ -1641,7 +1644,7 @@ IedConnection_createDataSet(IedConnection self, IedClientError* error, char* dat
 }
 
 void
-IedConnection_deleteDataSet(IedConnection self, IedClientError* error, char* dataSetReference)
+IedConnection_deleteDataSet(IedConnection self, IedClientError* error, const char* dataSetReference)
 {
     char domainId[65];
     char itemId[129];
@@ -1669,7 +1672,7 @@ IedConnection_deleteDataSet(IedConnection self, IedClientError* error, char* dat
 }
 
 LinkedList /* <char*> */
-IedConnection_getDataSetDirectory(IedConnection self, IedClientError* error, char* dataSetReference, bool* isDeletable)
+IedConnection_getDataSetDirectory(IedConnection self, IedClientError* error, const char* dataSetReference, bool* isDeletable)
 {
     bool deletable = false;
 
@@ -1678,15 +1681,16 @@ IedConnection_getDataSetDirectory(IedConnection self, IedClientError* error, cha
     char domainIdBuffer[65];
     char itemIdBuffer[129];
 
-    char* domainId = NULL;
-    char* itemId = NULL;
+    const char* domainId = NULL;
+    const char* itemId = NULL;
 
     bool isAssociationSpecific = false;
 
     if (dataSetReference[0] != '@') {
         domainId = MmsMapping_getMmsDomainFromObjectReference(dataSetReference, domainIdBuffer);
-        itemId = copyStringToBuffer(dataSetReference + strlen(domainId) + 1, itemIdBuffer);
-        StringUtils_replace(itemId, '.', '$');
+        char* itemIdRef = copyStringToBuffer(dataSetReference + strlen(domainId) + 1, itemIdBuffer);
+        StringUtils_replace(itemIdRef, '.', '$');
+        itemId = itemIdRef;
     }
     else {
         itemId = dataSetReference;
@@ -1732,22 +1736,23 @@ IedConnection_getDataSetDirectory(IedConnection self, IedClientError* error, cha
 }
 
 ClientDataSet
-IedConnection_readDataSetValues(IedConnection self, IedClientError* error, char* dataSetReference,
+IedConnection_readDataSetValues(IedConnection self, IedClientError* error, const char* dataSetReference,
         ClientDataSet dataSet)
 {
     char domainIdBuffer[65];
     char itemIdBuffer[129];
 
-    char* domainId = NULL;
-    char* itemId = NULL;
+    const char* domainId = NULL;
+    const char* itemId = NULL;
 
 
     bool isAssociationSpecific = false;
 
     if (dataSetReference[0] != '@') {
         domainId = MmsMapping_getMmsDomainFromObjectReference(dataSetReference, domainIdBuffer);
-        itemId = copyStringToBuffer(dataSetReference + strlen(domainId) + 1, itemIdBuffer);
-        StringUtils_replace(itemId, '.', '$');
+        char* itemIdRef = copyStringToBuffer(dataSetReference + strlen(domainId) + 1, itemIdBuffer);
+        StringUtils_replace(itemIdRef, '.', '$');
+        itemId = itemIdRef;
     }
     else {
         itemId = dataSetReference;
@@ -1811,7 +1816,7 @@ private_IedConnection_removeControlClient(IedConnection self, ControlObjectClien
 }
 
 FileDirectoryEntry
-FileDirectoryEntry_create(char* fileName, uint32_t fileSize, uint64_t lastModified)
+FileDirectoryEntry_create(const char* fileName, uint32_t fileSize, uint64_t lastModified)
 {
     FileDirectoryEntry self = (FileDirectoryEntry) calloc(1, sizeof(struct sFileDirectoryEntry));
 

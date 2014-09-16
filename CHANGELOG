@@ -1,3 +1,45 @@
+Changes to version 0.8
+-----------------------
+- HAL: socket layer. Some changes. read and accept are now non-blocking. Changes the standard implementations (Linux/POSIX, WIN32, BSD) accordingly
+- server stack: added single-threaded and threadless operation modes to better fit to resource constraint devices (added new configuration option CONFIG_MMS_SINGLE_THREADED)
+- some small changes in server side control model handling (ControlHandler return values and behaviour) to enable threadless and single-threaded operation.
+- C# client API extended and XML documentation completed
+- some smaller bug fixes and extensions
+
+
+Changes to version 0.7.8
+------------------------
+- IED client: added client side support for Ed.1 compliant control (client side automatically detects if a control is ed1 or ed2 compliant)
+- Tools: SCL parser throws exceptions if names are defined multiple times in the same context
+- build support for FreeBSD (gmake and cmake)
+- server: fixed BER encoding problen in file close/delete response messages
+- server: fixed wrong reason-for-inclusion encoding for GI/integrity reports in buffered reporting
+- server: fixed endianess issue with report entry id
+- Configuration tools: fixed bug in static model generator - generator does not create RCBs for all logical devices
+- mms server: added support for vmd-scope named variables
+- mms server: support for standard MMS get-name-list behaviour (no flat address space)
+- common: refactored MmsValue string handling
+- some small extensions to C# client API
+
+Changes to version 0.7.7
+------------------------
+- client: fixed encoding bug in file close service
+- Configuration tools: fixed code generator problem with index report control blocks
+- Configuration tools: fixed problem with multiple data sets in a logical node
+- Configuration tools: configuration file generator can now handle arrays of data objects
+- Configuration toosl: configuration file generator does now properly define predefined unicode strings
+- removed some older functions of client API report setup in favor of ClientReportControlBlock
+- client side report handling does no longer require to read the data set before reports can be received 
+- added preview version of C# client API
+- added support (HAL) for Mac OS X (thanks to Michael Clausen - HES-SO Valais-Wallis)
+- some fixes in server side report handling (data set containing complex data attributes or FCDOs)
+- buffered reporting: fixed problem when buffer can only hold a single entry
+- fixed problem in function MmsValue_cloneToBuffer used by buffered reporting
+- fixed problem in GOOSE publisher (sqNum starts with 1 instead of 0)
+- added convenience methods IedServer_updateInt64AttributeValue and IedServer_updateVisibleStringAttributeValue
+- added conditional extern "C" declaration to header files for use in C++ projects
+- server now closes TCP socket after sending the ACSE release message
+
 Changes to version 0.7.6
 ------------------------
 - Server: fixed bug: authenticator will be called and can accept client connection even if no authentication value is provided

@@ -44,7 +44,7 @@ static char* password2 = "user2@testpw";
 static bool
 clientAuthenticator(void* parameter, AcseAuthenticationParameter authParameter, void** securityToken)
 {
-    if (authParameter->mechanism == AUTH_PASSWORD) {
+    if (authParameter->mechanism == ACSE_AUTH_PASSWORD) {
         if (authParameter->value.password.passwordLength == strlen(password1)) {
             if (memcmp(authParameter->value.password.octetString, password1,
                     authParameter->value.password.passwordLength) == 0)

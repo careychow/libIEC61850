@@ -38,6 +38,7 @@ struct sIedConnection
     LinkedList logicalDevices;
     LinkedList clientControls;
     LastApplError lastApplError;
+
     Semaphore stateMutex;
 
     IedConnectionClosedHandler connectionCloseHandler;
@@ -88,7 +89,7 @@ IedClientError
 iedConnection_mapDataAccessErrorToIedError(MmsDataAccessError mmsError);
 
 ClientReport
-ClientReport_create(ClientDataSet dataSet);
+ClientReport_create(void);
 
 void
 ClientReport_destroy(ClientReport self);

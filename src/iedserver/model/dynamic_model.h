@@ -27,6 +27,11 @@
 #include "model.h"
 #include "cdc.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 /** \addtogroup server_api_group
  *  @{
  */
@@ -48,7 +53,7 @@
  * \return
  */
 IedModel*
-IedModel_create(char* name/*, MemoryAllocator allocator*/);
+IedModel_create(const char* name/*, MemoryAllocator allocator*/);
 
 /**
  * \brief destroy a dynamically created data model
@@ -71,7 +76,7 @@ IedModel_destroy(IedModel* model);
  * \return the newly created LogicalDevice instance
  */
 LogicalDevice*
-LogicalDevice_create(char* name, IedModel* parent);
+LogicalDevice_create(const char* name, IedModel* parent);
 
 
 /**
@@ -83,7 +88,7 @@ LogicalDevice_create(char* name, IedModel* parent);
  * \return the newly created LogicalNode instance
  */
 LogicalNode*
-LogicalNode_create(char* name, LogicalDevice* parent);
+LogicalNode_create(const char* name, LogicalDevice* parent);
 
 /**
  * \brief create a new data object and add it to a parent model node
@@ -97,7 +102,7 @@ LogicalNode_create(char* name, LogicalDevice* parent);
  * \return the newly create DataObject instance
  */
 DataObject*
-DataObject_create(char* name, ModelNode* parent, int arrayElements);
+DataObject_create(const char* name, ModelNode* parent, int arrayElements);
 
 /**
  * \brief create a new data attribute and add it to a parent model node
@@ -115,7 +120,7 @@ DataObject_create(char* name, ModelNode* parent, int arrayElements);
  * \return the newly create DataAttribute instance
  */
 DataAttribute*
-DataAttribute_create(char* name, ModelNode* parent, DataAttributeType type, FunctionalConstraint fc,
+DataAttribute_create(const char* name, ModelNode* parent, DataAttributeType type, FunctionalConstraint fc,
         uint8_t triggerOptions, int arrayElements, uint32_t sAddr);
 
 /**
@@ -138,7 +143,7 @@ DataAttribute_create(char* name, ModelNode* parent, DataAttributeType type, Func
  * \return the new RCB instance.
  */
 ReportControlBlock*
-ReportControlBlock_create(char* name, LogicalNode* parent, char* rptId, bool isBuffered, char*
+ReportControlBlock_create(const char* name, LogicalNode* parent, char* rptId, bool isBuffered, char*
         dataSetName, uint32_t confRef, uint8_t trgOps, uint8_t options, uint32_t bufTm, uint32_t intgPd);
 
 /**
@@ -156,7 +161,7 @@ ReportControlBlock_create(char* name, LogicalNode* parent, char* rptId, bool isB
  * \return the new GoCB instance
  */
 GSEControlBlock*
-GSEControlBlock_create(char* name, LogicalNode* parent, char* appId, char* dataSet, uint32_t confRef, bool fixedOffs);
+GSEControlBlock_create(const char* name, LogicalNode* parent, char* appId, char* dataSet, uint32_t confRef, bool fixedOffs);
 
 /**
  * \brief create a PhyComAddress object and add it to a GoCB
@@ -183,7 +188,7 @@ PhyComAddress_create(GSEControlBlock* parent, uint8_t vlanPriority, uint16_t vla
  * \return the new data set instance
  */
 DataSet*
-DataSet_create(char* name, LogicalNode* parent);
+DataSet_create(const char* name, LogicalNode* parent);
 
 /**
  * \brief returns the number of elements (entries) of the data set
@@ -224,5 +229,9 @@ DataSetEntry_create(DataSet* dataSet, char* variable, int index, char* component
 /**@}*/
 
 /**@}*/
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* DYNAMIC_MODEL_H_ */

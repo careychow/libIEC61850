@@ -33,7 +33,7 @@
 
 int
 mmsClient_createMmsGetNameListRequestVMDspecific(long invokeId, ByteBuffer* writeBuffer,
-		char* continueAfter)
+		const char* continueAfter)
 {
 	MmsPdu_t* mmsPdu = mmsClient_createConfirmedRequestPdu(invokeId);
 
@@ -70,7 +70,7 @@ mmsClient_createMmsGetNameListRequestVMDspecific(long invokeId, ByteBuffer* writ
 
 int
 mmsClient_createMmsGetNameListRequestAssociationSpecific(long invokeId, ByteBuffer* writeBuffer,
-		char* continueAfter)
+		const char* continueAfter)
 {
 	MmsPdu_t* mmsPdu = mmsClient_createConfirmedRequestPdu(invokeId);
 
@@ -197,8 +197,8 @@ exit_error:
 }
 
 int
-mmsClient_createGetNameListRequestDomainOrVMDSpecific(long invokeId, char* domainName,
-		ByteBuffer* writeBuffer, MmsObjectClass objectClass, char* continueAfter)
+mmsClient_createGetNameListRequestDomainOrVMDSpecific(long invokeId, const char* domainName,
+		ByteBuffer* writeBuffer, MmsObjectClass objectClass, const char* continueAfter)
 {
 	MmsPdu_t* mmsPdu = mmsClient_createConfirmedRequestPdu(invokeId);
 

@@ -30,6 +30,12 @@ IsoConnection
 IsoConnection_create(Socket socket, IsoServer isoServer);
 
 void
+IsoConnection_destroy(IsoConnection self);
+
+void
+IsoConnection_handleTcpConnection(IsoConnection self);
+
+void
 private_IsoServer_increaseConnectionCounter(IsoServer self);
 
 void
@@ -49,5 +55,8 @@ IsoServer_userLock(IsoServer self);
 
 void
 IsoServer_userUnlock(IsoServer self);
+
+bool
+IsoConnection_isRunning(IsoConnection self);
 
 #endif /* ISO_SERVER_PRIVATE_H_ */

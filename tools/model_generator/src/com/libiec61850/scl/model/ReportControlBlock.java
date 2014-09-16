@@ -1,7 +1,7 @@
 package com.libiec61850.scl.model;
 
 /*
- *  Copyright 2013 Michael Zillgith
+ *  Copyright 2013, 2014 Michael Zillgith
  *
  *	This file is part of libIEC61850.
  *
@@ -38,7 +38,7 @@ public class ReportControlBlock {
 	private long bufferTime = 0;
 	private TriggerOptions triggerOptions = null;
 	private OptionFields optionFields = null;
-	private boolean indexed = false;
+	private boolean indexed = true;
 	private RptEnabled rptEna = null;
 	
 	public ReportControlBlock(Node reportControlNode) throws SclParserException {
@@ -83,23 +83,24 @@ public class ReportControlBlock {
 		
 		this.optionFields = new OptionFields(optFieldsNode);
 		
-		
 		Boolean indexed = ParserUtils.parseBooleanAttribute(reportControlNode, "indexed");
 		
 		if (indexed != null)
 			this.indexed = indexed.booleanValue();
 		
-		if (this.indexed) {
-			Node rptEnabledNode = ParserUtils.getChildNodeWithTag(reportControlNode, "RptEnabled");
-			
-			if (rptEnabledNode == null)
-				throw new SclParserException(reportControlNode, 
-						"ReportControl is missing required element \"RptEnabled\" (required when \"indexed\" is true)");
-			
+		Node rptEnabledNode = ParserUtils.getChildNodeWithTag(reportControlNode, "RptEnabled");
+		
+		if (rptEnabledNode != null) {
 			RptEnabled rptEna = new RptEnabled(rptEnabledNode);
+			
+			if (this.indexed == false) {
+				if (rptEna.getMaxInstances() != 1)
+					throw new SclParserException("RptEnabled.max != 1 is not allowed when indexed=\"false\"");
+			}
 			
 			this.rptEna = rptEna;
 		}
+		
 	}
 
 	public String getName() {

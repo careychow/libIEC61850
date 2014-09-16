@@ -212,17 +212,26 @@ createVariableAccessAttributesResponse(
 {
 	MmsDevice* device = MmsServer_getDevice(connection->server);
 
-	MmsDomain* domain = MmsDevice_getDomain(device, domainId);
+	MmsVariableSpecification* namedVariable = NULL;
 
-	if (domain == NULL) {
-		if (DEBUG_MMS_SERVER) printf("mms_server: domain %s not known\n", domainId);
-		return -1;
+	if (domainId != NULL) {
+	    MmsDomain* domain = MmsDevice_getDomain(device, domainId);
+
+	    if (domain == NULL) {
+	        if (DEBUG_MMS_SERVER) printf("MMS_SERVER: domain %s not known\n", domainId);
+	        return -1;
+	    }
+
+	    namedVariable = MmsDomain_getNamedVariable(domain, nameId);
 	}
+#if (CONFIG_MMS_SUPPORT_VMD_SCOPE_NAMED_VARIABLES == 1)
+	else
+	    namedVariable = MmsDevice_getNamedVariable(device, nameId);
+#endif /* (CONFIG_MMS_SUPPORT_VMD_SCOPE_NAMED_VARIABLES == 1) */
 
-	MmsVariableSpecification* namedVariable = MmsDomain_getNamedVariable(domain, nameId);
 
 	if (namedVariable == NULL) {
-		if (DEBUG_MMS_SERVER) printf("mms_server: named variable %s not known\n", nameId);
+		if (DEBUG_MMS_SERVER) printf("MMS_SERVER: named variable %s not known\n", nameId);
 		return -1;
 	}
 
@@ -286,13 +295,28 @@ mmsServer_handleGetVariableAccessAttributesRequest(
 
 				char* domainIdStr = createStringFromBuffer(domainId.buf, domainId.size);
 				char* nameIdStr = createStringFromBuffer(nameId.buf, nameId.size);
-				if (DEBUG_MMS_SERVER) printf("getVariableAccessAttributes domainId: %s nameId: %s\n", domainIdStr, nameIdStr);
+
+				if (DEBUG_MMS_SERVER)
+				    printf("MMS_SERVER: getVariableAccessAttributes domainId: %s nameId: %s\n", domainIdStr, nameIdStr);
 
 				createVariableAccessAttributesResponse(connection, domainIdStr, nameIdStr, invokeId, response);
 
 				free(domainIdStr);
 				free(nameIdStr);
 			}
+#if (CONFIG_MMS_SUPPORT_VMD_SCOPE_NAMED_VARIABLES == 1)
+			else if (request->choice.name.present == ObjectName_PR_vmdspecific) {
+			    Identifier_t nameId = request->choice.name.choice.vmdspecific;
+
+			    char* nameIdStr = createStringFromBuffer(nameId.buf, nameId.size);
+
+			    if (DEBUG_MMS_SERVER) printf("MMS_SERVER: getVariableAccessAttributes (VMD specific) nameId: %s\n", nameIdStr);
+
+			    createVariableAccessAttributesResponse(connection, NULL, nameIdStr, invokeId, response);
+
+			    free(nameIdStr);
+			}
+#endif /* (CONFIG_MMS_SUPPORT_VMD_SCOPE_NAMED_VARIABLES == 1) */
 			else {
 				if (DEBUG_MMS_SERVER) printf("GetVariableAccessAttributesRequest with name other than domainspecific is not supported!\n");
 				retVal = -1;

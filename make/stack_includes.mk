@@ -20,4 +20,5 @@ INCLUDES += -I$(LIBIEC_HOME)/src/hal
 INCLUDES += -I$(LIBIEC_HOME)/src/hal/thread
 INCLUDES += -I$(LIBIEC_HOME)/src/hal/socket
 INCLUDES += -I$(LIBIEC_HOME)/src/hal/filesystem
+INCLUDES += -I$(LIBIEC_HOME)/src/hal/time
 INCLUDES += -I$(LIBIEC_HOME)/src/goose

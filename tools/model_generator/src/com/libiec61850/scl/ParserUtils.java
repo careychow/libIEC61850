@@ -79,6 +79,7 @@ public class ParserUtils {
 
                 if (childNode.getNodeName().equals(nodeTag))
                     nodeList.add(childNode);
+
             }
         }
 

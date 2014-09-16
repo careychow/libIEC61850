@@ -88,7 +88,7 @@ destroyAutomaticThread(void* parameter)
 
 	free(thread);
 
-	return NULL;
+	pthread_exit(NULL);
 }
 
 void

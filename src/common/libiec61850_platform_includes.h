@@ -9,7 +9,8 @@
 
 #include "string_utilities.h"
 #include <stdio.h>
-#include <malloc.h>
+#include <stdlib.h>
+
 #include "platform_endian.h"
 
 #if (DEBUG != 1)

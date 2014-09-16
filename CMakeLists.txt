@@ -10,8 +10,12 @@ endif()
 project(libiec61850)
 
 set(LIB_VERSION_MAJOR "0")
-set(LIB_VERSION_MINOR "7")
-set(LIB_VERSION_PATCH "6")
+set(LIB_VERSION_MINOR "8")
+set(LIB_VERSION_PATCH "0")
+
+# feature checks
+include(CheckLibraryExists)
+check_library_exists(rt clock_gettime "time.h" CONFIG_SYSTEM_HAS_CLOCK_GETTIME)
 
 # check if we are on a little or a big endian
 include (TestBigEndian)
@@ -21,6 +25,9 @@ set(CONFIG_MMS_MAXIMUM_PDU_SIZE "65000" CACHE STRING "Configure the maximum size
 set(CONFIG_MAXIMUM_TCP_CLIENT_CONNECTIONS 5 CACHE STRING "Configure the maximum number of clients allowed to connect to the server")
 
 option(BUILD_EXAMPLES "Build the examples" ON)
+
+option(CONFIG_MMS_SINGLE_THREADED "Compile for single threaded version" OFF)
+option(CONFIG_MMS_THREADLESS_STACK "Optimize stack for threadless operation (warning: single- or multi-threaded server will not work!)" OFF)
 
 # choose the library features which shall be included
 option(CONFIG_INCLUDE_GOOSE_SUPPORT "Build with GOOSE support" ON)
@@ -35,6 +42,7 @@ set(CONFIG_REPORTING_DEFAULT_REPORT_BUFFER_SIZE "8000" CACHE STRING "Default buf
 
 # advanced options
 option(DEBUG "Enable debugging mode (include assertions)" OFF)
+option(DEBUG_SOCKET "Enable printf debugging for socket layer" OFF)
 option(DEBUG_COTP "Enable COTP printf debugging" OFF)
 option(DEBUG_ISO_SERVER "Enable ISO SERVER printf debugging" OFF)
 option(DEBUG_ISO_CLIENT "Enable ISO CLIENT printf debugging" OFF)
@@ -54,6 +62,7 @@ include_directories(
     src/hal/socket
     src/hal/thread
     src/hal/filesystem
+    src/hal/time
     src/iedclient
     src/iedcommon
     src/iedserver
@@ -75,7 +84,7 @@ include_directories(
 )
 
 set(API_HEADERS 
-	src/hal/hal.h 
+	src/hal/time/time_hal.h 
 	src/hal/ethernet/ethernet.h 
 	src/hal/thread/thread.h 
 	src/hal/filesystem/filesystem.h 

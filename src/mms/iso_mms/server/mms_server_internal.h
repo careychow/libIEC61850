@@ -32,6 +32,7 @@
 #include "mms_device_model.h"
 #include "mms_common_internal.h"
 #include "stack_config.h"
+#include "mms_server.h"
 
 #include "byte_buffer.h"
 #include "string_utilities.h"

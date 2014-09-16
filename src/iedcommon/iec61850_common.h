@@ -24,6 +24,11 @@
 #ifndef IEC61850_COMMON_H_
 #define IEC61850_COMMON_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #include "libiec61850_common_api.h"
 
 /**
@@ -158,7 +163,7 @@ typedef enum eFunctionalConstraint {
     NONE = -1
 } FunctionalConstraint;
 
-/**
+/**extern "C" {
  * \brief convert a function constraint to a static string
  */
 char*
@@ -277,5 +282,9 @@ Timestamp_setTimeInMilliseconds(Timestamp* self, uint64_t millisSinceEpoch);
 /** @} */
 
 /**@}*/
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* IEC61850_COMMON_H_ */

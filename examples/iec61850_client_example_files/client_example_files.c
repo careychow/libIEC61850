@@ -81,6 +81,15 @@ int main(int argc, char** argv) {
         /* Download a file from the server */
         IedConnection_getFile(con, &error, "IEDSERVER.BIN", downloadHandler, NULL);
 
+        if (error != IED_ERROR_OK)
+            printf("Failed to get file!\n");
+
+        /* Delete file at server */
+        IedConnection_deleteFile(con, &error, "IEDSERVER.BIN");
+
+        if (error != IED_ERROR_OK)
+            printf("Failed to delete file! (code=%i)\n", error);
+
         abort_connection:
 
         IedConnection_abort(con, &error);

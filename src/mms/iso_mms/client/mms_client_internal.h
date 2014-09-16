@@ -114,47 +114,47 @@ MmsPdu_t*
 mmsClient_createConfirmedRequestPdu(uint32_t invokeId);
 
 int
-mmsClient_createMmsGetNameListRequestVMDspecific(long invokeId, ByteBuffer* writeBuffer, char* continueAfter);
+mmsClient_createMmsGetNameListRequestVMDspecific(long invokeId, ByteBuffer* writeBuffer, const char* continueAfter);
 
 bool
 mmsClient_parseGetNameListResponse(LinkedList* nameList, ByteBuffer* message, uint32_t* invokeId);
 
 int
-mmsClient_createGetNameListRequestDomainOrVMDSpecific(long invokeId, char* domainName,
-		ByteBuffer* writeBuffer, MmsObjectClass objectClass, char* continueAfter);
+mmsClient_createGetNameListRequestDomainOrVMDSpecific(long invokeId, const char* domainName,
+		ByteBuffer* writeBuffer, MmsObjectClass objectClass, const char* continueAfter);
 
 MmsValue*
 mmsClient_parseReadResponse(ByteBuffer* message, uint32_t* invokeId, bool createArray);
 
 int
-mmsClient_createReadRequest(uint32_t invokeId, char* domainId, char* itemId, ByteBuffer* writeBuffer);
+mmsClient_createReadRequest(uint32_t invokeId, const char* domainId, const char* itemId, ByteBuffer* writeBuffer);
 
 int
-mmsClient_createReadRequestAlternateAccessIndex(uint32_t invokeId, char* domainId, char* itemId,
+mmsClient_createReadRequestAlternateAccessIndex(uint32_t invokeId, const char* domainId, const char* itemId,
 		uint32_t index, uint32_t elementCount, ByteBuffer* writeBuffer);
 
 int
-mmsClient_createReadRequestMultipleValues(uint32_t invokeId, char* domainId, LinkedList /*<char*>*/ items,
+mmsClient_createReadRequestMultipleValues(uint32_t invokeId, const char* domainId, LinkedList /*<char*>*/ items,
 		ByteBuffer* writeBuffer);
 
 int
-mmsClient_createReadNamedVariableListRequest(uint32_t invokeId, char* domainId, char* itemId,
+mmsClient_createReadNamedVariableListRequest(uint32_t invokeId, const char* domainId, const char* itemId,
 		ByteBuffer* writeBuffer, bool specWithResult);
 
 int
 mmsClient_createReadAssociationSpecificNamedVariableListRequest(
 		uint32_t invokeId,
-		char* itemId,
+		const char* itemId,
 		ByteBuffer* writeBuffer,
 		bool specWithResult);
 
 void
 mmsClient_createGetNamedVariableListAttributesRequest(uint32_t invokeId, ByteBuffer* writeBuffer,
-		char* domainId, char* listNameId);
+		const char* domainId, const char* listNameId);
 
 void
 mmsClient_createGetNamedVariableListAttributesRequestAssociationSpecific(uint32_t invokeId,
-        ByteBuffer* writeBuffer, char* listNameId);
+        ByteBuffer* writeBuffer, const char* listNameId);
 
 LinkedList
 mmsClient_parseGetNamedVariableListAttributesResponse(ByteBuffer* message, uint32_t* invokeId,
@@ -163,7 +163,7 @@ mmsClient_parseGetNamedVariableListAttributesResponse(ByteBuffer* message, uint3
 int
 mmsClient_createGetVariableAccessAttributesRequest(
         uint32_t invokeId,
-		char* domainId, char* itemId,
+        const char* domainId, const char* itemId,
 		ByteBuffer* writeBuffer);
 
 MmsVariableSpecification*
@@ -177,16 +177,16 @@ mmsClient_parseWriteMultipleItemsResponse(ByteBuffer* message, int32_t bufPos, M
         int itemCount, LinkedList* accessResults);
 
 int
-mmsClient_createWriteRequest(uint32_t invokeId, char* domainId, char* itemId, MmsValue* value,
+mmsClient_createWriteRequest(uint32_t invokeId, const char* domainId, const char* itemId, MmsValue* value,
 		ByteBuffer* writeBuffer);
 
 int
-mmsClient_createWriteMultipleItemsRequest(uint32_t invokeId, char* domainId, LinkedList itemIds, LinkedList values,
+mmsClient_createWriteMultipleItemsRequest(uint32_t invokeId, const char* domainId, LinkedList itemIds, LinkedList values,
         ByteBuffer* writeBuffer);
 
 void
 mmsClient_createDefineNamedVariableListRequest(uint32_t invokeId, ByteBuffer* writeBuffer,
-		char* domainId, char* listNameId, LinkedList /*<char*>*/ listOfVariables,
+		const char* domainId, const char* listNameId, LinkedList /*<char*>*/ listOfVariables,
 		bool associationSpecific);
 
 bool
@@ -194,7 +194,7 @@ mmsClient_parseDefineNamedVariableResponse(ByteBuffer* message, uint32_t* invoke
 
 void
 mmsClient_createDeleteNamedVariableListRequest(long invokeId, ByteBuffer* writeBuffer,
-		char* domainId, char* listNameId);
+        const char* domainId, const char* listNameId);
 
 bool
 mmsClient_parseDeleteNamedVariableListResponse(ByteBuffer* message, uint32_t* invokeId);
@@ -203,7 +203,7 @@ void
 mmsClient_createDeleteAssociationSpecificNamedVariableListRequest(
 		long invokeId,
 		ByteBuffer* writeBuffer,
-		char* listNameId);
+		const char* listNameId);
 
 void
 mmsClient_createIdentifyRequest(uint32_t invokeId, ByteBuffer* request);
@@ -218,7 +218,7 @@ bool
 mmsClient_parseStatusResponse(MmsConnection self, int* vmdLogicalStatus, int* vmdPhysicalStatus);
 
 void
-mmsClient_createFileOpenRequest(uint32_t invokeId, ByteBuffer* request, char* fileName, uint32_t initialPosition);
+mmsClient_createFileOpenRequest(uint32_t invokeId, ByteBuffer* request, const char* fileName, uint32_t initialPosition);
 
 bool
 mmsClient_parseFileOpenResponse(MmsConnection self, int32_t* frsmId, uint32_t* fileSize, uint64_t* lastModified);
@@ -233,13 +233,13 @@ void
 mmsClient_createFileCloseRequest(uint32_t invokeId, ByteBuffer* request, int32_t frsmId);
 
 void
-mmsClient_createFileRenameRequest(uint32_t invokeId, ByteBuffer* request, char* currentFileName, char* newFileName);
+mmsClient_createFileRenameRequest(uint32_t invokeId, ByteBuffer* request, const char* currentFileName, const char* newFileName);
 
 void
-mmsClient_createFileDeleteRequest(uint32_t invokeId, ByteBuffer* request, char* fileName);
+mmsClient_createFileDeleteRequest(uint32_t invokeId, ByteBuffer* request, const char* fileName);
 
 void
-mmsClient_createFileDirectoryRequest(uint32_t invokeId, ByteBuffer* request, char* fileSpecification, char* continueAfter);
+mmsClient_createFileDirectoryRequest(uint32_t invokeId, ByteBuffer* request, const char* fileSpecification, const char* continueAfter);
 
 bool
 mmsClient_parseFileDirectoryResponse(MmsConnection self, MmsFileDirectoryHandler handler, void* handlerParameter,
@@ -253,6 +253,6 @@ mmsClient_createConcludeRequest(MmsConnection self, ByteBuffer* message);
 
 int
 mmsClient_createMmsGetNameListRequestAssociationSpecific(long invokeId, ByteBuffer* writeBuffer,
-		char* continueAfter);
+		const char* continueAfter);
 
 #endif /* MMS_MSG_INTERNAL_H_ */

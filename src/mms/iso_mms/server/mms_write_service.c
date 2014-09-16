@@ -72,13 +72,13 @@ mmsServer_createMmsWriteResponse(MmsServerConnection* connection,
 
 
 void
-MmsServerConnection_sendWriteResponse(MmsServerConnection* self, uint32_t invokeId, MmsDataAccessError indication)
+MmsServerConnection_sendWriteResponse(MmsServerConnection* self, uint32_t invokeId, MmsDataAccessError indication, bool handlerMode)
 {
     ByteBuffer* response = ByteBuffer_create(NULL, self->maxPduSize);
 
     mmsServer_createMmsWriteResponse(self, invokeId, response, 1, &indication);
 
-    IsoConnection_sendMessage(self->isoConnection, response, false);
+    IsoConnection_sendMessage(self->isoConnection, response, handlerMode);
 
     ByteBuffer_destroy(response);
 }
@@ -137,29 +137,47 @@ mmsServer_handleWriteRequest(
             continue;
         }
 
-        if (varSpec->variableSpecification.choice.name.present != ObjectName_PR_domainspecific) {
-            accessResults[i] = DATA_ACCESS_ERROR_OBJECT_ACCESS_UNSUPPORTED;
-            continue;
-        }
-
-        Identifier_t domainId = varSpec->variableSpecification.choice.name.choice.domainspecific.domainId;
-        char* domainIdStr = createStringFromBuffer(domainId.buf, domainId.size);
+        MmsVariableSpecification* variable;
 
         MmsDevice* device = MmsServer_getDevice(connection->server);
 
-        MmsDomain* domain = MmsDevice_getDomain(device, domainIdStr);
+        MmsDomain* domain = NULL;
 
-        free(domainIdStr);
+        char* nameIdStr;
 
-        if (domain == NULL) {
-            accessResults[i] = DATA_ACCESS_ERROR_OBJECT_NONE_EXISTENT;
-            continue;
+        if (varSpec->variableSpecification.choice.name.present == ObjectName_PR_domainspecific) {
+            Identifier_t domainId = varSpec->variableSpecification.choice.name.choice.domainspecific.domainId;
+            char* domainIdStr = createStringFromBuffer(domainId.buf, domainId.size);
+
+            domain = MmsDevice_getDomain(device, domainIdStr);
+
+            free(domainIdStr);
+
+            if (domain == NULL) {
+                accessResults[i] = DATA_ACCESS_ERROR_OBJECT_NONE_EXISTENT;
+                continue;
+            }
+
+            Identifier_t nameId = varSpec->variableSpecification.choice.name.choice.domainspecific.itemId;
+            nameIdStr = createStringFromBuffer(nameId.buf, nameId.size);
+
+            variable = MmsDomain_getNamedVariable(domain, nameIdStr);
         }
 
-        Identifier_t nameId = varSpec->variableSpecification.choice.name.choice.domainspecific.itemId;
-        char* nameIdStr = createStringFromBuffer(nameId.buf, nameId.size);
+#if (CONFIG_MMS_SUPPORT_VMD_SCOPE_NAMED_VARIABLES == 1)
+        else if (varSpec->variableSpecification.choice.name.present == ObjectName_PR_vmdspecific) {
 
-        MmsVariableSpecification* variable = MmsDomain_getNamedVariable(domain, nameIdStr);
+            Identifier_t nameId = varSpec->variableSpecification.choice.name.choice.vmdspecific;
+            nameIdStr = createStringFromBuffer(nameId.buf, nameId.size);
+
+            variable = MmsDevice_getNamedVariable(device, nameIdStr);
+        }
+#endif /* (CONFIG_MMS_SUPPORT_VMD_SCOPE_NAMED_VARIABLES == 1) */
+
+        else {
+            accessResults[i] = DATA_ACCESS_ERROR_OBJECT_ACCESS_UNSUPPORTED;
+            continue;
+        }
 
         if (variable == NULL) {
             free(nameIdStr);
@@ -194,6 +212,10 @@ mmsServer_handleWriteRequest(
         }
 
         if (alternateAccess != NULL) {
+
+            if (domain != NULL)
+                domain = (MmsDomain*) device;
+
             MmsValue* cachedArray = MmsServer_getValueFromCache(connection->server, domain, nameIdStr);
 
             if (cachedArray == NULL) {

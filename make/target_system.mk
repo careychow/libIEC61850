@@ -2,9 +2,9 @@ UNAME := $(shell uname)
 
 MIPSEL_TOOLCHAIN_PREFIX=mipsel-openwrt-linux-
 # ARM_TOOLCHAIN_PREFIX=arm-linux-gnueabihf-
-ARM_TOOLCHAIN_PREFIX=arm-linux-gnueabi-
+#ARM_TOOLCHAIN_PREFIX=arm-linux-gnueabi-
 #ARM_TOOLCHAIN_PREFIX=arm-poky-linux-gnueabi-
-#ARM_TOOLCHAIN_PREFIX=arm-linux-
+ARM_TOOLCHAIN_PREFIX=arm-linux-
 UCLINUX_ARM_TOOLCHAIN_PREFIX=arm-uclinux-elf-
 MINGW_TOOLCHAIN_PREFIX=i586-mingw32msvc-
 #MINGW_TOOLCHAIN_PREFIX=x86_64-w64-mingw32-
@@ -18,6 +18,10 @@ ifeq ($(UNAME), Linux)
 TARGET=POSIX
 else ifeq ($(findstring MINGW,$(UNAME)), MINGW)
 TARGET=WIN32
+else ifeq ($(UNAME), Darwin)
+TARGET=BSD
+else ifeq ($(UNAME), FreeBSD)
+TARGET=BSD
 endif
 endif
 
@@ -99,8 +103,12 @@ EXCLUDE_ETHERNET_WINDOWS = 1
 endif
 
 
+else 
+ifeq ($(TARGET), BSD)
+HAL_IMPL = BSD
 else
 HAL_IMPL = POSIX
+endif
 
 LDLIBS = -lpthread
 
@@ -117,12 +125,8 @@ else
 LIB_OBJS_DIR = $(LIBIEC_HOME)/build
 endif
 
-ifneq ($(TARGET), UCLINUX-WAGO)
-LDLIBS += -lrt
-endif
-
 CFLAGS += -g 
-CFLAGS += -Os
+#CFLAGS += -Os
 
 DYNLIB_LDFLAGS=-lpthread
 endif
@@ -130,6 +134,11 @@ endif
 ifneq ($(TARGET), CLANG-CHECK)
 CC=$(TOOLCHAIN_PREFIX)gcc
 CPP=$(TOOLCHAIN_PREFIX)g++
+endif
+
+ifeq ($(TARGET), BSD)
+CC=cc
+CPP=c++
 endif
 
 AR=$(TOOLCHAIN_PREFIX)ar
@@ -142,8 +151,19 @@ endif
 
 LIB_NAME = $(LIB_OBJS_DIR)/libiec61850.a
 
+ifeq ($(TARGET), BSD)
+CFLAGS += -arch i386
+LDFLAGS += -arch i386
+endif
+
 ifeq ($(TARGET), WIN32)
-DYN_LIB_NAME = $(LIB_OBJS_DIR)/libiec61850.dll
+DYN_LIB_NAME = $(LIB_OBJS_DIR)/iec61850.dll
+else 
+
+ifeq ($(TARGET), BSD)
+DYN_LIB_NAME = $(LIB_OBJS_DIR)/libiec61850.dylib
 else
 DYN_LIB_NAME = $(LIB_OBJS_DIR)/libiec61850.so
+endif
+
 endif

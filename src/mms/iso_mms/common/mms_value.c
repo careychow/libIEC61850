@@ -33,6 +33,10 @@
 
 #include "mms_value_internal.h"
 
+#include "conversions.h"
+
+#include <time.h> /* for ctime_r */
+
 static inline int
 bitStringByteSize(MmsValue* value)
 {
@@ -149,14 +153,14 @@ MmsValue_equals(MmsValue* self, MmsValue* otherValue)
 
         case MMS_VISIBLE_STRING:
         case MMS_STRING:
-            if (self->value.visibleString != NULL) {
-                if (otherValue->value.visibleString != NULL) {
-                    if (strcmp(self->value.visibleString, otherValue->value.visibleString) == 0)
+            if (self->value.visibleString.buf != NULL) {
+                if (otherValue->value.visibleString.buf != NULL) {
+                    if (strcmp(self->value.visibleString.buf, otherValue->value.visibleString.buf) == 0)
                         return true;
                 }
             }
             else {
-                if (otherValue->value.visibleString == NULL)
+                if (otherValue->value.visibleString.buf == NULL)
                     return true;
             }
             break;
@@ -254,10 +258,10 @@ MmsValue_update(MmsValue* self, MmsValue* update)
 			else return false;
 			break;
 		case MMS_VISIBLE_STRING:
-			MmsValue_setVisibleString(self, update->value.visibleString);
+			MmsValue_setVisibleString(self, update->value.visibleString.buf);
 			break;
 		case MMS_STRING:
-			MmsValue_setMmsString(self, update->value.visibleString);
+			MmsValue_setMmsString(self, update->value.visibleString.buf);
 			break;
 		case MMS_BINARY_TIME:
 			self->value.binaryTime.size = update->value.binaryTime.size;
@@ -495,7 +499,7 @@ MmsValue_newDouble(double variable)
 }
 
 MmsValue*
-MmsValue_netIntegerFromInt8(int8_t integer)
+MmsValue_newIntegerFromInt8(int8_t integer)
 {
     MmsValue* value = (MmsValue*) calloc(1, sizeof(MmsValue));;
 
@@ -514,6 +518,26 @@ MmsValue_newIntegerFromInt16(int16_t integer)
 	value->value.integer = BerInteger_createFromInt32((int32_t) integer);
 
 	return value;
+}
+
+void
+MmsValue_setInt8(MmsValue* value, int8_t integer)
+{
+    if (value->type == MMS_INTEGER) {
+        if (Asn1PrimitiveValue_getMaxSize(value->value.integer) >= 1) {
+            BerInteger_setInt32(value->value.integer, (int32_t) integer);
+        }
+    }
+}
+
+void
+MmsValue_setInt16(MmsValue* value, int16_t integer)
+{
+    if (value->type == MMS_INTEGER) {
+        if (Asn1PrimitiveValue_getMaxSize(value->value.integer) >= 1) {
+            BerInteger_setInt32(value->value.integer, (int32_t) integer);
+        }
+    }
 }
 
 void
@@ -821,9 +845,11 @@ MmsValue_getSizeInMemory(MmsValue* self)
     case MMS_ARRAY:
     case MMS_STRUCTURE:
         {
+            memorySize += (sizeof(MmsValue*) * self->value.structure.size);
+
             int i;
             for (i = 0; i < self->value.structure.size; i++)
-            memorySize += MmsValue_getSizeInMemory(self->value.structure.components[i]);
+                memorySize += MmsValue_getSizeInMemory(self->value.structure.components[i]);
         }
         break;
     case MMS_BIT_STRING:
@@ -842,7 +868,8 @@ MmsValue_getSizeInMemory(MmsValue* self)
         break;
     case MMS_STRING:
     case MMS_VISIBLE_STRING:
-        memorySize += strlen(self->value.visibleString);
+        memorySize += strlen(self->value.visibleString.buf);
+        memorySize += 1; /* add space for 0 character */
         break;
     default:
         break;
@@ -863,9 +890,14 @@ MmsValue_cloneToBuffer(MmsValue* self, uint8_t* destinationAddress)
     case MMS_ARRAY:
     case MMS_STRUCTURE:
         {
+            newValue->value.structure.components = (MmsValue**) destinationAddress;
+            destinationAddress += (sizeof(MmsValue*) * self->value.structure.size);
+
             int i;
-            for (i = 0; i < self->value.structure.size; i++)
+            for (i = 0; i < self->value.structure.size; i++) {
+                newValue->value.structure.components[i] = (MmsValue*) destinationAddress;
                 destinationAddress = MmsValue_cloneToBuffer(self->value.structure.components[i], destinationAddress);
+            }
         }
         break;
 
@@ -901,9 +933,10 @@ MmsValue_cloneToBuffer(MmsValue* self, uint8_t* destinationAddress)
         break;
     case MMS_STRING:
     case MMS_VISIBLE_STRING:
-        newValue->value.visibleString = (char*) destinationAddress;
-        strcpy((char*) destinationAddress, self->value.visibleString);
-        destinationAddress += (strlen(self->value.visibleString) + 1);
+        newValue->value.visibleString.buf = (char*) destinationAddress;
+        newValue->value.visibleString.size = self->value.visibleString.size;
+        strcpy((char*) destinationAddress, self->value.visibleString.buf);
+        destinationAddress += (strlen(self->value.visibleString.buf) + 1);
         break;
     default:
         break;
@@ -973,9 +1006,10 @@ MmsValue_clone(MmsValue* value)
 	    break;
     case MMS_VISIBLE_STRING:
 	case MMS_STRING:
-	    size = strlen(value->value.visibleString) + 1;
-        newValue->value.visibleString = (char*) malloc(size);
-        strcpy(newValue->value.visibleString, value->value.visibleString);
+	    size = value->value.visibleString.size;
+        newValue->value.visibleString.buf = (char*) malloc(size + 1);
+        newValue->value.visibleString.size = size;
+        strcpy(newValue->value.visibleString.buf, value->value.visibleString.buf);
 	    break;
 	case MMS_DATA_ACCESS_ERROR:
 	    newValue->value.dataAccessError = value->value.dataAccessError;
@@ -1019,8 +1053,8 @@ MmsValue_delete(MmsValue* value)
         break;
     case MMS_VISIBLE_STRING:
     case MMS_STRING:
-        if (value->value.visibleString != NULL)
-            free(value->value.visibleString);
+        if (value->value.visibleString.buf != NULL)
+            free(value->value.visibleString.buf);
         break;
     case MMS_ARRAY:
     case MMS_STRUCTURE:
@@ -1064,8 +1098,8 @@ MmsValue_deleteConditional(MmsValue* value)
             break;
         case MMS_VISIBLE_STRING:
         case MMS_STRING:
-            if (value->value.visibleString != NULL)
-                free(value->value.visibleString);
+            if (value->value.visibleString.buf != NULL)
+                free(value->value.visibleString.buf);
             break;
         case MMS_ARRAY:
         case MMS_STRUCTURE:
@@ -1229,7 +1263,7 @@ MmsValue_newDefaultValue(MmsVariableSpecification* typeSpec)
 		value->value.octetString.buf = (uint8_t*) calloc(1, abs(typeSpec->typeSpec.octetString));
 		break;
 	case MMS_VISIBLE_STRING:
-		value = MmsValue_newVisibleString(NULL);
+		value = MmsValue_newVisibleStringWithSize(abs(typeSpec->typeSpec.visibleString));
 		break;
 	case MMS_BOOLEAN:
 		value = MmsValue_newBoolean(false);
@@ -1246,7 +1280,7 @@ MmsValue_newDefaultValue(MmsVariableSpecification* typeSpec)
 		value = MmsValue_newStructure(typeSpec);
 		break;
 	case MMS_STRING:
-		value = MmsValue_newMmsString(NULL);
+		value = MmsValue_newMmsStringWithSize(abs(typeSpec->typeSpec.visibleString));
 		break;
 	case MMS_BINARY_TIME:
 		if (typeSpec->typeSpec.binaryTime == 4)
@@ -1267,22 +1301,85 @@ MmsValue_newDefaultValue(MmsVariableSpecification* typeSpec)
 static inline void
 setVisibleStringValue(MmsValue* value, char* string)
 {
-	if (string != NULL)
-		value->value.visibleString = copyString(string);
-	else
-		value->value.visibleString = NULL;
+	if (value->value.visibleString.buf != NULL) {
+	    if (string != NULL) {
+
+	        int newStringSize = strlen(string);
+
+	        if (newStringSize > value->value.visibleString.size) {
+	            free(value->value.visibleString.buf);
+	            value->value.visibleString.buf = (char*) malloc(newStringSize + 1);
+	            value->value.visibleString.size = newStringSize;
+	        }
+
+	        strncpy(value->value.visibleString.buf, string, value->value.visibleString.size + 1);
+	        value->value.visibleString.buf[value->value.visibleString.size] = 0;
+	    }
+	    else
+	        value->value.visibleString.buf[0] = 0;
+	}
+}
+
+static MmsValue*
+MmsValue_newString(char* string, MmsType type)
+{
+    MmsValue* value = (MmsValue*) calloc(1, sizeof(MmsValue));
+    value->type = type;
+
+    if (string == NULL) {
+        value->value.visibleString.size = 0;
+        value->value.visibleString.buf = NULL;
+    }
+    else {
+        int stringSize = strlen(string);
+
+        value->value.visibleString.size = stringSize;
+        value->value.visibleString.buf = (char*) malloc(stringSize + 1);
+
+        setVisibleStringValue(value, string);
+    }
+
+
+    return value;
 }
 
 MmsValue*
 MmsValue_newVisibleString(char* string)
 {
-	MmsValue* value = (MmsValue*) calloc(1, sizeof(MmsValue));
-	value->type = MMS_VISIBLE_STRING;
-
-	setVisibleStringValue(value, string);
-
-	return value;
+	return MmsValue_newString(string, MMS_VISIBLE_STRING);
 }
+
+static MmsValue*
+MmsValue_newStringWithSize(int size, MmsType type)
+{
+    MmsValue* value = (MmsValue*) calloc(1, sizeof(MmsValue));
+    value->type = type;
+
+    value->value.visibleString.size = size;
+    value->value.visibleString.buf = (char*) malloc(size + 1);
+    value->value.visibleString.buf[0] = 0;
+
+    return value;
+}
+
+MmsValue*
+MmsValue_newVisibleStringWithSize(int size)
+{
+    return MmsValue_newStringWithSize(size, MMS_VISIBLE_STRING);
+}
+
+MmsValue*
+MmsValue_newMmsString(char* string)
+{
+    return MmsValue_newString(string, MMS_STRING);
+}
+
+MmsValue*
+MmsValue_newMmsStringWithSize(int size)
+{
+    return MmsValue_newStringWithSize(size, MMS_STRING);
+}
+
 
 MmsValue*
 MmsValue_newBinaryTime(bool timeOfDay)
@@ -1375,54 +1472,45 @@ MmsValue_getDataAccessError(MmsValue* self)
     return self->value.dataAccessError;
 }
 
-static inline void
-setMmsStringValue(MmsValue* value, char* string)
-{
-	if (string != NULL)
-		value->value.visibleString = copyString(string);
-	else
-		value->value.visibleString = NULL;
-}
-
-MmsValue*
-MmsValue_newMmsString(char* string)
-{
-	MmsValue* value = (MmsValue*) calloc(1, sizeof(MmsValue));
-	value->type = MMS_STRING;
-
-	setMmsStringValue(value, string);
-
-	return value;
-}
-
 void
 MmsValue_setMmsString(MmsValue* value, char* string)
 {
 	if (value->type == MMS_STRING) {
-		if (value->value.visibleString != NULL)
-			free(value->value.visibleString);
+		assert(value->value.visibleString.buf != NULL);
 
-		setMmsStringValue(value, string);
+        setVisibleStringValue(value, string);
 	}
+}
+
+static MmsValue*
+MmsValue_newStringFromByteArray(uint8_t* byteArray, int size, MmsType type)
+{
+    MmsValue* value = (MmsValue*) calloc(1, sizeof(MmsValue));
+    value->type = type;
+
+    value->value.visibleString.buf = createStringFromBuffer(byteArray, size);
+    value->value.visibleString.size = size;
+
+    return value;
 }
 
 MmsValue*
 MmsValue_newVisibleStringFromByteArray(uint8_t* byteArray, int size)
 {
-	MmsValue* value = (MmsValue*) calloc(1, sizeof(MmsValue));
-	value->type = MMS_VISIBLE_STRING;
+    return MmsValue_newStringFromByteArray(byteArray, size, MMS_VISIBLE_STRING);
+}
 
-	value->value.visibleString = createStringFromBuffer(byteArray, size);
-
-	return value;
+MmsValue*
+MmsValue_newMmsStringFromByteArray(uint8_t* byteArray, int size)
+{
+    return MmsValue_newStringFromByteArray(byteArray, size, MMS_STRING);
 }
 
 void
 MmsValue_setVisibleString(MmsValue* value, char* string)
 {
 	if (value->type == MMS_VISIBLE_STRING) {
-		if (value->value.visibleString != NULL)
-			free(value->value.visibleString);
+	    assert(value->value.visibleString.buf != NULL);
 
 		setVisibleStringValue(value, string);
 	}
@@ -1432,7 +1520,7 @@ char*
 MmsValue_toString(MmsValue* value)
 {
 	if ((value->type == MMS_VISIBLE_STRING) || (value->type == MMS_STRING))
-		return value->value.visibleString;
+		return value->value.visibleString.buf;
 
 	return NULL;
 }
@@ -1620,3 +1708,104 @@ MmsValue_getTypeString(MmsValue* self)
     }
 }
 
+char*
+MmsValue_printToBuffer(MmsValue* self, char* buffer, int bufferSize)
+{
+    switch (MmsValue_getType(self)) {
+    case MMS_STRUCTURE:
+    case MMS_ARRAY:
+        {
+            buffer[0] = '{';
+
+            int bufPos = 1;
+
+            int arraySize = MmsValue_getArraySize(self);
+            int i;
+            for (i = 0; i < arraySize; i++) {
+
+                char* currentStr = MmsValue_printToBuffer(MmsValue_getElement(self, i), buffer + bufPos, bufferSize - bufPos);
+
+                bufPos += strlen(currentStr);
+
+                if (bufPos >= bufferSize)
+                    break;
+
+                if (i != (arraySize - 1)) {
+                    buffer[bufPos++] = ',';
+                }
+            }
+
+            buffer[bufPos++] = '}';
+            buffer[bufPos] = 0;
+        }
+        break;
+    case MMS_BINARY_TIME:
+        Conversions_msTimeToGeneralizedTime(MmsValue_getBinaryTimeAsUtcMs(self), (uint8_t*) buffer);
+        break;
+    case MMS_BIT_STRING:
+        {
+            int bufPos = 0;
+
+            int size = MmsValue_getBitStringSize(self);
+
+            int i;
+            for (i = 0; i < size; i++) {
+                if (MmsValue_getBitStringBit(self, i))
+                    buffer[bufPos++] = '1';
+                else
+                    buffer[bufPos++] = '0';
+            }
+            buffer[bufPos] = 0;
+        }
+        break;
+    case MMS_BOOLEAN:
+        if (MmsValue_getBoolean(self))
+            strncpy(buffer, "true", bufferSize);
+        else
+            strncpy(buffer, "false", bufferSize);
+        break;
+    case MMS_DATA_ACCESS_ERROR:
+        snprintf(buffer, bufferSize, "error %i", self->value.dataAccessError);
+        break;
+    case MMS_FLOAT:
+        snprintf(buffer, bufferSize, "%f", MmsValue_toFloat(self));
+        break;
+    case MMS_GENERALIZED_TIME:
+        strncpy(buffer, "generalized time", bufferSize);
+        break;
+    case MMS_INTEGER:
+        snprintf(buffer, bufferSize, "%i", MmsValue_toInt32(self));
+        break;
+    case MMS_OCTET_STRING:
+        {
+
+            int size = MmsValue_getOctetStringSize(self);
+            int bufPos = 0;
+            int i;
+            for (i = 0; i < size; i++) {
+                snprintf(buffer + bufPos, bufferSize - bufPos, "%02x", self->value.octetString.buf[i]);
+                bufPos += 2;
+
+                if (bufPos >= bufferSize)
+                    break;
+            }
+        }
+
+        break;
+    case MMS_UNSIGNED:
+        snprintf(buffer, bufferSize, "%u", MmsValue_toUint32(self));
+        break;
+    case MMS_UTC_TIME:
+        Conversions_msTimeToGeneralizedTime(MmsValue_getUtcTimeInMs(self), (uint8_t*) buffer);
+        break;
+    case MMS_STRING:
+    case MMS_VISIBLE_STRING:
+        strncpy(buffer, MmsValue_toString(self), bufferSize);
+        break;
+    default:
+        strncpy(buffer, "unknown type", bufferSize);
+        break;
+    }
+
+    return buffer;
+}

@@ -1,7 +1,7 @@
 /*
  *  mms_server.c
  *
- *  Copyright 2013 Michael Zillgith
+ *  Copyright 2013, 2014 Michael Zillgith
  *
  *  This file is part of libIEC61850.
  *
@@ -28,7 +28,7 @@
 #include "iso_server_private.h"
 
 static Map
-createValueCachesForDomains(MmsDevice* device)
+createValueCaches(MmsDevice* device)
 {
     Map valueCaches = Map_create();
 
@@ -37,6 +37,11 @@ createValueCachesForDomains(MmsDevice* device)
         MmsValueCache valueCache = MmsValueCache_create(device->domains[i]);
         Map_addEntry(valueCaches, device->domains[i], valueCache);
     }
+
+#if (CONFIG_MMS_SUPPORT_VMD_SCOPE_NAMED_VARIABLES == 1)
+    MmsValueCache valueCache = MmsValueCache_create((MmsDomain*) device);
+    Map_addEntry(valueCaches, (MmsDomain*) device, valueCache);
+#endif
 
     return valueCaches;
 }
@@ -51,11 +56,14 @@ MmsServer_create(IsoServer isoServer, MmsDevice* device)
     self->isoServer = isoServer;
     self->device = device;
     self->openConnections = Map_create();
-    self->valueCaches = createValueCachesForDomains(device);
+    self->valueCaches = createValueCaches(device);
     self->isLocked = false;
+
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     self->modelMutex = Semaphore_create(1);
 
     IsoServer_setUserLock(isoServer, self->modelMutex);
+#endif
 
     return self;
 }
@@ -63,13 +71,17 @@ MmsServer_create(IsoServer isoServer, MmsDevice* device)
 void
 MmsServer_lockModel(MmsServer self)
 {
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     Semaphore_wait(self->modelMutex);
+#endif
 }
 
 void
 MmsServer_unlockModel(MmsServer self)
 {
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
     Semaphore_post(self->modelMutex);
+#endif
 }
 
 void
@@ -157,6 +169,9 @@ mmsServer_setValue(MmsServer self, MmsDomain* domain, char* itemId, MmsValue* va
     } else {
         MmsValue* cachedValue;
 
+        if (domain == NULL)
+            domain = (MmsDomain*) self->device;
+
         cachedValue = MmsServer_getValueFromCache(self, domain, itemId);
 
         if (cachedValue != NULL) {
@@ -225,6 +240,7 @@ isoConnectionIndicationHandler(IsoConnectionIndication indication,
     }
 }
 
+#if (CONFIG_MMS_THREADLESS_STACK != 1)
 void
 MmsServer_startListening(MmsServer server, int tcpPort)
 {
@@ -238,3 +254,25 @@ MmsServer_stopListening(MmsServer server)
 {
     IsoServer_stopListening(server->isoServer);
 }
+#endif /* (CONFIG_MMS_THREADLESS_STACK != 1)*/
+
+void
+MmsServer_startListeningThreadless(MmsServer self, int tcpPort)
+{
+    IsoServer_setConnectionHandler(self->isoServer, isoConnectionIndicationHandler, (void*) self);
+    IsoServer_setTcpPort(self->isoServer, tcpPort);
+    IsoServer_startListeningThreadless(self->isoServer);
+}
+
+void
+MmsServer_handleIncomingMessages(MmsServer self)
+{
+    IsoServer_processIncomingMessages(self->isoServer);
+}
+
+void
+MmsServer_stopListeningThreadless(MmsServer self)
+{
+    IsoServer_stopListeningThreadless(self->isoServer);
+}
+

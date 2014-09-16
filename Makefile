@@ -32,11 +32,19 @@ LIB_SOURCE_DIRS += src/hal/socket/win32
 LIB_SOURCE_DIRS += src/hal/thread/win32
 LIB_SOURCE_DIRS += src/hal/ethernet/win32
 LIB_SOURCE_DIRS += src/hal/filesystem/win32
+LIB_SOURCE_DIRS += src/hal/time/win32
 else ifeq ($(HAL_IMPL), POSIX)
 LIB_SOURCE_DIRS += src/hal/socket/linux
 LIB_SOURCE_DIRS += src/hal/thread/linux
 LIB_SOURCE_DIRS += src/hal/ethernet/linux
 LIB_SOURCE_DIRS += src/hal/filesystem/linux
+LIB_SOURCE_DIRS += src/hal/time/unix
+else ifeq ($(HAL_IMPL), BSD)
+LIB_SOURCE_DIRS += src/hal/socket/bsd
+LIB_SOURCE_DIRS += src/hal/thread/linux
+LIB_SOURCE_DIRS += src/hal/ethernet/bsd
+LIB_SOURCE_DIRS += src/hal/filesystem/linux
+LIB_SOURCE_DIRS += src/hal/time/unix
 endif
 
 LIB_INCLUDE_DIRS +=	src/mms/iso_presentation
@@ -55,7 +63,8 @@ LIB_INCLUDE_DIRS +=	src/hal/socket
 LIB_INCLUDE_DIRS +=	src/hal/thread
 LIB_INCLUDE_DIRS +=	src/hal/ethernet
 LIB_INCLUDE_DIRS +=	src/hal/filesystem
-LIB_INCLUDE_DIRS +=	src/hal
+LIB_INCLUDE_DIRS +=	src/hal/time
+LIB_INCLUDE_DIRS += src/hal
 LIB_INCLUDE_DIRS +=	src/goose
 LIB_INCLUDE_DIRS +=	src/mms/iso_server
 LIB_INCLUDE_DIRS +=	src/mms/iso_common
@@ -75,7 +84,7 @@ ifndef INSTALL_PREFIX
 INSTALL_PREFIX = ./.install
 endif
 
-LIB_API_HEADER_FILES = src/hal/hal.h 
+LIB_API_HEADER_FILES = src/hal/time/time_hal.h 
 LIB_API_HEADER_FILES += src/hal/ethernet/ethernet.h 
 LIB_API_HEADER_FILES += src/hal/thread/thread.h
 LIB_API_HEADER_FILES += src/hal/filesystem/filesystem.h 

@@ -69,13 +69,13 @@ void
 MmsMapping_enableGoosePublishing(MmsMapping* self);
 
 char*
-MmsMapping_getMmsDomainFromObjectReference(char* objectReference, char* buffer);
+MmsMapping_getMmsDomainFromObjectReference(const char* objectReference, char* buffer);
 
 void
 MmsMapping_addControlObject(MmsMapping* self, ControlObject* controlObject);
 
 char*
-MmsMapping_createMmsVariableNameFromObjectReference(char* objectReference, FunctionalConstraint fc, char* buffer);
+MmsMapping_createMmsVariableNameFromObjectReference(const char* objectReference, FunctionalConstraint fc, char* buffer);
 
 void
 MmsMapping_addObservedAttribute(MmsMapping* self, DataAttribute* dataAttribute,

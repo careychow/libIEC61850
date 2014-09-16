@@ -1,7 +1,7 @@
 package com.libiec61850.scl.types;
 
 /*
- *  Copyright 2013 Michael Zillgith
+ *  Copyright 2013, 2014 Michael Zillgith
  *
  *	This file is part of libIEC61850.
  *
@@ -41,6 +41,15 @@ public class LogicalNodeType extends SclType {
 
 		parseDataObjectNodes(lnNode);
 	}
+	
+	private DataObjectDefinition getObjectDefinitionByName(String name) {
+		for (DataObjectDefinition dod : dataObjects) {
+			if (dod.getName().equals(name))
+				return dod;
+		}
+		
+		return null;
+	}
 
 	private void parseDataObjectNodes(Node lnNode) throws SclParserException {
 		dataObjects = new LinkedList<DataObjectDefinition>();
@@ -48,7 +57,12 @@ public class LogicalNodeType extends SclType {
 		List<Node> doNodeList = ParserUtils.getChildNodesWithTag(lnNode, "DO");
 		
 		for (Node doNode : doNodeList) {
-			this.dataObjects.add(new DataObjectDefinition(doNode));
+			DataObjectDefinition dod = new DataObjectDefinition(doNode);
+			
+			if (getObjectDefinitionByName(dod.getName()) != null)
+				throw new SclParserException(lnNode, "Logical node contains multiple data objects with name \"" + dod.getName() + "\"");
+			
+			this.dataObjects.add(dod);
 		}
 	}
 

@@ -24,6 +24,11 @@
 #ifndef CONFIG_FILE_PARSER_H_
 #define CONFIG_FILE_PARSER_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 /** \addtogroup server_api_group
  *  @{
  */
@@ -40,5 +45,9 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle);
 /**@}*/
 
 /**@}*/
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* CONFIG_FILE_PARSER_H_ */

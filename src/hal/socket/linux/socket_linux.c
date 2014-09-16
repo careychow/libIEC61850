@@ -1,7 +1,7 @@
 /*
  *  socket_linux.c
  *
- *  Copyright 2013 Michael Zillgith
+ *  Copyright 2013, 2014 Michael Zillgith
  *
  *  This file is part of libIEC61850.
  *
@@ -80,7 +80,7 @@ activateKeepAlive(int sd)
 }
 
 static bool
-prepareServerAddress(char* address, int port, struct sockaddr_in* sockaddr)
+prepareServerAddress(const char* address, int port, struct sockaddr_in* sockaddr)
 {
 
 	memset((char *) sockaddr , 0, sizeof(struct sockaddr_in));
@@ -102,17 +102,15 @@ prepareServerAddress(char* address, int port, struct sockaddr_in* sockaddr)
     return true;
 }
 
-#if 0
 static void
 setSocketNonBlocking(Socket self)
 {
     int flags = fcntl(self->fd, F_GETFL, 0);
     fcntl(self->fd, F_SETFL, flags | O_NONBLOCK);
 }
-#endif
 
 ServerSocket
-TcpServerSocket_create(char* address, int port)
+TcpServerSocket_create(const char* address, int port)
 {
     ServerSocket serverSocket = NULL;
 
@@ -133,6 +131,8 @@ TcpServerSocket_create(char* address, int port)
             serverSocket = malloc(sizeof(struct sServerSocket));
             serverSocket->fd = fd;
             serverSocket->backLog = 0;
+
+            setSocketNonBlocking((Socket) serverSocket);
         }
         else {
             close(fd);
@@ -153,6 +153,8 @@ ServerSocket_listen(ServerSocket self)
     listen(self->fd, self->backLog);
 }
 
+
+/* CHANGED TO MAKE NON-BLOCKING --> RETURNS NULL IF NO CONNECTION IS PENDING */
 Socket
 ServerSocket_accept(ServerSocket self)
 {
@@ -215,8 +217,8 @@ TcpSocket_create()
     return self;
 }
 
-int
-Socket_connect(Socket self, char* address, int port)
+bool
+Socket_connect(Socket self, const char* address, int port)
 {
     struct sockaddr_in serverAddress;
 
@@ -224,7 +226,7 @@ Socket_connect(Socket self, char* address, int port)
         printf("Socket_connect: %s:%i\n", address, port);
 
     if (!prepareServerAddress(address, port, &serverAddress))
-        return 0;
+        return true;
 
     self->fd = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -233,9 +235,9 @@ Socket_connect(Socket self, char* address, int port)
 #endif
 
     if (connect(self->fd, (struct sockaddr *) &serverAddress, sizeof(serverAddress)) < 0)
-        return 0;
+        return false;
     else
-        return 1;
+        return true;
 }
 
 char*
@@ -285,7 +287,10 @@ Socket_read(Socket self, uint8_t* buf, int size)
     if (self->fd == -1)
         return -1;
 
-    int read_bytes = read(self->fd, buf, size);
+    int read_bytes = recv(self->fd, buf, size, MSG_DONTWAIT);
+
+    if (read_bytes == 0)
+        return -1;
 
     if (read_bytes == -1) {
         int error = errno;
@@ -301,9 +306,8 @@ Socket_read(Socket self, uint8_t* buf, int size)
                 return -1;
         }
     }
-    else  {
-        return read_bytes;
-    }
+
+    return read_bytes;
 }
 
 int
