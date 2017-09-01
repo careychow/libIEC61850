@@ -568,8 +568,7 @@ createFileDirectoryResponse(uint32_t invokeId, ByteBuffer* response, char* direc
 
     bufPos += tempEncoded;
 
-    if (moreFollows)
-        bufPos = BerEncoder_encodeBoolean(0x81, moreFollows, buffer, bufPos);
+    bufPos = BerEncoder_encodeBoolean(0x81, moreFollows, buffer, bufPos);
 
     response->size = bufPos;
 }
